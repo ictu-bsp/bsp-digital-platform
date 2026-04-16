@@ -1,7 +1,8 @@
-# wrangler.toml
-name = "bsp-platform"
+name = "bsp-platform-system"
 compatibility_date = "2026-04-01"
-compatibility_flags = ["nodejs_compat"] # Critical for Neon [cite: 31]
+compatibility_flags = ["nodejs_compat"] # Required for @neondatabase/serverless
+main = ".open-next/worker.js"
 
-[site]
-bucket = ".open-next/assets" # This acts as your output directory for static files
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
