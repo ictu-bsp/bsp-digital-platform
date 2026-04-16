@@ -5,6 +5,3 @@ compatibility_flags = ["nodejs_compat"] # Critical for Neon [cite: 31]
 
 [site]
 bucket = ".open-next/assets" # This acts as your output directory for static files
-
-[build]
-command = "npx @opennextjs/cloudflare build" # Fixes the "got 0" error
