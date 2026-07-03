@@ -4,7 +4,6 @@ import { Pool } from 'pg';
 import { users } from './schema';
 import * as dotenv from 'dotenv';
 
-// Load environmental parameters manually for isolated script execution
 dotenv.config({ path: '.env.local' });
 
 if (!process.env.DATABASE_URL) {
@@ -17,10 +16,8 @@ const db = drizzle(pool);
 async function main() {
   console.log('🌱 Generating uniform local testing data inside Docker container...');
 
-  // Reset existing table rows to clear previous experiments
   await db.delete(users);
 
-  // Insert mock records that both Frontend and Backend specialists can use
   await db.insert(users).values([
     {
       email: 'test.scout1@bsp.ph',

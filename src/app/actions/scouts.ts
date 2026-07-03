@@ -1,7 +1,7 @@
 'use server';
 
-import { db } from '@/db'; // Your environmental gateway client
-import { users } from '@/db/schema'; // Drizzle schema blueprint
+import { db } from '@/db';
+import { users } from '@/db/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
@@ -20,13 +20,8 @@ export async function getScoutsByCouncil(councilName: string) {
   }
 }
 
-/**
- * Mutation Action: Manually triggers a membership state update 
- * (e.g., when an admin approves an offline cash registration)
- */
 export async function verifyScoutPayment(scoutId: string, transactionReference: string) {
   try {
-    // Standard Drizzle Update statement
     const updatedRows = await db
       .update(users)
       .set({
@@ -35,9 +30,8 @@ export async function verifyScoutPayment(scoutId: string, transactionReference: 
         verificationStatus: 'active',
       })
       .where(eq(users.id, scoutId))
-      .returning(); // PostgreSQL native feature: returns the modified row instantly
+      .returning();
 
-    // In Next.js App Router, this clears the CDN edge cache for the target view path
     revalidatePath('/admin/dashboard');
 
     return { 

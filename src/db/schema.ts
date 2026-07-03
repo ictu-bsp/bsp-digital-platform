@@ -1,6 +1,5 @@
 import { pgTable, text, timestamp, integer, pgEnum, uuid } from 'drizzle-orm/pg-core';
 
-// Standard Enums to enforce status rules strictly
 export const paymentStatusEnum = pgEnum('payment_status', ['awaiting_payment', 'paid', 'failed']);
 export const verificationStatusEnum = pgEnum('verification_status', ['unverified', 'pending', 'active']);
 
@@ -13,12 +12,10 @@ export const users = pgTable('users', {
   birthdate: text('birthdate').notNull(),
   council: text('council').notNull(),
   
-  // Financial Tracking
   paymentStatus: paymentStatusEnum('payment_status').default('awaiting_payment').notNull(),
   paymentIntentId: text('payment_intent_id'), // PayMongo Reference
   registrationYears: integer('registration_years').default(1).notNull(),
 
-  // Legacy Member Validation
   scoutIdNumber: text('scout_id_number'),
   verificationStatus: verificationStatusEnum('verification_status').default('unverified').notNull(),
 
