@@ -29,6 +29,5 @@ export const membershipSchema = z.object({
   paymentReceiptUrl: z.string().url("Proof of payment is required"), // From Cloudflare R2
 });
 
-// Types for your developers to use
 export type BasicAuthData = z.infer<typeof basicAuthSchema>;
 export type MembershipData = z.infer<typeof membershipSchema>;
