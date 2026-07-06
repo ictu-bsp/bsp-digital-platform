@@ -2,6 +2,7 @@ import { AuthLinks } from "@/components/AuthLinks";
 import { BrandLogo } from "@/components/BrandLogo";
 import { OnboardingCarousel } from "@/components/Carousel/OnboardingCarousel";
 import { Button } from "@/components/ui/Button";
+import Link from "next/link";
 
 export default function LandingPage() {
   return (
@@ -27,7 +28,9 @@ export default function LandingPage() {
 
           <div className="mt-auto w-full md:mt-12">
             <AuthLinks />
-            <Button type="button">Sign up</Button>
+            <Link href="/signup" className="font-bold text-green-900 hover:underline">
+              <Button type="button">Sign up</Button>
+            </Link>
           </div>
         </div>
       </section>
