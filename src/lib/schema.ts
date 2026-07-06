@@ -1,34 +1,68 @@
 import { z } from "zod";
 
-export const basicAuthSchema = z.object({
-  lastName: z.string().min(2, "Last name is required"),
-  firstName: z.string().min(2, "First name is required"),
-  email: z.email("Invalid email address"),
-  mobileNumber: z.string().min(11, "Mobile number must be at least 11 digits"),
-  birthdate: z.coerce.date().refine((date) => date < new Date(), {
-    message: "Birthdate cannot be in the future",
-  }),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  // Data Privacy Agreement (The "Gate")
-  hasAgreedToDataPrivacy: z.literal(true, {
-    message: "You must agree to the Data Privacy Policy",
-  }),
+// --- Enums for strict validation ---
+const GENDER_ENUM = z.enum(["MALE", "FEMALE", "OTHER"]);
+const MEMBERSHIP_STATUS = z.enum(["PENDING", "ACTIVE", "EXPIRED"]);
+
+// --- Core Schemas ---
+
+export const nonVerifiedScoutSchema = z.object({
+  userID: z.string().uuid(),
+  firstName: z.string().min(2),
+  lastName: z.string().min(2),
+  suffix: z.string().optional(),
+  dateOfBirth: z.string(), // ISO format (YYYY-MM-DD)
+  gender: GENDER_ENUM,
+  email: z.string().email(),
 });
 
-export const membershipSchema = z.object({
-  gender: z.enum(["Male", "Female"]),
-  religion: z.string().min(2, "Religion is required"),
-  civilStatus: z.enum(["Single", "Married", "Widowed", "Separated"]),
-  region: z.string().min(2, "Region is required"),
-  council: z.string().min(2, "Council is required"),
-  outfit: z.string().min(1, "Outfit/Unit information is required"),
-  scoutingPosition: z.string().min(2, "Position is required"),
-  tenureInScouting: z.coerce.number().min(0, "Tenure cannot be negative"),
-  // One-Time Payment for Multi-Year Registration
-  paymentYears: z.coerce.number().min(1).max(5, "Select between 1 to 5 years"),
-  paymentReceiptUrl: z.string().url("Proof of payment is required"), // From Cloudflare R2
+export const scoutSchema = nonVerifiedScoutSchema.extend({
+  scoutID: z.string().uuid(),
+  scoutMembershipID: z.string(),
+  membershipValidity: z.string().datetime(),
+  isMembershipValid: z.boolean(),
+  scoutingPosition: z.string(),
+  bloodType: z.string().optional(),
+  advancementRank: z.string(),
+  tenure: z.coerce.number().int(),
+  region: z.string(),
+  council: z.string(),
+  isCommunityBased: z.boolean(),
+  sponsoringInstitution: z.string().optional(),
+  sponsoringInstitutionAddress: z.string().optional(),
+  emergencyContactName: z.string(),
+  emergencyContactAddress: z.string(),
+  emergencyContactRelationship: z.string(),
+  emergencyContactContactNum: z.string(),
+  emergencyContactEmail: z.string().email().optional(),
 });
 
-// Types for your developers to use
-export type BasicAuthData = z.infer<typeof basicAuthSchema>;
-export type MembershipData = z.infer<typeof membershipSchema>;
+export const paymentSchema = z.object({
+  transactionID: z.string().uuid(),
+  paymentMethod: z.string(),
+  dateOfTransaction: z.string().datetime(),
+  amountPaid: z.coerce.number().positive(),
+});
+
+export const advancementRankSchema = z.object({
+  advancementID: z.string().uuid(),
+  advancementRankName: z.string(),
+  advancementDateObtained: z.string().datetime(),
+});
+
+export const meritBadgeSchema = z.object({
+  meritBadgeID: z.string().uuid(),
+  meritBadgeName: z.string(),
+  meritBadgeDateObtained: z.string().datetime(),
+});
+
+export const localCouncilSchema = z.object({
+  localCouncilUserID: z.string().uuid(),
+  localCouncilName: z.string(),
+  email: z.string().email(),
+});
+
+export const superadminSchema = z.object({
+  superadminUserID: z.string().uuid(),
+  superadminEmail: z.string().email(),
+});
