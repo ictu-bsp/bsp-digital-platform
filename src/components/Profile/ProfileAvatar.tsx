@@ -1,3 +1,7 @@
+"use client";
+
+import { useRef } from "react";
+
 interface ProfileAvatarProps {
   avatarUrl?: string | null;
   onEditClick: () => void;
@@ -6,8 +10,8 @@ interface ProfileAvatarProps {
 export default function ProfileAvatar({ avatarUrl, onEditClick }: ProfileAvatarProps) {
   return (
     <div className="flex justify-center py-6">
-      <div className="relative">
-        <div className="h-32 w-32 rounded-full bg-green-900 flex items-center justify-center shadow-md">
+      <div className="relative group cursor-pointer">
+        <div className="h-32 w-32 rounded-full bg-green-900 flex items-center justify-center shadow-md transition-transform group-hover:scale-105 group-hover:shadow-lg">
           {avatarUrl ? (
             <img
               src={avatarUrl}
@@ -26,7 +30,7 @@ export default function ProfileAvatar({ avatarUrl, onEditClick }: ProfileAvatarP
         </div>
         <button
           onClick={onEditClick}
-          className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 px-4 py-1.5 bg-white border border-gray-300 rounded-full text-sm font-semibold text-slate-800 hover:bg-gray-50 transition flex items-center gap-1.5"
+          className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 px-4 py-1.5 bg-white border border-gray-300 rounded-full text-sm font-semibold text-slate-800 hover:bg-green-50 hover:border-green-400 hover:shadow-md hover:scale-110 transition cursor-pointer flex items-center gap-1.5"
         >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path

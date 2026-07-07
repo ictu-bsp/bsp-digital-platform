@@ -8,6 +8,7 @@ import UserInfoCard from "@/components/Profile/UserInfoCard";
 import ContentBlock from "@/components/Profile/ContentBlock";
 import MembershipCta from "@/components/Profile/MembershipCta";
 import ProfileBottomNav from "@/components/Profile/ProfileBottomNav";
+import EditAvatarModal from "@/components/Profile/EditAvatarModal";
 
 interface UserProfile {
   fullName: string;
@@ -19,18 +20,30 @@ export default function ProfilePage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("profile");
   const [isEditingAvatar, setIsEditingAvatar] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   const userProfile: UserProfile = {
     fullName: "Juan Dela Cruz",
     rank: "Senior Scout",
-    avatarUrl: null,
+    avatarUrl: avatarPreview,
   };
 
   const membershipStatus = false;
 
   const handleLogout = () => {
     alert("Logging out...");
-    router.push("/login");
+    router.push("/");
+  };
+
+  const handleImageChange = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const imageUrl = event.target?.result as string;
+      setAvatarPreview(imageUrl);
+      setIsEditingAvatar(false);
+      alert("Profile image updated! (Preview only - not saved to server yet)");
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -42,7 +55,7 @@ export default function ProfilePage() {
           {/* Profile Avatar */}
           <ProfileAvatar
             avatarUrl={userProfile.avatarUrl}
-            onEditClick={() => setIsEditingAvatar(!isEditingAvatar)}
+            onEditClick={() => setIsEditingAvatar(true)}
           />
 
           {/* User Info Card */}
@@ -72,6 +85,15 @@ export default function ProfilePage() {
 
         {/* Bottom Navigation */}
         <ProfileBottomNav activeTab={activeTab} onTabChange={setActiveTab} />
+
+        {/* Edit Avatar Modal */}
+        {isEditingAvatar && (
+          <EditAvatarModal
+            currentAvatarUrl={userProfile.avatarUrl}
+            onSave={handleImageChange}
+            onClose={() => setIsEditingAvatar(false)}
+          />
+        )}
       </div>
     </main>
   );
