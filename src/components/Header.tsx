@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 interface HeaderProps {
   userName: string;
   avatarUrl?: string;
@@ -18,17 +20,19 @@ export default function Header({ userName, avatarUrl }: HeaderProps) {
         <div className="text-right">
           <p className="text-2xl font-bold text-green-900">Hello, {userName}</p>
         </div>
-        {avatarUrl ? (
-          <img
-            src={avatarUrl}
-            alt={`${userName} avatar`}
-            className="h-12 w-12 rounded-full object-cover ring-2 ring-emerald-100"
-          />
-        ) : (
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-900 shadow-sm">
-            <span className="text-lg font-semibold">{initial}</span>
-          </div>
-        )}
+        <Link href="/profile" className="transition hover:opacity-80">
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt={`${userName} avatar`}
+              className="h-12 w-12 rounded-full object-cover ring-2 ring-emerald-100"
+            />
+          ) : (
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-900 shadow-sm hover:bg-emerald-200">
+              <span className="text-lg font-semibold">{initial}</span>
+            </div>
+          )}
+        </Link>
       </div>
     </header>
   );
