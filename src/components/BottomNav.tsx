@@ -16,7 +16,7 @@ const navItems: Array<NavItem> = [
     label: "Home",
     href: "/dashboard",
     icon: (
-      <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
         <path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5.5V14H9.5v7H4a1 1 0 0 1-1-1v-9.5Z" />
       </svg>
     ),
