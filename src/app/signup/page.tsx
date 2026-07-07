@@ -36,12 +36,18 @@ export default function SignUpPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    console.log("Submitting account registration: ", formData);
+
+    alert("Account created! Please check your email for a verification code.");
+    router.push("/signup/verify");
     
-    // You can access all field values inside the `formData` object here
+    /* You can access all field values inside the `formData` object here
     console.log("Submitting account registration: ", formData);
 
     alert("Sign Up Successful!");
     router.push("/login");
+    */
   };
 
   return (
