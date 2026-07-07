@@ -21,12 +21,10 @@ const promoBanners: PromoBanner[] = [
 export default function DashboardPage() {
   return (
     <main className="min-h-screen bg-white text-slate-950">
-      <div className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-between">
+      <div className="mx-auto flex min-h-screen max-w-md flex-col">
         <div className="flex-1 w-full pb-28">
           <Header userName={user.userName} avatarUrl={user.userAvatarUrl ?? undefined} />
-
           <PromoCarousel banners={promoBanners} />
-
           <DashboardGrid />
         </div>
 
