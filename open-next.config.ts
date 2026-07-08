@@ -25,8 +25,6 @@
 
 // export default config;
 
-import { defineHexConfig } from '@opennextjs/cloudflare';
-
 const config = {
   default: {
     override: {
