@@ -21,7 +21,7 @@ export default function MembershipPage() {
             </div>
           </div>
         </div>
-
+        
         <BottomNav />
       </div>
     </main>

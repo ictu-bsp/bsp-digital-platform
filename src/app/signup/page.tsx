@@ -1,233 +1,221 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 
-import {
-  signUpAction,
-  type ActionResult,
-} from "@/app/actions/auth";
+export default function SignUpPage() {
+  const router = useRouter(); 
 
-const initialState: ActionResult = {
-  success: false,
-};
+  const [formData, setFormData] = useState({
+    lastName: "",
+    suffix: "",
+    firstName: "",
+    middleName: "",
+    noMiddleName: false,
+    dateOfBirth: "",
+    gender: "",
+    email: "",
+  });
 
-export default function SignupPage() {
-  const router = useRouter();
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value, type } = e.target;
+    const fieldValue =
+      type === "checkbox" ? (e.target as HTMLInputElement).checked : value;
 
-  const [state, formAction, pending] = useActionState(
-    signUpAction,
-    initialState
-  );
+    setFormData((prev) => ({
+      ...prev,
+      [name]: fieldValue,
+      ...(name === "noMiddleName" && fieldValue
+        ? { middleName: "" }
+        : {}),
+    }));
+  };
 
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] =
-    useState(false);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
 
-  useEffect(() => {
-    if (state.success) {
-      alert("Account created successfully!");
-      router.push("/login");
-    }
-  }, [state.success, router]);
+    console.log("Submitting account registration: ", formData);
+
+    alert("Account created! Please check your email for a verification code.");
+    router.push("/signup/verify");
+    
+  };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-white">
-      <form
-        action={formAction}
-        className="w-full max-w-md rounded-lg bg-white p-8 shadow-md"
-      >
-        <h1 className="text-5xl font-bold text-green-900">
-          eScout
-        </h1>
-
-        <h2 className="mb-8 text-2xl font-semibold text-green-900">
-          Create Account
-        </h2>
-
-        {state.message && (
-          <div
-            className={`mb-5 rounded p-3 text-sm ${
-              state.success
-                ? "bg-green-100 text-green-700"
-                : "bg-red-100 text-red-700"
-            }`}
+    <main className="flex min-h-screen items-center justify-center bg-white md:bg-gray-50 md:p-6">
+      <div className="w-full max-w-md bg-white px-6 pb-8 pt-4 md:rounded-2xl md:shadow-sm md:border md:border-gray-100">
+        {/* Top Navigation & Brand Header */}
+        <div className="mb-6">
+          <Link 
+            href="/" 
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full text-green-950 transition-colors hover:bg-gray-100"
+            aria-label="Go back"
           >
-            {state.message}
-          </div>
-        )}
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-6 w-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+            </svg>
+          </Link>
+          
+          <h1 className="mt-2 text-4xl font-extrabold tracking-tight text-green-900">
+            eScout
+          </h1>
+          <h2 className="mt-1 text-xl font-bold text-green-900">
+            Create New Account
+          </h2>
+        </div>
 
-        <input
-          name="firstName"
-          placeholder="First Name"
-          required
-          className="mb-2 w-full rounded border border-gray-300 p-3 transition focus:border-green-700 focus:outline-none"
-        />
-
-        {state.errors?.firstName && (
-          <p className="mb-3 text-sm text-red-600">
-            {state.errors.firstName[0]}
-          </p>
-        )}
-
-        <input
-          name="middleName"
-          placeholder="Middle Name (Optional)"
-          className="mb-2 w-full rounded border border-gray-300 p-3 transition focus:border-green-700 focus:outline-none"
-        />
-
-        {state.errors?.middleName && (
-          <p className="mb-3 text-sm text-red-600">
-            {state.errors.middleName[0]}
-          </p>
-        )}
-
-        <input
-          name="lastName"
-          placeholder="Last Name"
-          required
-          className="mb-2 w-full rounded border border-gray-300 p-3 transition focus:border-green-700 focus:outline-none"
-        />
-
-        {state.errors?.lastName && (
-          <p className="mb-3 text-sm text-red-600">
-            {state.errors.lastName[0]}
-          </p>
-        )}
         
-        <input
-            name="suffix"
-            placeholder="Suffix (Jr., Sr., II, III)"
-            className="mb-2 w-full rounded border border-gray-300 p-3 transition focus:border-green-700 focus:outline-none"
-        />
+        <form onSubmit={handleSubmit} className="space-y-4">
+          
+          {/* Row 1: Last Name & Suffix Split */}
+          <div className="flex gap-3">
+            <div className="w-[70%]">
+              <input
+                type="text"
+                name="lastName"
+                placeholder="Last Name"
+                required
+                value={formData.lastName}
+                onChange={handleInputChange}
+                className="w-full rounded-lg border border-gray-300 p-3 text-base outline-none transition-all focus:border-green-900 focus:ring-1 focus:ring-green-900 placeholder:text-gray-400"
+              />
+            </div>
+            <div className="w-[30%]">
+              <select
+                name="suffix"
+                value={formData.suffix}
+                onChange={handleInputChange}
+                className="w-full rounded-lg border border-gray-300 p-3 text-base bg-white outline-none transition-all focus:border-green-900 focus:ring-1 focus:ring-green-900 text-gray-700"
+              >
+                <option value="" disabled hidden>Suffix</option>
+                <option value="Jr.">Jr.</option>
+                <option value="Sr.">Sr.</option>
+                <option value="I">I</option>
+                <option value="II">II</option>
+                <option value="III">III</option>
+                <option value="IV">IV</option>
+              </select>
+            </div>
+          </div>
 
-        {state.errors?.suffix && (
-          <p className="mb-3 text-sm text-red-600">
-            {state.errors.suffix[0]}
-          </p>
-        )}
+          <div>
+            <input
+              type="text"
+              name="firstName"
+              placeholder="First Name"
+              required
+              value={formData.firstName}
+              onChange={handleInputChange}
+              className="w-full rounded-lg border border-gray-300 p-3 text-base outline-none transition-all focus:border-green-900 focus:ring-1 focus:ring-green-900 placeholder:text-gray-400"
+            />
+          </div>
 
-        <input
-          name="birthdate"
-          type="date"
-          required
-          className="mb-2 w-full rounded border border-gray-300 p-3 transition focus:border-green-700 focus:outline-none"
-        />
+          <div>
+            <input
+              type="text"
+              name="middleName"
+              placeholder="Middle Name"
+              required={!formData.noMiddleName}
+              disabled={formData.noMiddleName}
+              value={formData.middleName}
+              onChange={handleInputChange}
+              className="w-full rounded-lg border border-gray-300 p-3 text-base outline-none transition-all focus:border-green-900 focus:ring-1 focus:ring-green-900 placeholder:text-gray-400 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+            />
+          </div>
 
-        {state.errors?.birthdate && (
-          <p className="mb-3 text-sm text-red-600">
-            {state.errors.birthdate[0]}
-          </p>
-        )}
+          <div className="flex items-center gap-2 pl-1">
+            <input
+              type="checkbox"
+              id="noMiddleName"
+              name="noMiddleName"
+              checked={formData.noMiddleName}
+              onChange={handleInputChange}
+              className="h-4 w-4 rounded border-gray-300 text-green-900 focus:ring-green-900 accent-green-900"
+            />
+            <label htmlFor="noMiddleName" className="text-sm text-gray-500 select-none">
+              I have no middle name
+            </label>
+          </div>
 
-        <input
-          name="email"
-          type="email"
-          placeholder="Email Address"
-          required
-          autoComplete="email"
-          className="mb-2 w-full rounded border border-gray-300 p-3 transition focus:border-green-700 focus:outline-none"
-        />
+          <div className="flex gap-3">
+            <div className="w-[65%]">
+              <input
+                type="text"
+                name="dateOfBirth"
+                placeholder="Date of Birth"
+                required
+                onFocus={(e) => (e.target.type = "date")}
+                onBlur={(e) => !e.target.value && (e.target.type = "text")}
+                value={formData.dateOfBirth}
+                onChange={handleInputChange}
+                className="w-full rounded-lg border border-gray-300 p-3 text-base outline-none transition-all focus:border-green-900 focus:ring-1 focus:ring-green-900 placeholder:text-gray-400"
+              />
+            </div>
+            <div className="w-[35%]">
+              <select
+                name="gender"
+                required
+                value={formData.gender}
+                onChange={handleInputChange}
+                className="w-full rounded-lg border border-gray-300 p-3 text-base bg-white outline-none transition-all focus:border-green-900 focus:ring-1 focus:ring-green-900 text-gray-700"
+              >
+                <option value="" disabled hidden>Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
 
-        {state.errors?.email && (
-          <p className="mb-3 text-sm text-red-600">
-            {state.errors.email[0]}
-          </p>
-        )}
+          <div>
+            <input
+              type="email"
+              name="email"
+              placeholder="Email Address"
+              required
+              value={formData.email}
+              onChange={handleInputChange}
+              className="w-full rounded-lg border border-gray-300 p-3 text-base outline-none transition-all focus:border-green-900 focus:ring-1 focus:ring-green-900 placeholder:text-gray-400"
+            />
+          </div>
 
-        <div className="relative mb-2">
-          <input
-            name="password"
-            type={showPassword ? "text" : "password"}
-            placeholder="Password"
-            required
-            autoComplete="new-password"
-            className="w-full rounded border border-gray-300 p-3 pr-12 transition focus:border-green-700 focus:outline-none"
-          />
+          <div className="py-2 text-center text-xs text-gray-600 leading-normal px-4">
+            By tapping Sign up, you agree with the{" "}
+            <Link href="/terms" className="font-bold text-green-900 hover:underline">
+              Terms and Conditions
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className="font-bold text-green-900 hover:underline">
+              Privacy Notice
+            </Link>
+          </div>
 
-          <button
-            type="button"
-            onClick={() =>
-              setShowPassword(!showPassword)
-            }
-            className="absolute inset-y-0 right-3 flex items-center"
-          >
-            {showPassword ? (
-              <EyeSlashIcon className="h-5 w-5 text-gray-500" />
-            ) : (
-              <EyeIcon className="h-5 w-5 text-gray-500" />
-            )}
-          </button>
-        </div>
+          <div className="space-y-4 pt-4">
+            <button
+              type="submit"
+              className="w-full rounded-lg bg-green-900 py-3.5 text-center font-bold text-white transition-colors hover:bg-green-950 focus:outline-none focus:ring-4 focus:ring-green-300"
+            >
+              Sign up
+            </button>
 
-        {state.errors?.password && (
-          <p className="mb-3 text-sm text-red-600">
-            {state.errors.password[0]}
-          </p>
-        )}
+            <div className="text-center text-sm text-gray-400">or</div>
 
-        <div className="relative mb-2">
-          <input
-            name="confirmPassword"
-            type={
-              showConfirmPassword
-                ? "text"
-                : "password"
-            }
-            placeholder="Confirm Password"
-            required
-            autoComplete="new-password"
-            className="w-full rounded border border-gray-300 p-3 pr-12 transition focus:border-green-700 focus:outline-none"
-          />
+            <div className="text-center space-y-3">
+              <p className="text-sm text-gray-500">Already have an eScout account?</p>
+              <Link
+                href="/login"
+                className="block w-full rounded-lg border border-green-900 bg-white py-3.5 text-center font-bold text-green-900 transition-colors hover:bg-green-50 focus:outline-none focus:ring-4 focus:ring-green-100"
+              >
+                Log in
+              </Link>
+            </div>
+          </div>
 
-          <button
-            type="button"
-            onClick={() =>
-              setShowConfirmPassword(
-                !showConfirmPassword
-              )
-            }
-            className="absolute inset-y-0 right-3 flex items-center"
-          >
-            {showConfirmPassword ? (
-              <EyeSlashIcon className="h-5 w-5 text-gray-500" />
-            ) : (
-              <EyeIcon className="h-5 w-5 text-gray-500" />
-            )}
-          </button>
-        </div>
-
-        {state.errors?.confirmPassword && (
-          <p className="mb-4 text-sm text-red-600">
-            {state.errors.confirmPassword[0]}
-          </p>
-        )}
-
-        <button
-          type="submit"
-          disabled={pending}
-          className="mt-6 w-full rounded bg-green-900 p-3 text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {pending
-            ? "Creating Account..."
-            : "Sign Up"}
-        </button>
-
-        <p className="mt-6 text-center text-sm text-gray-500">
-          Already have an eScout account?
-        </p>
-
-        <Link href="/login">
-          <button
-            type="button"
-            className="mt-3 w-full rounded border border-gray-300 p-3 font-semibold text-green-900 hover:bg-gray-100"
-          >
-            Log In
-          </button>
-        </Link>
-      </form>
+        </form>
+      </div>
     </main>
   );
 }

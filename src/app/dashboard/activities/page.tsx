@@ -1,29 +1,49 @@
-import Header from "@/components/Header";
-import BottomNav from "@/components/BottomNav";
+import ScoutingActivitiesScreen from '@/components/ScoutingActivitiesScreen';
+import type { Activity, FeaturedBanner } from '@/types/activities';
 
-const user = {
-  userName: "Juan",
-  userAvatarUrl: null,
-};
+const banners: FeaturedBanner[] = [
+  { id: 'banner-1', imageUrl: '/placeholder-banner-1.svg', linkUrl: '#' },
+  { id: 'banner-2', imageUrl: '/placeholder-banner-2.svg', linkUrl: '#' },
+  { id: 'banner-3', imageUrl: '/placeholder-banner-3.svg', linkUrl: '#' },
+];
+
+const activities: Activity[] = [
+  {
+    id: 'activity-1',
+    title: '',
+    startDate: '',
+    endDate: '',
+    location: '',
+    category: 'council',
+    thumbnailColor: 'bg-blue-600',
+  },
+  {
+    id: 'activity-2',
+    title: '',
+    startDate: '',
+    endDate: '',
+    location: '',
+    category: 'regional',
+    thumbnailColor: 'bg-emerald-600',
+  },
+  {
+    id: 'activity-3',
+    title: '',
+    startDate: '',
+    endDate: '',
+    location: '',
+    category: 'national',
+    thumbnailColor: 'bg-amber-500',
+  },
+];
 
 export default function ActivitiesPage() {
   return (
-    <main className="min-h-screen bg-white text-slate-950">
-      <div className="mx-auto flex min-h-screen max-w-md flex-col">
-        <div className="flex-1 w-full pb-28">
-          <Header userName={user.userName} avatarUrl={user.userAvatarUrl ?? undefined} />
-          <div className="space-y-4 px-4 py-6">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
-              <h2 className="text-lg font-semibold text-slate-900">Activities</h2>
-              <p className="mt-2 text-sm text-slate-600">
-                Your upcoming activities and events will appear here.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <BottomNav />
-      </div>
-    </main>
+    <ScoutingActivitiesScreen
+      userName="Juan"
+      avatarUrl={undefined}
+      banners={banners}
+      activities={activities}
+    />
   );
 }
