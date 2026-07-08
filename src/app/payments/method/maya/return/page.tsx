@@ -1,0 +1,101 @@
+"use client";
+// src/app/payments/method/maya/return/page.tsx
+// PayMongo sends the customer here after they authorize (or cancel) on
+// Maya's page. Unlike GCash/GrabPay, PayMongo does NOT tell us the result
+// via the URL — we have to ask PayMongo directly what happened, and it
+// can take a few seconds for the status to actually update after
+// authorization, so we retry a few times before giving up.
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
+export default function MayaReturnPage() {
+  const router = useRouter();
+  const [statusText, setStatusText] = useState("Confirming your payment...");
+  const [rawResponse, setRawResponse] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkStatus = async () => {
+      const fullClient = localStorage.getItem("paymentIntentClientKey");
+
+      if (!fullClient) {
+        router.replace("/payments/method");
+        return;
+      }
+
+      const paymentIntentId = fullClient.split("_client")[0];
+
+      for (let i = 5; i > 0; i--) {
+        setStatusText(`Confirming your payment... (${i})`);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        const paymentIntentData = await fetch(
+          "https://api.paymongo.com/v1/payment_intents/" +
+            paymentIntentId +
+            "?client_key=" +
+            fullClient,
+          {
+            headers: {
+              Authorization: `Basic ${Buffer.from(
+                process.env.NEXT_PUBLIC_PAYMONGO_PUBLIC as string
+              ).toString("base64")}`,
+            },
+          }
+        )
+          .then((res) => res.json())
+          .then((res) => res.data)
+          .catch(() => null);
+
+        if (!paymentIntentData) {
+          continue;
+        }
+
+        const status = paymentIntentData.attributes.status;
+
+        if (status === "succeeded") {
+          localStorage.removeItem("paymentIntentClientKey");
+          localStorage.setItem("paymentTransactionId", paymentIntentId);
+          router.replace("/payments/success?status=success");
+          return;
+        }
+
+        if (
+          status === "awaiting_payment_method" &&
+          paymentIntentData.attributes.last_payment_error
+        ) {
+          localStorage.removeItem("paymentIntentClientKey");
+          localStorage.setItem("paymentTransactionId", paymentIntentId);
+          setRawResponse(JSON.stringify(paymentIntentData, null, 2));
+          router.replace("/payments/success?status=failed");
+          return;
+        }
+
+        if (i === 1) {
+          setRawResponse(JSON.stringify(paymentIntentData, null, 2));
+        }
+      }
+
+      localStorage.removeItem("paymentIntentClientKey");
+      localStorage.setItem("paymentTransactionId", paymentIntentId);
+      router.replace("/payments/success?status=failed");
+    };
+
+    checkStatus();
+  }, [router]);
+
+  return (
+    <div className="flex flex-col items-center justify-center py-10 px-6 bg-zinc-50 min-h-screen gap-4">
+      <p className="text-zinc-500 text-lg">{statusText}</p>
+      {rawResponse && (
+        <details className="w-full max-w-lg">
+          <summary className="text-sm text-zinc-400 cursor-pointer">
+            Raw response (only shows if something's off)
+          </summary>
+          <pre className="whitespace-pre-wrap text-xs bg-white border border-zinc-200 rounded p-3 mt-2">
+            {rawResponse}
+          </pre>
+        </details>
+      )}
+    </div>
+  );
+}
