@@ -1,15 +1,19 @@
 services:
   bsp_postgres:
-    image: postgres:16-alpine # Standard, lightweight stable enterprise engine
+    image: postgres:16-alpine
     container_name: bsp_local_db_container
+
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: bsp1234
       POSTGRES_DB: bsplocal_digital_platform
+
     ports:
-      - "5433:5432" # Maps standard database port to their localhost
+      - "5433:5432"
+
     volumes:
-      - bsp_db_data:/var/lib/postgresql/data # Saves data so it persists when laptop reboots
+      - bsp_db_data:/var/lib/postgresql/data
+
 
 volumes:
   bsp_db_data:
