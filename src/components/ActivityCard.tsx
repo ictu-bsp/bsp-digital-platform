@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { CalendarDaysIcon, MapPinIcon } from '@heroicons/react/24/outline';
 import type { ActivityCardProps } from '@/types/activities';
 
@@ -6,7 +7,10 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
   const thumbnailStyle = isTailwindClass ? undefined : { backgroundColor: activity.thumbnailColor };
 
   return (
-    <article className="flex items-center justify-between gap-4 rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-sm">
+    <Link
+      href={`/activities/${activity.id}`}
+      className="flex items-center justify-between gap-4 rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-sm transition hover:bg-slate-50"
+    >
       <div className="min-w-0 flex-1">
         <h3 className="text-[0.95rem] font-semibold text-slate-900">{activity.title}</h3>
 
@@ -29,6 +33,6 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
           style={thumbnailStyle}
         />
       </div>
-    </article>
+    </Link>
   );
 }
