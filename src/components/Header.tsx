@@ -16,7 +16,7 @@ export default function Header({ userName, avatarUrl }: HeaderProps) {
 
       <div className="flex items-center gap-3">
         <div className="text-right">
-          <p className="text-sm font-semibold text-green-900">Welcome, {userName}!</p>
+          <p className="text-lg font-bold text-green-900">Welcome, {userName}!</p>
         </div>
         <Link href="/profile" className="transition hover:opacity-80">
           {avatarUrl ? (

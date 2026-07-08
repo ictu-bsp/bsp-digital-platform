@@ -19,7 +19,7 @@ export default function InputField({
         {...props}
         className={`
           w-full
-          rounded-xl
+          rounded-lg
           border
           border-green-200
           px-4
