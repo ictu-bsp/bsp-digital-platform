@@ -1,13 +1,13 @@
-interface Props {
+import React from "react";
+
+interface Props extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
-  type?: string;
-  placeholder?: string;
 }
 
 export default function InputField({
   label,
-  type = "text",
-  placeholder,
+  className = "",
+  ...props
 }: Props) {
   return (
     <div className="w-full mb-4">
@@ -16,9 +16,8 @@ export default function InputField({
       </label>
 
       <input
-        type={type}
-        placeholder={placeholder}
-        className="
+        {...props}
+        className={`
           w-full
           rounded-xl
           border
@@ -31,7 +30,8 @@ export default function InputField({
           focus:ring-2
           focus:ring-green-300
           transition
-        "
+          ${className}
+        `}
       />
     </div>
   );
