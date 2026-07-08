@@ -10,6 +10,13 @@ const slides = [
     description: "Create your membership profile and verify your identity in minutes.",
     badge: "Step 1",
     accentClassName: "from-emerald-100 to-lime-100",
+    icon: (
+      <img
+        src="/landing-membership-icon.svg"
+        alt="Membership icon"
+        className="h-auto w-full max-w-[112px] object-contain sm:max-w-[124px] md:max-w-[132px]"
+      />
+    ),
     /*
      * TODO: Later, connect this slide to admin-managed content and allow an image/icon field.
      * Example: imageUrl?: string; icon?: React.ReactNode; mediaType?: "image" | "icon";
@@ -20,12 +27,26 @@ const slides = [
     description: "Stay updated with your application status and next steps.",
     badge: "Step 2",
     accentClassName: "from-blue-100 to-cyan-100",
+    icon: (
+      <img
+        src="/landing-membership-icon.svg"
+        alt="Membership icon"
+        className="h-auto w-full max-w-[112px] object-contain sm:max-w-[124px] md:max-w-[132px]"
+      />
+    ),
   },
   {
     title: "Join the Community",
     description: "Access scouting resources and connect with your local group.",
     badge: "Step 3",
     accentClassName: "from-amber-100 to-orange-100",
+    icon: (
+      <img
+        src="/landing-membership-icon.svg"
+        alt="Membership icon"
+        className="h-auto w-full max-w-[112px] object-contain sm:max-w-[124px] md:max-w-[132px]"
+      />
+    ),
   },
 ];
 
@@ -48,6 +69,7 @@ export function OnboardingCarousel() {
         description={slides[activeIndex].description}
         badge={slides[activeIndex].badge}
         accentClassName={slides[activeIndex].accentClassName}
+        icon={slides[activeIndex].icon}
       />
 
       <div className="flex items-center gap-2">
