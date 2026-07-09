@@ -1,5 +1,5 @@
-import Header from "@/components/Header";
-import BottomNav from "@/components/BottomNav";
+import Header from "../components/Header";
+import BottomNav from "../components/BottomNav";
 
 const user = {
   userName: "Juan",

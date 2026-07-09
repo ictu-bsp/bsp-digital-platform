@@ -1,14 +1,11 @@
 "use server";
 
-import {
-  createUser,
-  loginUser,
-} from "@/services/auth.service";
-
-import {
-  signUpSchema,
-  loginSchema,
-} from "@/lib/validation/auth";
+import { createUser, loginUser, } from "@/services/auth.service";
+import { loginSchema } from "@/lib/validation/auth/login";
+import { signUpSchema } from "@/lib/validation/auth/signup";
+import { getSessionCookie, clearSessionCookie } from "@/lib/auth/cookies";
+import { deleteSession } from "@/lib/auth/session";
+import { redirect } from "next/navigation";
 
 export interface ActionResult {
   success: boolean;
@@ -88,8 +85,6 @@ export async function loginAction(
       parsed.data.password
     );
 
-    // Session creation will be added here.
-
     return {
       success: true,
       message: `Welcome back, ${user.firstName}!`,
@@ -105,4 +100,21 @@ export async function loginAction(
           : "Unable to log in.",
     };
   }
+}
+
+export async function logout() {
+
+  const sessionId =
+    await getSessionCookie();
+
+  if (sessionId) {
+
+    await deleteSession(sessionId);
+
+  }
+
+  await clearSessionCookie();
+
+  redirect("/login");
+
 }
