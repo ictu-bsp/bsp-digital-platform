@@ -6,6 +6,7 @@ import Image from "next/image";
 
 export default function VerifiedMemberPage() {
   const [isFlipped, setIsFlipped] = useState(false);
+  const [isQrOpen, setIsQrOpen] = useState(false); 
 
   const [userData, setUserData] = useState({
     firstName: "Lebron James",
@@ -58,28 +59,25 @@ export default function VerifiedMemberPage() {
             onClick={() => setIsFlipped(!isFlipped)}
             className="w-full aspect-[1.58/1] [perspective:1000px] cursor-pointer group select-none"
           >
-            {/* The actual moving element spinning inside 3D space */}
             <div className={`relative w-full h-full duration-700 [transform-style:preserve-3d] ${isFlipped ? '[transform:rotateY(180deg)]' : ''}`}>
               
-              {/* =====================================
-                  FRONT FACE OF CARD 
-                  ===================================== */}
-
+              {/* FRONT FACE OF CARD */ }
+                    
               <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] rounded-2xl bg-[#f4f7f4] p-4 shadow-md border border-gray-200 overflow-hidden flex flex-col justify-between pl-9">
                 
                 <div className="absolute top-0 left-0 bottom-0 w-6 flex flex-row">
-                  <div className="h-full w-1/2 bg-blue-800" />
                   <div className="h-full w-1/2 bg-red-600" />
+                  <div className="h-full w-1/2 bg-blue-800" />
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <Image
-                        src="/bsp-logo-with-bkg.svg"
-                        alt="BSP Logo"
-                        width={32}
-                        height={32}
-                        className="h-8 w-8 shrink-0 object-contain"
-/>
+                  <Image
+                    src="/bsp-logo-with-bkg.svg"
+                    alt="BSP Logo"
+                    width={32}
+                    height={32}
+                    className="h-8 w-8 shrink-0 object-contain"
+                  />
                   <div className="text-[9px] uppercase leading-tight font-bold text-blue-900 tracking-wide">
                     <p>Boy Scouts of the Philippines</p>
                     <p className="font-normal text-gray-600">National Office</p>
@@ -97,7 +95,6 @@ export default function VerifiedMemberPage() {
                 </div>
 
                 <div className="grid grid-cols-3 items-end gap-2">
-                
                   <div className="col-span-2 space-y-2 text-[10px] pb-1">
                     <div className="flex flex-col">
                       <span className="font-bold text-blue-900 border-b border-blue-900/40 pb-0.5 leading-none">
@@ -150,10 +147,8 @@ export default function VerifiedMemberPage() {
 
               </div>
 
+              {/* BACK FACE OF CARD */ }
 
-              {/* =====================================
-                  BACK FACE OF CARD
-                  ===================================== */}
               <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] rounded-2xl bg-[#f4f7f4] p-4 shadow-md border border-gray-200 overflow-hidden flex flex-col justify-between pr-8">
                 
                 <div className="absolute top-0 right-0 bottom-0 w-6 flex flex-row">
@@ -285,7 +280,10 @@ export default function VerifiedMemberPage() {
         </div>
 
         <div className="space-y-3">
-          <button className="w-full rounded-xl border border-gray-300 bg-white py-3.5 text-center text-sm font-bold text-green-900 shadow-sm transition-colors hover:bg-gray-50">
+          <button 
+            onClick={() => setIsQrOpen(true)}
+            className="w-full rounded-xl border border-gray-300 bg-white py-3.5 text-center text-sm font-bold text-green-900 shadow-sm transition-colors hover:bg-gray-50"
+          >
             Show QR Code
           </button>
           
@@ -302,8 +300,44 @@ export default function VerifiedMemberPage() {
         </div>
       </div>
 
+      {isQrOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-xs transition-opacity duration-300 animate-fadeIn"
+          onClick={() => setIsQrOpen(false)} 
+        >
+          <div 
+            className="relative w-full max-w-xs overflow-hidden rounded-3xl bg-[#d1d5db] shadow-2xl border border-white/20 flex flex-col items-center pt-9 pb-8 px-7"
+            onClick={(e) => e.stopPropagation()} 
+          >
+            <button 
+              onClick={() => setIsQrOpen(false)}
+              className="absolute top-3 right-3 rounded-full bg-black/10 p-1.5 text-gray-600 hover:bg-black/20 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="h-4 w-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div className="w-full aspect-square bg-white rounded-xl p-5 flex items-center justify-center shadow-inner">
+              <div className="relative w-full h-full">
+                <Image 
+                  src="/bsp-qr-code.png" 
+                  alt="Scout Member ID QR Verification"
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
+            </div>
+            
+            <p className="mt-4 text-[10px] uppercase font-bold tracking-widest text-gray-500">
+              ID Verification
+            </p>
+          </div>
+        </div>
+      )}
+
       <BottomNav />
-    
     </main>
   );
 }
