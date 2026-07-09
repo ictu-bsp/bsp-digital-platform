@@ -1,7 +1,7 @@
-import { AuthLinks } from "@/components/AuthLinks";
-import { BrandLogo } from "@/components/BrandLogo";
-import { OnboardingCarousel } from "@/components/Carousel/OnboardingCarousel";
-import { Button } from "@/components/ui/Button";
+import { AuthLinks } from "@/app/(public)/components/AuthLinks";
+import { BrandLogo } from "@/components-general/BrandLogo";
+import { OnboardingCarousel } from "@/app/(public)/components/carousel/OnboardingCarousel";
+import { Button } from "@/components-general/ui/Button";
 import Link from "next/link";
 
 export default function LandingPage() {
