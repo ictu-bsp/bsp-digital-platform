@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { nonVerifiedScoutSchema } from "./profile";
+import { nonVerifiedScoutSchema } from "./nonverifiedProfile";
 
 const MEMBERSHIP_STATUS = z.enum(["PENDING", "ACTIVE", "EXPIRED"]);
 const ROLE_ENUM = z.enum(["SCOUT", "SUPERADMIN", "COUNCIL"]);

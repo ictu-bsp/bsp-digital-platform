@@ -9,3 +9,4 @@ export * from "./roles";
 export * from "./scouts";
 export * from "./users";
 export * from "./enums";
+export * from "./sessions";

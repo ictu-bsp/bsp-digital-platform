@@ -3,11 +3,9 @@
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
-
-import {
-  hashPassword,
-  verifyPassword,
-} from "@/lib/auth/hash";
+import { hashPassword, verifyPassword, } from "@/lib/auth/hash";
+import { setSessionCookie } from "@/lib/auth/cookies";
+import { createSession, deleteExpiredSessions } from "@/lib/auth/session";
 
 export interface CreateUserInput {
   email: string;
@@ -106,6 +104,14 @@ export async function loginUser(
         "Invalid email or password."
       );
     }
+
+    await deleteExpiredSessions(); 
+
+    const session = await createSession(user.id);
+      await setSessionCookie(
+        session.id,
+        session.expiresAt
+      );
 
     return user;
   } catch (error) {
