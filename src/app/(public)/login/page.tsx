@@ -1,15 +1,12 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useState,} from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import { EyeIcon, EyeSlashIcon, EnvelopeIcon, LockClosedIcon,} from "@heroicons/react/24/outline";
 
-import {
-  loginAction,
-  type ActionResult,
-} from "@/app/actions/auth";
+import {loginAction,type ActionResult,} from "@/app/actions/auth";
 
 const initialState: ActionResult = {
   success: false,
@@ -32,112 +29,136 @@ export default function LoginPage() {
   }, [state.success, router]);
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-white">
-      <form
-        action={formAction}
-        className="w-full max-w-md rounded-lg bg-white p-8 shadow-md"
-      >
-        <Image
-          src="/escout-logo.svg"
-          alt="eScout Logo"
-          width={115}
-          height={115}
-          className="h-auto w-[115px] object-contain"
-        />
-
-        <h2 className="mb-6 text-2xl font-semibold text-green-900">
-          Login
-        </h2>
-
-        {state.message && (
-          <div
-            className={`mb-5 rounded p-3 text-sm ${
-              state.success
-                ? "bg-green-100 text-green-700"
-                : "bg-red-100 text-red-700"
-            }`}
-          >
-            {state.message}
-          </div>
-        )}
-
-        <input
-          name="email"
-          type="email"
-          placeholder="Email Address"
-          required
-          autoComplete="email"
-          className="mb-4 w-full rounded border border-gray-300 p-3 transition focus:border-green-700 focus:outline-none"
-        />
-
-        {state.errors?.email && (
-          <p className="mb-4 text-sm text-red-600">
-            {state.errors.email[0]}
+    <main className="flex min-h-screen flex-col bg-white md:flex-row">
+      <section className="flex-1 flex-col items-center justify-center bg-gray-50 px-6 py-8 md:flex md:px-12">
+        <div className="w-full max-w-md text-center">
+          <Image
+            src="/escout-logo.svg"
+            alt="eScout Logo"
+            width={115}
+            height={115}
+            className="mx-auto mb-6 h-auto w-[115px] object-contain"
+          />
+          <h2 className="text-3xl font-bold tracking-tight text-green-900">
+            Welcome Back
+          </h2>
+          <p className="mt-4 text-base leading-7 text-gray-500">
+            Sign in to manage your scout account and continue your journey.
           </p>
-        )}
+        </div>
+      </section>
 
-        <div className="relative mb-6">
-          <input
-            name="password"
-            type={showPassword ? "text" : "password"}
-            placeholder="Password"
-            required
-            autoComplete="current-password"
-            className="w-full rounded border border-gray-300 p-3 pr-12 transition focus:border-green-700 focus:outline-none"
+      <section className="flex flex-1 items-center justify-center px-6 py-8 md:px-16">
+        <form
+          action={formAction}
+          className="w-full max-w-md rounded-lg bg-white p-8 shadow-md"
+        >
+          <Image
+            src="/escout-logo.svg"
+            alt="eScout Logo"
+            width={115}
+            height={115}
+            className="h-auto w-[115px] object-contain"
           />
 
-          <button
-            type="button"
-            onClick={() =>
-              setShowPassword(!showPassword)
-            }
-            className="absolute inset-y-0 right-3 flex items-center"
-          >
-            {showPassword ? (
-              <EyeSlashIcon className="h-5 w-5 text-gray-500" />
-            ) : (
-              <EyeIcon className="h-5 w-5 text-gray-500" />
-            )}
-          </button>
-        </div>
+          <h2 className="mb-6 text-2xl font-semibold text-green-900">
+            Login
+          </h2>
 
-        {state.errors?.password && (
-          <p className="mb-4 text-sm text-red-600">
-            {state.errors.password[0]}
+          {state.message && (
+            <div
+              className={`mb-5 rounded p-3 text-sm ${
+                state.success
+                  ? "bg-green-100 text-green-700"
+                  : "bg-red-100 text-red-700"
+              }`}
+            >
+              {state.message}
+            </div>
+          )}
+
+          <div className="relative mb-4">
+            <EnvelopeIcon className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-green-900" />
+            <input
+              name="email"
+              type="email"
+              placeholder="Email Address"
+              required
+              autoComplete="email"
+              className="w-full rounded border border-gray-300 bg-white py-3 pl-10 pr-3 transition focus:border-green-700 focus:outline-none"
+            />
+          </div>
+
+          {state.errors?.email && (
+            <p className="mb-4 text-sm text-red-600">
+              {state.errors.email[0]}
+            </p>
+          )}
+
+          <div className="relative mb-6">
+            <LockClosedIcon className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-green-900" />
+            <input
+              name="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="Password"
+              required
+              autoComplete="current-password"
+              className="w-full rounded border border-gray-300 bg-white py-3 pl-10 pr-12 transition focus:border-green-700 focus:outline-none"
+            />
+
+            <button
+              type="button"
+              onClick={() =>
+                setShowPassword(!showPassword)
+              }
+              className="absolute inset-y-0 right-3 flex items-center"
+            >
+              {showPassword ? (
+                <EyeSlashIcon className="h-5 w-5 text-gray-500" />
+              ) : (
+                <EyeIcon className="h-5 w-5 text-green-900" />
+              )}
+            </button>
+          </div>
+
+          {state.errors?.password && (
+            <p className="mb-4 text-sm text-red-600">
+              {state.errors.password[0]}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={pending}
+            className="mt-8 w-full rounded bg-green-900 p-3 text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {pending ? "Logging In..." : "Log In"}
+          </button>
+
+          <p className="my-4 text-center text-sm text-gray-500">
+            or
           </p>
-        )}
 
-        <button
-          type="submit"
-          disabled={pending}
-          className="mt-8 w-full rounded bg-green-900 p-3 text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {pending ? "Logging In..." : "Log In"}
-        </button>
+          <p className="text-center text-sm text-gray-500">
+            Don't have an <Image
+            src="/escout-logo.svg"
+            alt="eScout Logo"
+            width={60}
+            height={60}
+            className="inline-block mb-1.5"
+          /> account yet?
+          </p>
 
-        <p className="my-4 text-center text-sm text-gray-500">
-          or
-        </p>
-
-        <p className="text-center text-sm text-gray-500">
-          Don't have an <Image
-          src="/escout-logo.svg"
-          alt="eScout Logo"
-          width={60}
-          height={60}
-          className="inline-block mb-1.5"
-        /> account yet?
-        </p>
-
-        <Link href="/signup">
-          <button
-            type="button"
-            className="mt-3 w-full rounded border border-gray-300 p-3 font-semibold text-green-900 hover:bg-gray-100"
-          >
-            Sign Up
-          </button>
-        </Link>
-      </form>
+          <Link href="/signup">
+            <button
+              type="button"
+              className="mt-3 w-full rounded border border-gray-300 p-3 font-semibold text-green-900 hover:bg-gray-100"
+            >
+              Sign Up
+            </button>
+          </Link>
+        </form>
+      </section>
     </main>
   );
 }
