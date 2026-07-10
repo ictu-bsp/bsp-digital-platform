@@ -8,7 +8,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
 
   return (
     <Link
-      href={`/activities/${activity.id}`}
+      href={`/scout/activities/${activity.id}`}
       className="flex items-center justify-between gap-4 rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-sm transition hover:bg-slate-50"
     >
       <div className="min-w-0 flex-1">

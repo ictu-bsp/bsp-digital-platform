@@ -33,7 +33,7 @@ export default function ScoutingActivitiesScreen({
         <div className="flex-1 overflow-y-auto pb-28">
           <div className="space-y-5 px-4 py-5">
             <div className="space-y-1">
-              <h1 className="text-2xl font-semibold text-slate-900">Scouting Activities</h1>
+              <h1 className="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-700">Scouting Activities</h1>
             </div>
 
             <FeaturedCarousel banners={banners} />
