@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   title: "BSP Digital Platform",
   description: "Membership registration and scouting journey platform",
   icons: {
-    icon: " ", //logo of Boy Scout of the Philippines
+    icon: "/bsp-logo.svg", //logo of Boy Scout of the Philippines
   },
 };
 

@@ -67,7 +67,7 @@ export default function VerifiedMemberPage() {
               
               {/* FRONT FACE OF CARD */ }
                     
-              <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] rounded-2xl bg-[#f4f7f4] p-4 shadow-md border border-gray-200 overflow-hidden flex flex-col justify-between pl-9">
+              <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] rounded-2xl bg-[#F1F7EC] p-4 shadow-md border border-gray-200 overflow-hidden flex flex-col justify-between pl-9">
                 
                 <div className="absolute top-0 left-0 bottom-0 w-6 flex flex-row">
                   <div className="h-full w-1/2 bg-red-600" />
