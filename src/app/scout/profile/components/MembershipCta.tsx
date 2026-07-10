@@ -18,7 +18,7 @@ export default function MembershipCta({ membershipStatus }: MembershipCtaProps) 
   return (
     <ContentBlock>
       <button className="w-full rounded-full bg-green-900 py-3 text-white font-bold hover:bg-green-800 transition">
-        <a href=" " className="text-white no-underline">
+        <a href="/scout/membership/membership-registration/agreement" className="text-white no-underline">
           Apply Membership
         </a>
       </button>
