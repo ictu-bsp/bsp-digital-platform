@@ -4,6 +4,7 @@ import { OnboardingCarousel } from "@/app/(public)/components/carousel/Onboardin
 import { Button } from "@/components-general/ui/Button";
 import Link from "next/link";
 
+
 export default function LandingPage() {
   return (
     <main className="flex min-h-screen flex-col bg-white md:flex-row">

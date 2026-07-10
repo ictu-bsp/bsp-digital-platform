@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-
+import Image from "next/image";
 interface HeaderProps {
   userName: string;
   avatarUrl?: string;
@@ -12,7 +12,13 @@ export default function Header({ userName, avatarUrl }: HeaderProps) {
 
   return (
     <header className="flex items-center justify-between px-4 pt-6 pb-4">
-      <p className="text-3xl font-bold text-green-900">eScout</p>
+      <Image
+        src="/escout-logo.svg"
+        alt="Verification pending"
+        width={115}
+        height={115}
+        className="inline-block"
+      />
 
       <div className="flex items-center gap-3">
         <div className="text-right">

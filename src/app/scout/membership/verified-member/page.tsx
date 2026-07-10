@@ -38,9 +38,13 @@ export default function VerifiedMemberPage() {
       
       {/* HEADER NAVBAR */}
       <header className="flex items-center justify-between bg-white px-6 py-4 shadow-sm">
-        <h1 className="text-3xl font-extrabold tracking-tight text-green-950">
-          eScout
-        </h1>
+        <Image
+          src="/escout-logo.svg"
+          alt="eScout Logo"
+          width={115}
+          height={115}
+          className="h-auto w-[115px] object-contain"
+        />
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-green-900">
             Welcome, {userData.firstName}!
