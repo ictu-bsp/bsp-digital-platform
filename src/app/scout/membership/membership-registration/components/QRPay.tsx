@@ -138,7 +138,7 @@ export default function QRPay({ amount, description }: QRPayProps) {
           setStatus("Payment Success");
           localStorage.setItem("paymentTransactionId", paymentIntentId);
           localStorage.setItem("paymentMethodLabel", "QR Ph");
-          router.push("/membership-registration/success?status=success");
+          router.push("/scout/membership/membership-registration/success?status=success");
         } else {
           i = 5;
         }
