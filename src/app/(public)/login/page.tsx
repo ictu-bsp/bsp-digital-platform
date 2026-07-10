@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 
@@ -36,11 +37,15 @@ export default function LoginPage() {
         action={formAction}
         className="w-full max-w-md rounded-lg bg-white p-8 shadow-md"
       >
-        <h1 className="text-5xl font-bold text-green-900">
-          eScout
-        </h1>
+        <Image
+          src="/escout-logo.svg"
+          alt="eScout Logo"
+          width={115}
+          height={115}
+          className="h-auto w-[115px] object-contain"
+        />
 
-        <h2 className="mb-8 text-2xl font-semibold text-green-900">
+        <h2 className="mb-6 text-2xl font-semibold text-green-900">
           Login
         </h2>
 
@@ -115,7 +120,13 @@ export default function LoginPage() {
         </p>
 
         <p className="text-center text-sm text-gray-500">
-          Don't have an eScout account yet?
+          Don't have an <Image
+          src="/escout-logo.svg"
+          alt="eScout Logo"
+          width={60}
+          height={60}
+          className="inline-block mb-1.5"
+        /> account yet?
         </p>
 
         <Link href="/signup">
