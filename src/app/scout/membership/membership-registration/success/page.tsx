@@ -47,7 +47,7 @@ function SuccessPageContent() {
     localStorage.removeItem("paymentCouncil");
     localStorage.removeItem("paymentMethodLabel");
     localStorage.removeItem("paymentTransactionId");
-    router.replace("/payments/agreement");
+    router.replace("/scout/membership/membership-registration/agreement");
   };
 
   return (
