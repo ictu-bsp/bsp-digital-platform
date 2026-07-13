@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function MembershipVerificationPage() {
   const router = useRouter();
@@ -41,7 +42,13 @@ export default function MembershipVerificationPage() {
             </svg>
           </button>
           <h1 className="mt-2 text-4xl font-extrabold tracking-tight text-green-900">
-            eScout
+            <Image
+              src="/escout-logo.svg"
+              alt="Verification pending"
+              width={115}
+              height={115}
+              className="inline-block"
+            />
           </h1>
           <h2 className="mt-1 text-xl font-bold text-green-900">
             Membership Verification
