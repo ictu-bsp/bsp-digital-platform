@@ -49,7 +49,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
 
   if (!activity) {
     return (
-      <main className="min-h-screen bg-white text-slate-900">
+      <main className="min-h-screen bg-gradient-to-b from-white via-[#f7fdf8] to-[#e7f6ea] text-slate-900">
         <div className="mx-auto flex min-h-screen max-w-md flex-col">
           <Header userName="Juan" avatarUrl={undefined} />
           <div className="flex-1 px-4 py-6">
@@ -62,7 +62,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-white text-slate-900">
+    <main className="min-h-screen bg-gradient-to-b from-white via-[#f7fdf8] to-[#e7f6ea] text-slate-900">
       <div className="mx-auto flex min-h-screen max-w-md flex-col">
         <Header userName="Juan" avatarUrl={undefined} />
 
