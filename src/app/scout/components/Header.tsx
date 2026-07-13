@@ -1,14 +1,15 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+
 interface HeaderProps {
   userName: string;
   avatarUrl?: string;
 }
 
-export default function Header({ userName, avatarUrl }: HeaderProps) {
-  const initial = userName.charAt(0).toUpperCase();
+export default function Header({ userName }: HeaderProps) {
+  const router = useRouter();
 
   return (
     <header className="flex items-center justify-between px-4 pt-6 pb-4">
@@ -20,24 +21,13 @@ export default function Header({ userName, avatarUrl }: HeaderProps) {
         className="inline-block"
       />
 
-      <div className="flex items-center gap-3">
-        <div className="text-right">
-          <p className="text-lg font-bold text-green-900">Welcome, {userName}!</p>
-        </div>
-        <Link href="/scout/profile" className="transition hover:opacity-80">
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt={`${userName} avatar`}
-              className="h-11 w-11 rounded-full object-cover ring-2 ring-emerald-100"
-            />
-          ) : (
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-100 text-emerald-900 shadow-sm hover:bg-emerald-200">
-              <span className="text-sm font-semibold">{initial}</span>
-            </div>
-          )}
-        </Link>
-      </div>
+      <button
+        type="button"
+        onClick={() => router.push("/login")}
+        className="rounded-full border border-emerald-200 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 shadow-sm transition hover:bg-emerald-50"
+      >
+        Log out
+      </button>
     </header>
   );
 }
