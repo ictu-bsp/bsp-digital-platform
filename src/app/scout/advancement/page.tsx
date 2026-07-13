@@ -28,6 +28,10 @@ const advancementOptions = [
     title: 'Senior Scout | Venturer',
     image: '/Venturer.svg',
   },
+  {
+    title: 'Senior Scout | Eagle Scout',
+    image: '/EagleScout.svg',
+  },
 ];
 
 export default function AdvancementPage() {
