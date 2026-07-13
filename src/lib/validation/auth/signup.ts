@@ -2,38 +2,27 @@ import { z } from "zod";
 
 import {
   emailSchema,
-  passwordSchema,
   nameSchema,
   birthdateSchema,
   suffixSchema,
 } from "./shared";
 
-export const signUpSchema = z
-  .object({
-    email: emailSchema,
+export const signUpSchema = z.object({
+  email: emailSchema,
 
-    password: passwordSchema,
+  firstName: nameSchema,
 
-    confirmPassword: z.string(),
+  middleName: nameSchema
+    .optional()
+    .or(z.literal("")),
 
-    firstName: nameSchema,
+  lastName: nameSchema,
 
-    middleName: nameSchema.optional().or(z.literal("")),
+  suffix: suffixSchema,
 
-    lastName: nameSchema,
+  birthdate: birthdateSchema,
 
-    suffix: suffixSchema,
-
-    birthdate: birthdateSchema,
-  })
-  .superRefine((data, ctx) => {
-    if (data.password !== data.confirmPassword) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["confirmPassword"],
-        message: "Passwords do not match.",
-      });
-    }
-  });
+  gender: z.string().min(1, "Gender is required."),
+});
 
 export type SignUpInput = z.infer<typeof signUpSchema>;
