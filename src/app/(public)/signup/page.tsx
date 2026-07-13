@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 export default function SignUpPage() {
@@ -60,7 +61,13 @@ export default function SignUpPage() {
           </Link>
           
           <h1 className="mt-2 text-4xl font-extrabold tracking-tight text-green-900">
-            eScout
+             <Image
+              src="/escout-logo.svg"
+              alt="eScout Logo"
+              width={115}
+              height={115}
+              className="h-auto w-[115px] object-contain"
+              />
           </h1>
           <h2 className="mt-1 text-xl font-bold text-green-900">
             Create New Account

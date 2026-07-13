@@ -115,7 +115,15 @@ export default function MethodPage() {
           &lt;
         </button>
 
-        <h1 className="text-4xl font-bold text-green-800 mb-0">eScout</h1>
+        <h1 className="text-4xl font-bold text-green-800 mb-0">
+          <Image
+            src="/escout-logo.svg"
+            alt="eScout Logo"
+            width={115}
+            height={115}
+            className="h-auto w-[115px] object-contain"
+          />
+        </h1>
         <h2 className="text-2xl font-semibold mb-4">Register Membership</h2>
 
         <div className="flex items-center justify-center gap-3 text-base text-green-800 mb-8">

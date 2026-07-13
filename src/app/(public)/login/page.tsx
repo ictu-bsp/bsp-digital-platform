@@ -33,7 +33,7 @@ export default function LoginPage() {
       <section className="w-full md:w-[46%] md:min-h-screen">
         <div className="relative h-[300px] w-full sm:h-[400px] md:h-full">
           <Image
-            src="/bsp-landingpage-bg2.svg"
+            src="/bsp-login-bg.svg"
             alt="bsp-landingpage-backdrop"
             fill
             priority
@@ -46,11 +46,11 @@ export default function LoginPage() {
       <section className="flex w-full md:flex-1 items-center justify-center px-6 py-8 sm:px-8 md:px-10 lg:px-16">
         <div className="absolute inset-0 z-0 pointer-events-none select-none">
         <Image
-          src="/bsp-landingpage-bg2.svg"
+          src="/bsp-login-bg.svg"
           alt="Form Background Backdrop"
           fill
           priority
-          className="object-cover object-center blur-md opacity-30 scale-105"
+          className="object-cover object-center blur-md opacity-20 scale-105"
         />
         
         </div>
