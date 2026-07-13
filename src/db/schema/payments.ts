@@ -8,7 +8,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { paymentStatusEnum } from "./enums";
-import { registrations } from "./registrations";
+import { registrations } from "./scout-registrations";
 
 export const payments = pgTable("payments", {
   id: uuid("id").defaultRandom().primaryKey(),

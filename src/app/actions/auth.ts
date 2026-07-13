@@ -1,11 +1,18 @@
 "use server";
 
-import { createUser, loginUser, } from "@/services/auth.service";
+import { redirect } from "next/navigation";
+import { deleteSession } from "@/lib/auth/session";
 import { loginSchema } from "@/lib/validation/auth/login";
 import { signUpSchema } from "@/lib/validation/auth/signup";
-import { getSessionCookie, clearSessionCookie } from "@/lib/auth/cookies";
-import { deleteSession } from "@/lib/auth/session";
-import { redirect } from "next/navigation";
+import { getSessionCookie, clearSessionCookie, } from "@/lib/auth/cookies";
+
+import {
+  createPendingUserRegistration,
+  verifyPendingUserRegistration,
+  completePendingRegistration,
+  resendPendingVerification,
+  loginUser,
+} from "@/services/auth.service";
 
 export interface ActionResult {
   success: boolean;
@@ -23,29 +30,24 @@ export async function signUpAction(
     lastName: formData.get("lastName"),
     suffix: formData.get("suffix"),
     birthdate: formData.get("birthdate"),
+    gender: formData.get("gender"),
     email: formData.get("email"),
-    password: formData.get("password"),
-    confirmPassword:
-      formData.get("confirmPassword"),
   });
 
   if (!parsed.success) {
     return {
       success: false,
-      message:
-        "Please correct the highlighted fields.",
-      errors:
-        parsed.error.flatten().fieldErrors,
+      message: "Please correct the highlighted fields.",
+      errors: parsed.error.flatten().fieldErrors,
     };
   }
 
   try {
-    await createUser(parsed.data);
+    await createPendingUserRegistration(parsed.data);
 
     return {
       success: true,
-      message:
-        "Account created successfully.",
+      message: "Verification code sent to your email.",
     };
   } catch (error) {
     console.error(error);
@@ -55,7 +57,93 @@ export async function signUpAction(
       message:
         error instanceof Error
           ? error.message
-          : "Unable to create account.",
+          : "Unable to create registration.",
+    };
+  }
+}
+
+export async function verifyEmailAction(
+  email: string,
+  code: string
+): Promise<ActionResult> {
+  try {
+    await verifyPendingUserRegistration(
+      email,
+      code
+    );
+
+    return {
+      success: true,
+      message: "Email verified successfully.",
+    };
+  } catch (error) {
+    console.error(error);
+
+    return {
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Unable to verify email.",
+    };
+  }
+}
+
+export async function resendVerificationAction(
+  email: string
+): Promise<ActionResult> {
+  try {
+    await resendPendingVerification(email);
+
+    return {
+      success: true,
+      message: "Verification code sent successfully.",
+    };
+  } catch (error) {
+    console.error(error);
+
+    return {
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Unable to resend verification code.",
+    };
+  }
+}
+
+export async function createPasswordAction(
+  email: string,
+  password: string,
+  confirmPassword: string
+): Promise<ActionResult> {
+  if (password !== confirmPassword) {
+    return {
+      success: false,
+      message: "Passwords do not match.",
+    };
+  }
+
+  try {
+    await completePendingRegistration(
+      email,
+      password
+    );
+
+    return {
+      success: true,
+      message:
+        "Account created successfully. Please log in.",
+    };
+  } catch (error) {
+    console.error(error);
+
+    return {
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Unable to complete registration.",
     };
   }
 }
@@ -72,10 +160,8 @@ export async function loginAction(
   if (!parsed.success) {
     return {
       success: false,
-      message:
-        "Please correct the highlighted fields.",
-      errors:
-        parsed.error.flatten().fieldErrors,
+      message: "Please correct the highlighted fields.",
+      errors: parsed.error.flatten().fieldErrors,
     };
   }
 
@@ -103,18 +189,14 @@ export async function loginAction(
 }
 
 export async function logout() {
-
   const sessionId =
     await getSessionCookie();
 
   if (sessionId) {
-
     await deleteSession(sessionId);
-
   }
 
   await clearSessionCookie();
 
   redirect("/login");
-
 }
