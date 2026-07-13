@@ -1,6 +1,6 @@
 "use client";
 
-import BottomNav from "../../components/BottomNav";
+import PageLayout from "../../../components/PageLayout";
 import React, { useState } from "react";
 import Image from "next/image";
 
@@ -9,7 +9,7 @@ export default function VerifiedMemberPage() {
   const [isQrOpen, setIsQrOpen] = useState(false); 
 
   const [userData, setUserData] = useState({
-    firstName: "Lebron James",
+    firstName: "Juan",
     middleInitial: "D.",
     lastName: "Dela Cruz",
     designation: "Senior Scout",
@@ -34,29 +34,7 @@ export default function VerifiedMemberPage() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col bg-gray-50 pb-24 text-gray-800">
-      
-      {/* HEADER NAVBAR */}
-      <header className="flex items-center justify-between bg-white px-6 py-4 shadow-sm">
-        <Image
-          src="/escout-logo.svg"
-          alt="eScout Logo"
-          width={115}
-          height={115}
-          className="h-auto w-[115px] object-contain"
-        />
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-green-900">
-            Welcome, {userData.firstName}!
-          </span>
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-900 text-white">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-6 w-6">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-            </svg>
-          </div>
-        </div>
-      </header>
-
+    <PageLayout userName={userData.firstName} avatarUrl={undefined}>
       <div className="mx-auto w-full max-w-md flex-1 p-5 space-y-6">
         <div className="space-y-2">
           <div 
@@ -341,7 +319,6 @@ export default function VerifiedMemberPage() {
         </div>
       )}
 
-      <BottomNav />
-    </main>
+    </PageLayout>
   );
 }

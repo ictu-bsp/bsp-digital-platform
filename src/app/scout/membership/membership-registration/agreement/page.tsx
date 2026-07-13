@@ -18,7 +18,7 @@ export default function AgreementPage() {
       <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl p-6 sm:p-14 text-zinc-900">
         <button
           type="button"
-          onClick={() => router.push("/scout/profile")}
+          onClick={() => router.push("/scout/membership")}
           className="text-2xl sm:text-3xl text-zinc-700 mb-4"
           aria-label="Go back"
         >
