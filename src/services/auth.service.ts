@@ -125,6 +125,32 @@ export async function changePassword(
   }
 }
 
+export async function verifyCurrentPassword(
+  userId: string,
+  currentPassword: string
+) {
+  try {
+    const user = await findUserById(userId);
+
+    if (!user) {
+      throw new Error("User not found.");
+    }
+
+    const valid = await verifyPassword(
+      currentPassword,
+      user.passwordHash
+    );
+
+    if (!valid) {
+      throw new Error("Incorrect password.");
+    }
+
+    return true;
+  } catch (error) {
+    mapDatabaseError(error);
+  }
+}
+
 export async function verifyUserEmail(
   userId: string
 ) {

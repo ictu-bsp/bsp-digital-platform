@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { deleteSession } from "@/lib/auth/session";
+import { getCurrentUser } from "@/lib/auth/session";
 import { loginSchema } from "@/lib/validation/auth/login";
 import { signUpSchema } from "@/lib/validation/auth/signup";
 import { getSessionCookie, clearSessionCookie, } from "@/lib/auth/cookies";
@@ -11,6 +12,7 @@ import {
   verifyPendingUserRegistration,
   completePendingRegistration,
   resendPendingVerification,
+  verifyCurrentPassword,
   loginUser,
 } from "@/services/auth.service";
 
@@ -144,6 +146,55 @@ export async function createPasswordAction(
         error instanceof Error
           ? error.message
           : "Unable to complete registration.",
+    };
+  }
+}
+
+export async function verifyCurrentPasswordAction(
+  currentPassword: string
+): Promise<ActionResult> {
+  try {
+    const sessionId = await getSessionCookie();
+
+    if (!sessionId) {
+      return {
+        success: false,
+        message: "You are not logged in.",
+      };
+    }
+
+    const user = await getCurrentUser(sessionId);
+
+    if (!user) {
+      return {
+        success: false,
+        message: "Session expired.",
+      };
+    }
+
+    const verified = await verifyCurrentPassword(
+      user.id,
+      currentPassword
+    );
+
+    if (!verified) {
+      return {
+        success: false,
+        message: "Incorrect password.",
+      };
+    }
+
+    return {
+      success: true,
+      message: "Password verified.",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Unable to verify password.",
     };
   }
 }
