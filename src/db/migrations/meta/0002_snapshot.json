@@ -1,6 +1,6 @@
 {
-  "id": "5839209b-8229-421d-af2a-6f4e0b8d8910",
-  "prevId": "48d5ecb5-4c49-467e-b9ce-5c2e7866fdb8",
+  "id": "0833c259-8565-4de2-adb9-03ab6e71444e",
+  "prevId": "b741a39a-ee51-48f4-ac92-a535bfbb7679",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -254,6 +254,65 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.email_verifications": {
+      "name": "email_verifications",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code": {
+          "name": "code",
+          "type": "varchar(6)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "email_verifications_user_id_users_id_fk": {
+          "name": "email_verifications_user_id_users_id_fk",
+          "tableFrom": "email_verifications",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.merit_badges": {
       "name": "merit_badges",
       "schema": "",
@@ -355,10 +414,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "payments_registration_id_registrations_id_fk": {
-          "name": "payments_registration_id_registrations_id_fk",
+        "payments_registration_id_scout_registrations_id_fk": {
+          "name": "payments_registration_id_scout_registrations_id_fk",
           "tableFrom": "payments",
-          "tableTo": "registrations",
+          "tableTo": "scout_registrations",
           "columnsFrom": [
             "registration_id"
           ],
@@ -375,8 +434,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.registrations": {
-      "name": "registrations",
+    "public.scout_registrations": {
+      "name": "scout_registrations",
       "schema": "",
       "columns": {
         "id": {
@@ -442,9 +501,9 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "registrations_scout_id_scouts_id_fk": {
-          "name": "registrations_scout_id_scouts_id_fk",
-          "tableFrom": "registrations",
+        "scout_registrations_scout_id_scouts_id_fk": {
+          "name": "scout_registrations_scout_id_scouts_id_fk",
+          "tableFrom": "scout_registrations",
           "tableTo": "scouts",
           "columnsFrom": [
             "scout_id"
@@ -662,6 +721,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "gender": {
+          "name": "gender",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -742,6 +807,101 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.pending_user_registrations": {
+      "name": "pending_user_registrations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "first_name": {
+          "name": "first_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "middle_name": {
+          "name": "middle_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_name": {
+          "name": "last_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "suffix": {
+          "name": "suffix",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "birthdate": {
+          "name": "birthdate",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "gender": {
+          "name": "gender",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "verification_code": {
+          "name": "verification_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "verification_expires": {
+          "name": "verification_expires",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email_verified_at": {
+          "name": "email_verified_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "pending_user_registrations_email_unique": {
+          "name": "pending_user_registrations_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

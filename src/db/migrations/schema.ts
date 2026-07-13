@@ -104,7 +104,7 @@ export const advancements = pgTable("advancements", {
 		}),
 ]);
 
-export const registrations = pgTable("registrations", {
+export const registrations = pgTable("scout_registrations", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	scoutId: uuid("scout_id").notNull(),
 	registrationYears: integer("registration_years").default(1).notNull(),

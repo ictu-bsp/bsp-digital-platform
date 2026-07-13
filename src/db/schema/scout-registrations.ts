@@ -12,7 +12,7 @@ import {
 import { scouts } from "./scouts";
 import { registrationStatusEnum } from "./enums";
 
-export const registrations = pgTable("registrations", {
+export const registrations = pgTable("scout_registrations", {
   id: uuid("id").defaultRandom().primaryKey(),
 
   scoutId: uuid("scout_id")

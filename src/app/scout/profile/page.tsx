@@ -1,4 +1,4 @@
-"use client";
+//src/app/scout/profile/page.tsx
 
 import { useState } from "react";
 import PageLayout from "../../components/PageLayout";
@@ -8,11 +8,8 @@ import ContentBlock from "./components/ContentBlock";
 import MembershipCta from "./components/MembershipCta";
 import EditAvatarModal from "./components/EditAvatarModal";
 
-interface UserProfile {
-  fullName: string;
-  rank: string;
-  avatarUrl?: string | null;
-}
+export default async function ProfilePage() {
+  const user = await getCurrentUser();
 
 export default function ProfilePage() {
   const [isEditingAvatar, setIsEditingAvatar] = useState(false);

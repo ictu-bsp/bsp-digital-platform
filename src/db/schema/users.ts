@@ -29,6 +29,8 @@ export const users = pgTable("users", {
   
   birthdate: date("birthdate", { mode: "date" }).notNull(),
 
+  gender: text("gender").notNull(),
+
   createdAt: timestamp("created_at")
     .defaultNow()
     .notNull(),
