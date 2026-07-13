@@ -7,7 +7,7 @@ export default function VerificationPendingPage() {
   const router = useRouter();
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-white md:bg-gray-50 md:p-6">
+    <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-white via-[#f7fdf8] to-[#e7f6ea] md:p-6">
       <div className="flex min-h-screen w-full max-w-md flex-col bg-white px-6 pb-8 pt-4 md:min-h-[650px] md:rounded-2xl md:border md:border-gray-100 md:shadow-sm">
         <div className="mb-6">
           <button

@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Header from '../components/Header';
 import BottomNav from '../components/BottomNav';
+import AdvancementProgress from "../components/AdvancementProgress";
 
 const user = {
   userName: 'Juan',
@@ -36,7 +37,7 @@ const advancementOptions = [
 
 export default function AdvancementPage() {
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-950">
+    <main className="min-h-screen bg-gradient-to-b from-white via-[#f7fdf8] to-[#e7f6ea] text-slate-950">
       <div className="mx-auto flex min-h-screen max-w-md flex-col">
         <div className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
           <Header userName={user.userName} avatarUrl={user.userAvatarUrl ?? undefined} />
@@ -49,6 +50,8 @@ export default function AdvancementPage() {
                 Advancement
               </p>
             </div>
+
+            <AdvancementProgress />
 
             <div className="grid gap-3">
               {advancementOptions.map((item) => (

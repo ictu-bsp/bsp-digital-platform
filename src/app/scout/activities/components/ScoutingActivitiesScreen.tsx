@@ -24,7 +24,7 @@ export default function ScoutingActivitiesScreen({
   const [activeFilter, setActiveFilter] = useState<string>('all');
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-950">
+    <main className="min-h-screen bg-gradient-to-b from-white via-[#f7fdf8] to-[#e7f6ea] text-slate-950">
       <div className="mx-auto flex min-h-screen max-w-md flex-col">
         <div className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
           <Header userName={userName} avatarUrl={avatarUrl} />
