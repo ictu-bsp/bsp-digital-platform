@@ -1,5 +1,6 @@
-import Header from "../components/Header";
-import BottomNav from "../components/BottomNav";
+import PageLayout from "../../components/PageLayout";
+import Link from "next/link";
+import Image from "next/image";
 
 const user = {
   userName: "Juan",
@@ -8,22 +9,156 @@ const user = {
 
 export default function MembershipPage() {
   return (
-    <main className="min-h-screen bg-white text-slate-950">
-      <div className="mx-auto flex min-h-screen max-w-md flex-col">
-        <div className="flex-1 w-full pb-28">
-          <Header userName={user.userName} avatarUrl={user.userAvatarUrl ?? undefined} />
-          <div className="space-y-4 px-4 py-6">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
-              <h2 className="text-lg font-semibold text-slate-900">Membership</h2>
-              <p className="mt-2 text-sm text-slate-600">
-                Your membership details and account information will appear here.
-              </p>
+    <PageLayout userName={user.userName} avatarUrl={user.userAvatarUrl ?? undefined}>
+      <div className="space-y-4 px-4 py-6">
+        <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
+          <div className="relative">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="mb-3 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-green-700">
+                    Membership Preview
+                  </p>
+                  <h2 className="text-lg font-semibold text-slate-900">Verified Member</h2>
+                </div>
+                <div className="rounded-full bg-green-900 px-3 py-1 text-xs font-semibold text-white">
+                  VALID
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-[#f5fbe8] to-[#eef4e6] p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <Image
+                    src="/bsp-logo-with-bkg.svg"
+                    alt="BSP Logo"
+                    width={32}
+                    height={32}
+                    className="h-8 w-8 shrink-0 object-contain"
+                  />
+                  <div className="text-[10px] font-semibold uppercase leading-tight text-slate-700">
+                    Boy Scouts of the Philippines
+                  </div>
+                </div>
+
+                <div className="blur-[4px]">
+                  <div className="w-full aspect-[1.58/1] [perspective:1000px]">
+                    <div className="relative h-full w-full rounded-2xl border border-gray-200 bg-[#F1F7EC] p-4 shadow-md overflow-hidden flex flex-col justify-between pl-9">
+                      <div className="absolute top-0 left-0 bottom-0 w-6 flex flex-row">
+                        <div className="h-full w-1/2 bg-red-600" />
+                        <div className="h-full w-1/2 bg-blue-800" />
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Image
+                          src="/bsp-logo-with-bkg.svg"
+                          alt="BSP Logo"
+                          width={32}
+                          height={32}
+                          className="h-8 w-8 shrink-0 object-contain"
+                        />
+                        <div className="text-[9px] uppercase leading-tight font-bold text-blue-900 tracking-wide">
+                          <p>Boy Scouts of the Philippines</p>
+                          <p className="font-normal text-gray-600">National Office</p>
+                          <p className="font-light normal-case text-[7px] text-gray-400">181 Natividad Almeda-Lopez St., Ermita, Manila</p>
+                        </div>
+                      </div>
+
+                      <div className="text-center">
+                        <h3 className="text-xs font-bold text-red-500 uppercase tracking-widest leading-none">
+                          Membership Card
+                        </h3>
+                        <span className="text-[7px] font-bold text-blue-900 uppercase">
+                          Valid Until: June 25, 2027
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-3 items-end gap-2">
+                        <div className="col-span-2 space-y-2 text-[10px] pb-1">
+                          <div className="flex flex-col">
+                            <span className="font-bold text-blue-900 border-b border-blue-900/40 pb-0.5 leading-none">
+                              Dela Cruz, Lebron James D.
+                            </span>
+                            <span className="text-[5px] text-gray-400 uppercase font-bold tracking-tight pt-0.5">Name</span>
+                          </div>
+
+                          <div className="flex flex-col">
+                            <span className="font-bold text-blue-900 border-b border-blue-900/40 pb-0.5 leading-none">
+                              Senior Scout
+                            </span>
+                            <span className="text-[5px] text-gray-400 uppercase font-bold tracking-tight pt-0.5">Designation</span>
+                          </div>
+
+                          <div className="flex flex-col">
+                            <span className="font-bold text-blue-900 border-b border-blue-900/40 pb-0.5 leading-none">
+                              Camarines Sur Council
+                            </span>
+                            <span className="text-[5px] text-gray-400 uppercase font-bold tracking-tight pt-0.5">Council</span>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col items-center justify-end">
+                          <div className="relative h-20 w-20 border border-gray-400 bg-gray-200 overflow-hidden mb-2.5 shadow-sm">
+                            <div className="flex h-full w-full flex-col items-center justify-center bg-gray-300 text-gray-500 text-[8px] text-center p-1">
+                              User Photo
+                            </div>
+                          </div>
+                          <div className="w-20 border-t border-blue-900 pt-1 text-center">
+                            <span className="block text-[5px] font-bold text-blue-900/70 uppercase tracking-tight leading-none">
+                              Signature of Member
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-end text-[7px] text-blue-900 pb-0.5">
+                        <div className="flex flex-col items-center">
+                          <div className="w-20 border-t border-blue-900 pt-0.5 text-center">
+                            <span className="block text-[5px] uppercase font-medium text-blue-900/80 tracking-tight">
+                              Council Chairperson
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right font-serif text-sm font-bold text-red-600 tracking-tight leading-none">
+                          № <span className="tracking-normal">09109090</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="blur-[4px]">
+                  <div className="rounded-xl bg-slate-50 p-3 text-center">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-500">
+                      Membership Status
+                    </p>
+                    <p className="mt-2 text-4xl font-black tracking-[0.25em] text-slate-900">
+                      VALID
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[2px]">
+              <div className="w-full max-w-[280px] rounded-3xl border border-slate-200 bg-white/95 p-5 text-center shadow-xl">
+                <button className="w-full rounded-full bg-green-900 py-3 font-bold text-white transition hover:bg-green-800">
+                  <Link href="/scout/membership/membership-registration/agreement" className="text-white no-underline">
+                    Apply Membership
+                  </Link>
+                </button>
+                <p className="mt-3 text-center text-sm text-gray-700">
+                  Already a member?{' '}
+                  <Link href="/scout/membership/membership-verification" className="font-semibold text-green-700 underline hover:text-green-800">
+                    Click Here
+                  </Link>
+                </p>
+              </div>
             </div>
           </div>
         </div>
-        
-        <BottomNav />
       </div>
-    </main>
+    </PageLayout>
   );
 }

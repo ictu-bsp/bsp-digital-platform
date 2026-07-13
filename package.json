@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "ngrok": "ngrok http 3000 --domain=emphasis-moonlike-iron.ngrok-free.dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -38,6 +39,7 @@
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.2.3",
+    "ngrok": "^5.0.0-beta.2",
     "tailwindcss": "^4",
     "tsx": "^4.23.0",
     "typescript": "5.9.3"

@@ -1,3 +1,4 @@
+import Image from "next/image";
 interface BrandLogoProps {
   className?: string;
 }
@@ -5,7 +6,13 @@ interface BrandLogoProps {
 export function BrandLogo({ className = "" }: BrandLogoProps) {
   return (
     <div className={className}>
-      <h1 className="text-3xl font-bold tracking-tight text-green-900">eScout</h1>
+      <Image
+                src="/escout-logo.svg"
+                alt="eScout Logo"
+                width={125}
+                height={125}
+                className="h-auto w-[115px] object-contain"
+              />
     </div>
   );
 }
