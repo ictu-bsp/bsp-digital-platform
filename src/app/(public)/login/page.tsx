@@ -29,29 +29,34 @@ export default function LoginPage() {
   }, [state.success, router]);
 
   return (
-    <main className="flex min-h-screen flex-col bg-white md:flex-row">
-      <section className="flex-1 flex-col items-center justify-center bg-gray-50 px-6 py-8 md:flex md:px-12">
-        <div className="w-full max-w-md text-center">
+    <main className="flex min-h-screen flex-col bg-white md:flex-row md:items-stretch">
+      <section className="w-full md:w-[46%] md:min-h-screen">
+        <div className="relative h-[300px] w-full sm:h-[400px] md:h-full">
           <Image
-            src="/escout-logo.svg"
-            alt="eScout Logo"
-            width={115}
-            height={115}
-            className="mx-auto mb-6 h-auto w-[115px] object-contain"
+            src="/bsp-landingpage-bg2.svg"
+            alt="bsp-landingpage-backdrop"
+            fill
+            priority
+            sizes="(max-width: 768px) 100vw, 50vw"
+            className="object-cover object-center"
           />
-          <h2 className="text-3xl font-bold tracking-tight text-green-900">
-            Welcome Back
-          </h2>
-          <p className="mt-4 text-base leading-7 text-gray-500">
-            Sign in to manage your scout account and continue your journey.
-          </p>
         </div>
       </section>
 
-      <section className="flex flex-1 items-center justify-center px-6 py-8 md:px-16">
+      <section className="flex w-full md:flex-1 items-center justify-center px-6 py-8 sm:px-8 md:px-10 lg:px-16">
+        <div className="absolute inset-0 z-0 pointer-events-none select-none">
+        <Image
+          src="/bsp-landingpage-bg2.svg"
+          alt="Form Background Backdrop"
+          fill
+          priority
+          className="object-cover object-center blur-md opacity-30 scale-105"
+        />
+        
+        </div>
         <form
           action={formAction}
-          className="w-full max-w-md rounded-lg bg-white p-8 shadow-md"
+          className="relative z-10 w-full max-w-md rounded-2xl bg-[#ffffff] p-8 shadow-2xl border border-gray-100"
         >
           <Image
             src="/escout-logo.svg"
@@ -135,18 +140,18 @@ export default function LoginPage() {
             {pending ? "Logging In..." : "Log In"}
           </button>
 
-          <p className="my-4 text-center text-sm text-gray-500">
-            or
-          </p>
+          <p className="my-4 text-center text-sm text-gray-500">or</p>
 
           <p className="text-center text-sm text-gray-500">
-            Don't have an <Image
-            src="/escout-logo.svg"
-            alt="eScout Logo"
-            width={60}
-            height={60}
-            className="inline-block mb-1.5"
-          /> account yet?
+            Don't have an{" "}
+            <Image
+              src="/escout-logo.svg"
+              alt="eScout Logo"
+              width={60}
+              height={60}
+              className="mb-1.5 inline-block"
+            />{" "}
+            account yet?
           </p>
 
           <Link href="/signup">
