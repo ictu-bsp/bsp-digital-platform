@@ -1,127 +1,214 @@
+// src/app/scout/profile/components/EditAvatarModal.tsx
+
 "use client";
 
 import { useRef, useState } from "react";
 
 interface EditAvatarModalProps {
   currentAvatarUrl?: string | null;
-  onSave: (file: File) => void;
+
+  onSave: (avatarUrl: string) => void;
+
   onClose: () => void;
 }
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+const ALLOWED_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+];
 
 export default function EditAvatarModal({
   currentAvatarUrl,
   onSave,
   onClose,
 }: EditAvatarModalProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileClick = () => {
-    fileInputRef.current?.click();
-  };
+  const [selectedFile, setSelectedFile] =
+    useState<File | null>(null);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [preview, setPreview] =
+    useState<string | null>(
+      currentAvatarUrl ?? null
+    );
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  function handleFileChange(
+    e: React.ChangeEvent<HTMLInputElement>
+  ) {
     const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setPreview(event.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
-  const handleSave = () => {
-    if (selectedFile) {
-      onSave(selectedFile);
-      onClose();
+    if (!file) return;
+
+    setError("");
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setSelectedFile(null);
+      setError(
+        "Only JPG, PNG and WebP images are allowed."
+      );
+      return;
     }
-  };
+
+    if (file.size > MAX_FILE_SIZE) {
+      setSelectedFile(null);
+      setError(
+        "Image must be smaller than 5 MB."
+      );
+      return;
+    }
+
+    setSelectedFile(file);
+
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      setPreview(
+        event.target?.result as string
+      );
+    };
+
+    reader.readAsDataURL(file);
+  }
+
+  async function handleUpload() {
+    if (!selectedFile) return;
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const formData = new FormData();
+
+      formData.append(
+        "avatar",
+        selectedFile
+      );
+
+      const response = await fetch(
+        "/scout/profile/avatar",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const result = await response.json();
+
+      if (!result.success) {
+        setError(
+          result.message ??
+            "Upload failed."
+        );
+        return;
+      }
+
+      onSave(result.avatarUrl);
+
+      onClose();
+    } catch {
+      setError(
+        "Unable to upload image."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl p-6 max-w-md w-full">
-        <h2 className="text-2xl font-bold text-green-900 mb-6">Edit Profile Picture</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
 
-        {/* Current Avatar Preview */}
-        <div className="mb-6">
-          <p className="text-sm font-semibold text-gray-700 mb-3">Current Image:</p>
-          <div className="h-40 w-40 mx-auto rounded-full bg-gray-100 flex items-center justify-center mb-4 border-2 border-gray-300">
-            {currentAvatarUrl ? (
+        <h2 className="mb-6 text-center text-2xl font-bold text-green-900">
+          Change Avatar
+        </h2>
+
+        <div className="mb-6 flex justify-center">
+          <div className="h-36 w-36 overflow-hidden rounded-full bg-green-900 shadow">
+
+            {preview ? (
               <img
-                src={currentAvatarUrl}
-                alt="Current avatar"
-                className="h-full w-full rounded-full object-cover"
+                src={preview}
+                alt="Avatar Preview"
+                className="h-full w-full object-cover"
               />
             ) : (
-              <svg
-                className="h-20 w-20 text-gray-400"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-              </svg>
+              <div className="flex h-full items-center justify-center">
+                <svg
+                  className="h-16 w-16 text-white"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4Zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                </svg>
+              </div>
             )}
+
           </div>
         </div>
 
-        {/* New Preview */}
-        {preview && (
-          <div className="mb-6">
-            <p className="text-sm font-semibold text-gray-700 mb-3">New Image Preview:</p>
-            <div className="h-40 w-40 mx-auto rounded-full bg-gray-100 flex items-center justify-center border-2 border-green-400">
-              <img
-                src={preview}
-                alt="New avatar preview"
-                className="h-full w-full rounded-full object-cover"
-              />
-            </div>
-          </div>
-        )}
+        <input
+          ref={inputRef}
+          hidden
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={handleFileChange}
+        />
 
-        {/* Upload Button */}
         <button
-          onClick={handleFileClick}
-          className="w-full mb-4 px-4 py-3 bg-gray-100 text-slate-800 font-semibold rounded-full hover:bg-gray-200 transition flex items-center justify-center gap-2"
+          type="button"
+          disabled={loading}
+          onClick={() =>
+            inputRef.current?.click()
+          }
+          className="mb-4 w-full rounded-xl bg-green-900 py-3 font-semibold text-white transition hover:bg-green-800 disabled:opacity-50"
         >
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
           Choose Image
         </button>
 
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileSelect}
-          className="hidden"
-          aria-label="Upload new profile image"
-        />
+        <p className="mb-4 text-center text-xs text-gray-500">
+          JPG, PNG or WebP • Maximum 5 MB
+        </p>
 
-        {/* Action Buttons */}
+        {error && (
+          <p className="mb-4 text-center text-sm text-red-600">
+            {error}
+          </p>
+        )}
+
         <div className="flex gap-3">
+
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-3 bg-gray-200 text-slate-800 font-semibold rounded-full hover:bg-gray-300 transition"
+            disabled={loading}
+            className="flex-1 rounded-xl border py-3 font-semibold transition hover:bg-gray-100 disabled:opacity-50"
           >
             Cancel
           </button>
+
           <button
-            onClick={handleSave}
-            disabled={!selectedFile}
-            className="flex-1 px-4 py-3 bg-green-900 text-white font-semibold rounded-full hover:bg-green-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
+            disabled={
+              !selectedFile ||
+              loading
+            }
+            onClick={handleUpload}
+            className="flex-1 rounded-xl bg-green-900 py-3 font-semibold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Save
+            {loading
+              ? "Uploading..."
+              : "Use This Avatar"}
           </button>
+
         </div>
+
       </div>
     </div>
   );

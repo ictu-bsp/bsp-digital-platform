@@ -1,19 +1,24 @@
-//src/app/scout/profile/ProfileClient.tsx
+//src/app/scout/profile/ClientProfile.tsx
 
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import UserInfoCard from "./components/UserInfoCard";
-import MembershipCta from "./components/MembershipCta";
+
 import ProfileHeader from "./components/ProfileHeader";
 import ProfileAvatar from "./components/ProfileAvatar";
-import EditAvatarModal from "./components/EditAvatarModal";
-import ProfileBottomNav from "./components/ProfileBottomNav";
+import UserInfoCard from "./components/UserInfoCard";
 import AccountInformationCard from "./components/AccountInformationCard";
+import MembershipCta from "./components/MembershipCta";
+import EditProfileButton from "./components/EditProfileButton";
+import ProfileBottomNav from "./components/ProfileBottomNav";
+
+import VerifyPasswordModal from "./components/VerifyPasswordModal";
+import EditProfileModal from "./components/EditProfileModal";
 
 interface ProfileClientProps {
   user: {
+    id: string;
     firstName: string;
     middleName: string | null;
     lastName: string;
@@ -21,12 +26,8 @@ interface ProfileClientProps {
     email: string;
     birthdate: Date;
     gender: string;
+    avatarUrl?: string | null;
   };
-}
-
-interface UserProfile {
-  fullName: string;
-  avatarUrl?: string | null;
 }
 
 export default function ProfileClient({
@@ -34,74 +35,70 @@ export default function ProfileClient({
 }: ProfileClientProps) {
   const router = useRouter();
 
-  const [activeTab, setActiveTab] = useState("./scout/profile");
-  const [isEditingAvatar, setIsEditingAvatar] = useState(false);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [activeTab, setActiveTab] =
+    useState("/scout/profile");
 
-  // ✅ This belongs INSIDE the component
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] =
+    useState(false);
 
-  const userProfile: UserProfile = {
-    fullName: [
-      user.firstName,
-      user.middleName,
-      user.lastName,
-      user.suffix,
-    ]
-      .filter(Boolean)
-      .join(" "),
-    avatarUrl: avatarPreview,
-  };
+  const [showEditProfileModal, setShowEditProfileModal] =
+    useState(false);
+
+  const [profile, setProfile] =
+    useState(user);
 
   const membershipStatus = false;
 
-  const handleLogout = () => {
-    alert("Logging out...");
+  const fullName = [
+    profile.firstName,
+    profile.middleName,
+    profile.lastName,
+    profile.suffix,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  function handleLogout() {
     router.push("/login");
-  };
-
-  const handleImageChange = (file: File) => {
-    const reader = new FileReader();
-
-    reader.onload = (event) => {
-      const imageUrl = event.target?.result as string;
-      setAvatarPreview(imageUrl);
-      setIsEditingAvatar(false);
-
-      alert(
-        "Profile image updated! (Preview only - not saved to server yet)"
-      );
-    };
-
-    reader.readAsDataURL(file);
-  };
+  }
 
   return (
     <main className="min-h-screen bg-gray-50">
       <div className="mx-auto flex min-h-screen max-w-md flex-col bg-white">
-        <ProfileHeader onLogout={handleLogout} />
 
-        <div className="flex-1 w-full pb-28 overflow-y-auto">
+        <ProfileHeader
+          onLogout={handleLogout}
+        />
+
+        <div className="flex-1 overflow-y-auto pb-24">
+
           <ProfileAvatar
-            avatarUrl={userProfile.avatarUrl}
-            onEditClick={() => setIsEditingAvatar(true)}
+            avatarUrl={
+              profile.avatarUrl ?? null
+            }
           />
 
           <UserInfoCard
-            name={userProfile.fullName}
             status="Visitor"
+            name={fullName}
           />
 
           <AccountInformationCard
-            email={user.email}
-            birthdate={user.birthdate}
-            gender={user.gender}
-            onEdit={() => setShowPasswordModal(true)}
+            email={profile.email}
+            birthdate={profile.birthdate}
+            gender={profile.gender}
           />
 
           <MembershipCta
             membershipStatus={membershipStatus}
           />
+
+          <EditProfileButton
+            onClick={() =>
+              setShowPasswordModal(true)
+            }
+          />
+
         </div>
 
         <ProfileBottomNav
@@ -109,36 +106,35 @@ export default function ProfileClient({
           onTabChange={setActiveTab}
         />
 
-        {isEditingAvatar && (
-          <EditAvatarModal
-            currentAvatarUrl={userProfile.avatarUrl}
-            onSave={handleImageChange}
-            onClose={() => setIsEditingAvatar(false)}
+        {showPasswordModal && (
+          <VerifyPasswordModal
+            onClose={() =>
+              setShowPasswordModal(false)
+            }
+            onSuccess={() => {
+              setShowPasswordModal(false);
+              setShowEditProfileModal(true);
+            }}
           />
         )}
 
-        {/* We'll replace this with the real modal next */}
-        {showPasswordModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="w-80 rounded-2xl bg-white p-6 shadow-xl">
-              <h2 className="mb-2 text-xl font-bold text-green-900">
-                Verify Password
-              </h2>
+        {showEditProfileModal && (
+          <EditProfileModal
+            user={profile}
+            onClose={() =>
+              setShowEditProfileModal(false)
+            }
+            onSave={(updatedProfile) => {
+              setProfile({
+                ...profile,
+                ...updatedProfile,
+              });
 
-              <p className="mb-6 text-sm text-gray-600">
-                Before you can edit your account information,
-                please verify your current password.
-              </p>
-
-              <button
-                onClick={() => setShowPasswordModal(false)}
-                className="w-full rounded-xl bg-green-900 py-3 font-semibold text-white"
-              >
-                Close
-              </button>
-            </div>
-          </div>
+              setShowEditProfileModal(false);
+            }}
+          />
         )}
+
       </div>
     </main>
   );

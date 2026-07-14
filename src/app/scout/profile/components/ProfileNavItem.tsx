@@ -1,3 +1,5 @@
+//src/app/scout/profile/components/ProfileNavItem.tsx
+
 interface ProfileNavItemProps {
   icon: React.ReactNode;
   label: string;

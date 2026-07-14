@@ -1,3 +1,5 @@
+//src/app/scout/profile/components/ProfileBottomNav.tsx
+
 "use client";
 
 import { useRouter } from "next/navigation";
