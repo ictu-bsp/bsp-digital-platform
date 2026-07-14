@@ -1,5 +1,7 @@
+//src/services/admin.service.ts
+
 import { db } from "@/db";
-import { count, eq } from "drizzle-orm";
+import { count, eq, inArray } from "drizzle-orm";
 
 import {
   scouts,
@@ -7,6 +9,8 @@ import {
   councils,
   users,
   roles,
+  registrations,
+  payments,
 } from "@/db/schema";
 
 import type {
@@ -14,6 +18,39 @@ import type {
   AdminScoutRecord,
   AdministratorRecord,
 } from "@/types/admin";
+
+export type PendingRegistrationRecord = {
+  id: string;
+  scoutId: string;
+  scoutIdNumber: string | null;
+
+  fullName: string;
+  email: string;
+  birthdate: Date;
+  gender: string;
+
+  council: string;
+
+  registrationYears: number;
+  startDate: string;
+  endDate: string;
+  status: string;
+
+  isExistingScout: boolean;
+
+  paymentStatus: string | null;
+  paymentIntentId: string | null;
+
+  extraDetails: {
+    scoutingPosition?: string;
+    advancementRank?: string;
+    tenure?: string;
+    region?: string;
+    sponsoringInstitution?: string;
+  };
+
+  createdAt: Date;
+};
 
 function mapAdminScoutRecord(scout: {
   id: string;
@@ -254,6 +291,166 @@ export async function getAdministratorById(
   }
 
   return mapAdministratorRecord(record);
+}
+
+export async function getPendingRegistrations(): Promise<PendingRegistrationRecord[]> {
+  const pendingRecords = await db
+    .select({
+      id: registrations.id,
+      scoutId: registrations.scoutId,
+      scoutIdNumber: scouts.scoutIdNumber,
+
+      firstName: users.firstName,
+      lastName: users.lastName,
+      email: users.email,
+      birthdate: users.birthdate,
+      gender: users.gender,
+
+      council: councils.name,
+
+      registrationYears: registrations.registrationYears,
+      startDate: registrations.startDate,
+      endDate: registrations.endDate,
+      status: registrations.status,
+      remarks: registrations.remarks,
+      createdAt: registrations.createdAt,
+    })
+    .from(registrations)
+    .innerJoin(scouts, eq(registrations.scoutId, scouts.id))
+    .innerJoin(users, eq(scouts.userId, users.id))
+    .innerJoin(councils, eq(scouts.councilId, councils.id))
+    .where(eq(registrations.status, "pending"));
+
+  // Determine which scouts already have at least one "active" registration —
+  // this pending one is a renewal for them, not a first-time registration.
+  const activeRegs = await db
+    .select({ scoutId: registrations.scoutId })
+    .from(registrations)
+    .where(eq(registrations.status, "active"));
+
+  const activeScoutIds = new Set(activeRegs.map((r) => r.scoutId));
+
+  // Fetch payments separately (not via leftJoin) to avoid duplicate
+  // registration rows when a registration has more than one payment
+  // attempt (e.g. a failed GCash try followed by a successful Card retry).
+  const pendingRegIds = pendingRecords.map((r) => r.id);
+
+  const relatedPayments = pendingRegIds.length
+    ? await db
+        .select({
+          registrationId: payments.registrationId,
+          paymentStatus: payments.paymentStatus,
+          paymentIntentId: payments.paymentIntentId,
+          createdAt: payments.createdAt,
+        })
+        .from(payments)
+        .where(inArray(payments.registrationId, pendingRegIds))
+    : [];
+
+  // Pick one payment per registration: prefer the most recent "paid" one,
+  // falling back to the most recent payment of any status if none paid.
+  const bestPaymentByRegId = new Map<string, { paymentStatus: string; paymentIntentId: string | null; createdAt: Date }>();
+
+  for (const payment of relatedPayments) {
+    const current = bestPaymentByRegId.get(payment.registrationId);
+
+    if (!current) {
+      bestPaymentByRegId.set(payment.registrationId, payment);
+      continue;
+    }
+
+    const currentIsPaid = current.paymentStatus === "paid";
+    const candidateIsPaid = payment.paymentStatus === "paid";
+
+    if (candidateIsPaid && !currentIsPaid) {
+      // A paid payment always outranks a non-paid one, regardless of date.
+      bestPaymentByRegId.set(payment.registrationId, payment);
+    } else if (candidateIsPaid === currentIsPaid && payment.createdAt > current.createdAt) {
+      // Same "paid-ness" — keep whichever is more recent.
+      bestPaymentByRegId.set(payment.registrationId, payment);
+    }
+  }
+
+  return pendingRecords.map((record) => {
+    let extraDetails: PendingRegistrationRecord["extraDetails"] = {};
+
+    if (record.remarks) {
+      try {
+        extraDetails = JSON.parse(record.remarks);
+      } catch {
+        extraDetails = {};
+      }
+    }
+
+    const bestPayment = bestPaymentByRegId.get(record.id);
+
+    return {
+      id: record.id,
+      scoutId: record.scoutId,
+      scoutIdNumber: record.scoutIdNumber,
+
+      fullName: `${record.lastName}, ${record.firstName}`,
+      email: record.email,
+      birthdate: record.birthdate,
+      gender: record.gender,
+
+      council: record.council,
+
+      registrationYears: record.registrationYears,
+      startDate: record.startDate,
+      endDate: record.endDate,
+      status: record.status,
+
+      isExistingScout: activeScoutIds.has(record.scoutId),
+
+      paymentStatus: bestPayment?.paymentStatus ?? null,
+      paymentIntentId: bestPayment?.paymentIntentId ?? null,
+
+      extraDetails,
+
+      createdAt: record.createdAt,
+    };
+  });
+}
+
+export async function approveRegistration(registrationId: string) {
+  await db
+    .update(registrations)
+    .set({
+      status: "active",
+      updatedAt: new Date(),
+    })
+    .where(eq(registrations.id, registrationId));
+}
+
+export async function rejectRegistration(
+  registrationId: string,
+  feedback: string
+) {
+  const [existing] = await db
+    .select({ remarks: registrations.remarks })
+    .from(registrations)
+    .where(eq(registrations.id, registrationId));
+
+  let remarksData: Record<string, unknown> = {};
+  if (existing?.remarks) {
+    try {
+      remarksData = JSON.parse(existing.remarks);
+    } catch {
+      remarksData = {};
+    }
+  }
+
+  remarksData.rejectionFeedback = feedback;
+
+  await db
+    .update(registrations)
+    .set({
+      status: "cancelled",
+      remarks: JSON.stringify(remarksData),
+      updatedAt: new Date(),
+    })
+    .where(eq(registrations.id, registrationId));
 }
 
 export async function assignAdministratorRole(
