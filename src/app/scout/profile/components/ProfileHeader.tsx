@@ -1,3 +1,5 @@
+//src/app/scout/profile/components/ProfileHeader.tsx
+
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 

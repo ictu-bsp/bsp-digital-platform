@@ -22,6 +22,13 @@
       "when": 1783904715966,
       "tag": "0002_safe_black_tarantula",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784000409480,
+      "tag": "0003_pretty_diamondback",
+      "breakpoints": true
     }
   ]
 }

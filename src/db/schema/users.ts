@@ -31,6 +31,8 @@ export const users = pgTable("users", {
 
   gender: text("gender").notNull(),
 
+  avatarUrl: text("avatar_url"),
+
   createdAt: timestamp("created_at")
     .defaultNow()
     .notNull(),
