@@ -109,7 +109,7 @@ export async function POST(
     );
 
     const avatarUrl =
-      `uploads/avatars/${filename}`;
+      `/public/uploads/avatars/${filename}`;
 
     await updateAvatar(
       user.id,
