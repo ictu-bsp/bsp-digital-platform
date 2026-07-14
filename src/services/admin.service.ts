@@ -1,3 +1,5 @@
+//src/services/admin.service.ts
+
 import { db } from "@/db";
 import { count, eq } from "drizzle-orm";
 
@@ -7,6 +9,8 @@ import {
   councils,
   users,
   roles,
+  registrations,
+  payments,
 } from "@/db/schema";
 
 import type {
@@ -14,6 +18,39 @@ import type {
   AdminScoutRecord,
   AdministratorRecord,
 } from "@/types/admin";
+
+export type PendingRegistrationRecord = {
+  id: string;
+  scoutId: string;
+  scoutIdNumber: string | null;
+
+  fullName: string;
+  email: string;
+  birthdate: Date;
+  gender: string;
+
+  council: string;
+
+  registrationYears: number;
+  startDate: string;
+  endDate: string;
+  status: string;
+
+  isExistingScout: boolean;
+
+  paymentStatus: string | null;
+  paymentIntentId: string | null;
+
+  extraDetails: {
+    scoutingPosition?: string;
+    advancementRank?: string;
+    tenure?: string;
+    region?: string;
+    sponsoringInstitution?: string;
+  };
+
+  createdAt: Date;
+};
 
 function mapAdminScoutRecord(scout: {
   id: string;
@@ -254,6 +291,87 @@ export async function getAdministratorById(
   }
 
   return mapAdministratorRecord(record);
+}
+
+export async function getPendingRegistrations(): Promise<PendingRegistrationRecord[]> {
+  const pendingRecords = await db
+    .select({
+      id: registrations.id,
+      scoutId: registrations.scoutId,
+      scoutIdNumber: scouts.scoutIdNumber,
+
+      firstName: users.firstName,
+      lastName: users.lastName,
+      email: users.email,
+      birthdate: users.birthdate,
+      gender: users.gender,
+
+      council: councils.name,
+
+      registrationYears: registrations.registrationYears,
+      startDate: registrations.startDate,
+      endDate: registrations.endDate,
+      status: registrations.status,
+      remarks: registrations.remarks,
+      createdAt: registrations.createdAt,
+
+      paymentStatus: payments.paymentStatus,
+      paymentIntentId: payments.paymentIntentId,
+    })
+    .from(registrations)
+    .innerJoin(scouts, eq(registrations.scoutId, scouts.id))
+    .innerJoin(users, eq(scouts.userId, users.id))
+    .innerJoin(councils, eq(scouts.councilId, councils.id))
+    .leftJoin(payments, eq(payments.registrationId, registrations.id))
+    .where(eq(registrations.status, "pending"));
+
+  // Determine which scouts already have at least one "active" registration —
+  // this pending one is a renewal for them, not a first-time registration.
+  const activeRegs = await db
+    .select({ scoutId: registrations.scoutId })
+    .from(registrations)
+    .where(eq(registrations.status, "active"));
+
+  const activeScoutIds = new Set(activeRegs.map((r) => r.scoutId));
+
+  return pendingRecords.map((record) => {
+    let extraDetails: PendingRegistrationRecord["extraDetails"] = {};
+
+    if (record.remarks) {
+      try {
+        extraDetails = JSON.parse(record.remarks);
+      } catch {
+        extraDetails = {};
+      }
+    }
+
+    return {
+      id: record.id,
+      scoutId: record.scoutId,
+      scoutIdNumber: record.scoutIdNumber,
+
+      fullName: `${record.lastName}, ${record.firstName}`,
+      email: record.email,
+      birthdate: record.birthdate,
+      gender: record.gender,
+
+      council: record.council,
+
+      registrationYears: record.registrationYears,
+      startDate: record.startDate,
+      endDate: record.endDate,
+      status: record.status,
+
+      isExistingScout: activeScoutIds.has(record.scoutId),
+
+      paymentStatus: record.paymentStatus,
+      paymentIntentId: record.paymentIntentId,
+
+      extraDetails,
+
+      createdAt: record.createdAt,
+    };
+  });
 }
 
 export async function assignAdministratorRole(

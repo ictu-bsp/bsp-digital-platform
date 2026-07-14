@@ -7,6 +7,7 @@ import {
   getCouncilScouts,
   getAdministrators,
   getAdministratorById,
+  getPendingRegistrations,
 } from '@/services/admin.service';
 
 //Dashboard
@@ -116,6 +117,25 @@ export async function fetchAdministratorById(id: string) {
     return {
       success: false,
       error: 'Failed to load administrator.',
+    };
+  }
+}
+
+//Membership Review
+export async function fetchPendingRegistrations() {
+  try {
+    const data = await getPendingRegistrations();
+
+    return {
+      success: true,
+      data,
+    };
+  } catch (error) {
+    console.error(error);
+
+    return {
+      success: false,
+      error: 'Failed to load pending registrations.',
     };
   }
 }
