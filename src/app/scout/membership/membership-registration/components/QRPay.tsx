@@ -2,13 +2,21 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { setPaymentProviderIdAction } from "@/app/actions/payment";
 
 type QRPayProps = {
   amount: number;
   description: string;
+  registrationId: string;
+  paymentRecordId: string;
 };
 
-export default function QRPay({ amount, description }: QRPayProps) {
+export default function QRPay({
+  amount,
+  description,
+  registrationId,
+  paymentRecordId,
+}: QRPayProps) {
   const router = useRouter();
   const [qrImage, setQrImage] = useState<string | null>(null);
   const [rawResponse, setRawResponse] = useState<string | null>(null);
@@ -26,12 +34,21 @@ export default function QRPay({ amount, description }: QRPayProps) {
             currency: "PHP",
             description: description,
             statement_descriptor: "descriptor business name",
+            metadata: {
+              registrationId,
+              paymentRecordId,
+            },
           },
         },
       }),
     })
       .then((res) => res.json())
       .then((res) => res.body.data);
+
+    if (paymentIntent?.id) {
+      await setPaymentProviderIdAction(paymentRecordId, paymentIntent.id);
+    }
+
     return paymentIntent;
   };
 

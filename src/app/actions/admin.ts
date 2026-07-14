@@ -7,8 +7,10 @@ import {
   getCouncilScouts,
   getAdministrators,
   getAdministratorById,
+  getPendingRegistrations,
+  approveRegistration,
+  rejectRegistration,
 } from '@/services/admin.service';
-
 //Dashboard
 export async function fetchDashboardStats() {
   try {
@@ -116,6 +118,62 @@ export async function fetchAdministratorById(id: string) {
     return {
       success: false,
       error: 'Failed to load administrator.',
+    };
+  }
+}
+
+//Membership Review
+export async function fetchPendingRegistrations() {
+  try {
+    const data = await getPendingRegistrations();
+
+    return {
+      success: true,
+      data,
+    };
+  } catch (error) {
+    console.error(error);
+
+    return {
+      success: false,
+      error: 'Failed to load pending registrations.',
+    };
+  }
+}
+
+export async function approveRegistrationAction(registrationId: string) {
+  try {
+    await approveRegistration(registrationId);
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error(error);
+
+    return {
+      success: false,
+      error: 'Failed to approve registration.',
+    };
+  }
+}
+
+export async function rejectRegistrationAction(
+  registrationId: string,
+  feedback: string
+) {
+  try {
+    await rejectRegistration(registrationId, feedback);
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error(error);
+
+    return {
+      success: false,
+      error: 'Failed to reject registration.',
     };
   }
 }

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { CheckCircleIcon, ChevronDownIcon, LockClosedIcon } from "@heroicons/react/24/solid";
+import { createRegistrationAction } from "@/app/actions/registrations";
+import { getCouncilsAction } from "@/app/actions/councils";
 
 const FEE_PER_YEAR = 100;
 
@@ -24,12 +26,16 @@ export default function RegisterPage() {
   const [advancementRank, setAdvancementRank] = useState("");
   const [tenure, setTenure] = useState("");
   const [region, setRegion] = useState("");
-  const [council, setCouncil] = useState("");
+  const [councilId, setCouncilId] = useState("");
+const [councils, setCouncils] = useState<{ id: string; name: string }[]>([]);
+const [councilsLoading, setCouncilsLoading] = useState(true);
   const [isCommunityBased, setIsCommunityBased] = useState(false);
   const [sponsoringInstitution, setSponsoringInstitution] = useState("");
   const [membershipValidity, setMembershipValidity] = useState("");
 
   const amount = FEE_PER_YEAR * (Number(membershipValidity) || 0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   // When community-based is checked, Sponsoring Institution is locked out —
   // clear whatever was selected so a stale value doesn't get submitted.
@@ -39,20 +45,58 @@ export default function RegisterPage() {
     }
   }, [isCommunityBased]);
 
-  const onNext = (event: React.FormEvent) => {
+  useEffect(() => {
+  const loadCouncils = async () => {
+    const result = await getCouncilsAction();
+    if (result.success && result.data) {
+      setCouncils(result.data);
+    }
+    setCouncilsLoading(false);
+  };
+  loadCouncils();
+}, []);
+
+  const onNext = async (event: React.FormEvent) => {
     event.preventDefault();
+    setSubmitError("");
+    setIsSubmitting(true);
+
     const years = Number(membershipValidity);
+    const resolvedSponsoringInstitution = isCommunityBased
+      ? "community_based"
+      : sponsoringInstitution;
+
+    const result = await createRegistrationAction({
+      registrationYears: years,
+      scoutingPosition,
+      advancementRank,
+      tenure,
+      region,
+      sponsoringInstitution: resolvedSponsoringInstitution,
+      councilId,
+    });
+
+    if (!result.success || !result.data) {
+      setSubmitError(result.error ?? "Failed to create registration.");
+      setIsSubmitting(false);
+      return;
+    }
+
     const description = `Scout Membership Registration (${years} year${
       years > 1 ? "s" : ""
     })`;
+    localStorage.setItem("registrationId", result.data.id);
     localStorage.setItem("paymentAmount", String(amount));
     localStorage.setItem("paymentDescription", description);
     localStorage.setItem("paymentYears", String(years));
-    localStorage.setItem("paymentCouncil", council);
+    const selectedCouncilName =
+  councils.find((c) => c.id === councilId)?.name ?? "";
+localStorage.setItem("paymentCouncil", selectedCouncilName);
+localStorage.setItem("paymentCouncilId", councilId);
     localStorage.setItem("paymentIsCommunityBased", String(isCommunityBased));
     localStorage.setItem(
       "paymentSponsoringInstitution",
-      isCommunityBased ? "community_based" : sponsoringInstitution
+      resolvedSponsoringInstitution
     );
     router.push("/scout/membership/membership-registration/method");
   };
@@ -180,19 +224,29 @@ export default function RegisterPage() {
             <ChevronDownIcon className="w-5 h-5 text-zinc-500 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
-          {/* Council — plain text field, unaffected by the community-based checkbox */}
-          <div className="relative">
-            <input
-              placeholder="Council"
-              className={`${fieldShellClass(council !== "")} pl-4 pr-10`}
-              value={council}
-              onChange={(e) => setCouncil(e.target.value)}
-              required
-            />
-            {council !== "" && (
-              <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
-            )}
-          </div>
+          {/* Council — real dropdown sourced from the councils table */}
+<div className="relative">
+  <select
+    value={councilId}
+    onChange={(e) => setCouncilId(e.target.value)}
+    disabled={councilsLoading}
+    className={`${fieldShellClass(councilId !== "", councilsLoading)} appearance-none pl-4 pr-16`}
+    required
+  >
+    <option value="" disabled className="text-zinc-400">
+      {councilsLoading ? "Loading councils..." : "Council"}
+    </option>
+    {councils.map((c) => (
+      <option key={c.id} value={c.id} className="text-zinc-900">
+        {c.name}
+      </option>
+    ))}
+  </select>
+  {!councilsLoading && councilId !== "" && (
+    <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-9 top-1/2 -translate-y-1/2 pointer-events-none" />
+  )}
+  <ChevronDownIcon className="w-5 h-5 text-zinc-500 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+</div>
         </div>
 
         <label className="flex items-center gap-2 text-base text-zinc-700 -mt-2">
@@ -265,11 +319,16 @@ export default function RegisterPage() {
           Amount to pay: ₱{amount} (₱{FEE_PER_YEAR}/year — placeholder fee)
         </p>
 
+        {submitError && (
+          <p className="text-red-600 text-base">{submitError}</p>
+        )}
+
         <button
           type="submit"
-          className="rounded-lg bg-green-800 hover:bg-green-900 transition-colors text-white text-lg font-medium py-3.5 px-4 mt-2"
+          disabled={isSubmitting}
+          className="rounded-lg bg-green-800 hover:bg-green-900 transition-colors text-white text-lg font-medium py-3.5 px-4 mt-2 disabled:opacity-50"
         >
-          Next
+          {isSubmitting ? "Submitting..." : "Next"}
         </button>
       </form>
     </div>
