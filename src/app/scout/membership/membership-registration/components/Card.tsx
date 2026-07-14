@@ -1,7 +1,10 @@
+//src/app/scout/membership/membership-registration/components/Card.tsx
+
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { setPaymentProviderIdAction } from "@/app/actions/payment";
 
 export type CardBrand = "Mastercard" | "Visa";
 
@@ -9,9 +12,17 @@ type CardProps = {
   amount: number;
   description: string;
   brand: CardBrand;
+  registrationId: string;
+  paymentRecordId: string;
 };
 
-export default function Card({ amount, description, brand }: CardProps) {
+export default function Card({
+  amount,
+  description,
+  brand,
+  registrationId,
+  paymentRecordId,
+}: CardProps) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -39,6 +50,10 @@ export default function Card({ amount, description, brand }: CardProps) {
             currency: "PHP",
             description: description,
             statement_descriptor: "descriptor business name",
+            metadata: {
+              registrationId,
+              paymentRecordId,
+            },
           },
         },
       }),
@@ -48,7 +63,13 @@ export default function Card({ amount, description, brand }: CardProps) {
       setRawResponse(JSON.stringify(res, null, 2));
       return null;
     }
-    return res.body.data;
+
+    const intentData = res.body.data;
+    if (intentData?.id) {
+      await setPaymentProviderIdAction(paymentRecordId, intentData.id);
+    }
+
+    return intentData;
   };
 
   const createPaymentMethod = async () => {

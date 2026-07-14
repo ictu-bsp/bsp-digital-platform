@@ -1,6 +1,9 @@
+//src/app/scout/membership/membership-registration/components/EWallet.tsx
+
 "use client";
 
 import { useState } from "react";
+import { setPaymentProviderIdAction } from "@/app/actions/payment";
 
 export type WalletType = "gcash" | "grab_pay" | "paymaya" | "shopee_pay";
 
@@ -8,6 +11,8 @@ type EWalletProps = {
   amount: number;
   description: string;
   walletType: WalletType;
+  registrationId: string;
+  paymentRecordId: string;
 };
 
 const WALLET_LABELS: Record<WalletType, string> = {
@@ -20,7 +25,13 @@ const WALLET_LABELS: Record<WalletType, string> = {
 // gcash / grab_pay -> Source workflow. paymaya / shopee_pay -> Payment Intent workflow.
 const SOURCE_WORKFLOW_TYPES: WalletType[] = ["gcash", "grab_pay"];
 
-export default function EWallet({ amount, description, walletType }: EWalletProps) {
+export default function EWallet({
+  amount,
+  description,
+  walletType,
+  registrationId,
+  paymentRecordId,
+}: EWalletProps) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -54,6 +65,10 @@ export default function EWallet({ amount, description, walletType }: EWalletProp
             type: walletType, // "gcash" or "grab_pay"
             currency: "PHP",
             description: description,
+            metadata: {
+              registrationId,
+              paymentRecordId,
+            },
           },
         },
       }),
@@ -80,6 +95,10 @@ export default function EWallet({ amount, description, walletType }: EWalletProp
             currency: "PHP",
             description: description,
             statement_descriptor: "descriptor business name",
+            metadata: {
+              registrationId,
+              paymentRecordId,
+            },
           },
         },
       }),
@@ -89,7 +108,13 @@ export default function EWallet({ amount, description, walletType }: EWalletProp
       setRawResponse(JSON.stringify(res, null, 2));
       return null;
     }
-    return res.body.data;
+
+    const intentData = res.body.data;
+    if (intentData?.id) {
+      await setPaymentProviderIdAction(paymentRecordId, intentData.id);
+    }
+
+    return intentData;
   };
 
   const createPaymentMethod = async () => {
@@ -182,6 +207,7 @@ export default function EWallet({ amount, description, walletType }: EWalletProp
         setPaymentStatus("PayMongo rejected the request: " + JSON.stringify(source));
         return;
       }
+      await setPaymentProviderIdAction(paymentRecordId, source.data.id);
       localStorage.setItem("paymentTransactionId", source.data.id);
       localStorage.setItem("paymentMethodLabel", label);
       window.location.href = source.data.attributes.redirect.checkout_url;
