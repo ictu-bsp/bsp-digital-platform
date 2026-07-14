@@ -130,7 +130,7 @@ export default function EditProfileModal({
               {avatarUrl ? (
                 <img
                   src={`/${avatarUrl}`}
-                  alt="Avatar"
+                  alt="User Avatar"
                   className="h-full w-full object-cover"
                 />
               ) : (
