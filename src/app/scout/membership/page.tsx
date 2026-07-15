@@ -1,15 +1,24 @@
+//src/app/scout/membership/page.tsx
+
+import { redirect } from "next/navigation";
+
 import PageLayout from "../../components/PageLayout";
 import Link from "next/link";
 import Image from "next/image";
 
-const user = {
-  userName: "Juan",
-  userAvatarUrl: null,
-};
+import { getCurrentUser } from "@/lib/auth/current-user";
 
-export default function MembershipPage() {
+
+
+export default async function MembershipPage() {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
   return (
-    <PageLayout userName={user.userName} avatarUrl={user.userAvatarUrl ?? undefined}>
+    <PageLayout userName={user.firstName} avatarUrl={user.avatarUrl ?? undefined}>
       <div className="space-y-4 px-4 py-6">
         <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
           <div className="relative">

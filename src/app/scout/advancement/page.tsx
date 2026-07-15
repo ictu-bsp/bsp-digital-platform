@@ -1,12 +1,9 @@
-import Image from 'next/image';
 import Header from '../components/Header';
 import BottomNav from '../components/BottomNav';
 import AdvancementProgress from "../components/AdvancementProgress";
-
-const user = {
-  userName: 'Juan',
-  userAvatarUrl: null,
-};
+import { redirect } from "next/navigation";
+import Image from "next/image";
+import { getCurrentUser } from "@/lib/auth/current-user";
 
 const advancementOptions = [
   {
@@ -35,12 +32,18 @@ const advancementOptions = [
   },
 ];
 
-export default function AdvancementPage() {
+export default async function AdvancementPage() {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-white via-[#f7fdf8] to-[#e7f6ea] text-slate-950">
       <div className="mx-auto flex min-h-screen max-w-md flex-col">
         <div className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
-          <Header userName={user.userName} avatarUrl={user.userAvatarUrl ?? undefined} />
+          <Header userName={user.firstName} avatarUrl={user.avatarUrl ?? undefined} />
         </div>
 
         <div className="flex-1 overflow-y-auto pb-28">
