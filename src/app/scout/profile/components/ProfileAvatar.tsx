@@ -15,7 +15,7 @@ export default function ProfileAvatar({
         <div className="h-32 w-32 rounded-full bg-green-900 flex items-center justify-center shadow-md transition-all duration-200 group-hover:scale-105 group-hover:shadow-lg">
           {avatarUrl ? (
             <img
-              src={`/${avatarUrl}`}
+              src={avatarUrl}
               alt="User Avatar"
               className="h-full w-full rounded-full object-cover"
             />

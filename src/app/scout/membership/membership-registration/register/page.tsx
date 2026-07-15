@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { CheckCircleIcon, ChevronDownIcon, LockClosedIcon } from "@heroicons/react/24/solid";
-import { createRegistrationAction } from "@/app/actions/registrations";
+import { submitApplicationAction } from "@/app/actions/application";
 import { getCouncilsAction } from "@/app/actions/councils";
 
 const FEE_PER_YEAR = 100;
@@ -66,15 +66,27 @@ const [councilsLoading, setCouncilsLoading] = useState(true);
       ? "community_based"
       : sponsoringInstitution;
 
-    const result = await createRegistrationAction({
-      registrationYears: years,
-      scoutingPosition,
-      advancementRank,
-      tenure,
-      region,
-      sponsoringInstitution: resolvedSponsoringInstitution,
-      councilId,
-    });
+    const result = await submitApplicationAction({
+    councilId,
+
+    scoutingPosition,
+
+    advancementRank,
+
+    tenure: Number(tenure),
+
+    region,
+
+    communityBased: isCommunityBased,
+
+    sponsoringInstitution:
+        isCommunityBased
+            ? null
+            : sponsoringInstitution,
+
+    requestedRegistrationYears:
+        Number(membershipValidity),
+  });
 
     if (!result.success || !result.data) {
       setSubmitError(result.error ?? "Failed to create registration.");

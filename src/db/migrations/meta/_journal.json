@@ -29,6 +29,41 @@
       "when": 1784000409480,
       "tag": "0003_pretty_diamondback",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784087316985,
+      "tag": "0004_careful_sandman",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784099879234,
+      "tag": "0005_gigantic_king_cobra",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784100779332,
+      "tag": "0006_sudden_aaron_stack",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1784101457232,
+      "tag": "0007_numerous_gladiator",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1784106746060,
+      "tag": "0008_melodic_blue_blade",
+      "breakpoints": true
     }
   ]
 }

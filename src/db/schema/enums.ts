@@ -20,3 +20,34 @@ export const registrationStatusEnum = pgEnum("registration_status", [
   "expired",
   "cancelled",
 ]);
+
+export const scoutStatusEnum = pgEnum(
+  "scout_status",
+  [
+    "PENDING",
+    "ACTIVE",
+    "SUSPENDED",
+    "EXPIRED",
+  ]
+);
+
+export const scoutRankEnum = pgEnum(
+  "scout_rank",
+  [
+    "KID",
+    "KAB",
+    "BOY",
+    "SENIOR",
+    "ROVER",
+  ]
+);
+
+export const applicationStatusEnum = pgEnum(
+  "application_status",
+  [
+    "PENDING",
+    "APPROVED",
+    "REJECTED",
+    "CANCELLED",
+  ]
+);

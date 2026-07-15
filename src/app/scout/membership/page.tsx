@@ -1,15 +1,42 @@
-import PageLayout from "../../components/PageLayout";
+//src/app/scout/membership/page.tsx
+
 import Link from "next/link";
 import Image from "next/image";
+import { redirect } from "next/navigation";
+import PageLayout from "../../components/PageLayout";
+import { getCurrentUser } from "@/lib/auth/current-user";
+import { getApplicationByUser } from "@/services/application.service";
 
-const user = {
-  userName: "Juan",
-  userAvatarUrl: null,
-};
+export default async function MembershipPage() {
+  const user = await getCurrentUser();
 
-export default function MembershipPage() {
+  if (!user) {
+    redirect("/login");
+  }
+
+  const application = await getApplicationByUser(user.id);
+
+  const showMembershipCard =
+    user.role === "SCOUT" ||
+    user.role === "COUNCIL_ADMIN" ||
+    user.role === "SUPER_ADMIN";
+
+  const hasPendingApplication =
+    application?.status === "PENDING";
+
+  const hasRejectedApplication =
+    application?.status === "REJECTED";
+
+  const hasCancelledApplication =
+    application?.status === "CANCELLED";
+
+  const canApply =
+    !application ||
+    hasRejectedApplication ||
+    hasCancelledApplication;
+
   return (
-    <PageLayout userName={user.userName} avatarUrl={user.userAvatarUrl ?? undefined}>
+    <PageLayout userName={user.firstName} avatarUrl={user.avatarUrl ?? undefined}>
       <div className="space-y-4 px-4 py-6">
         <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
           <div className="relative">
@@ -21,6 +48,7 @@ export default function MembershipPage() {
                   </p>
                   <h2 className="text-lg font-semibold text-slate-900">Verified Member</h2>
                 </div>
+
                 <div className="rounded-full bg-green-900 px-3 py-1 text-xs font-semibold text-white">
                   VALID
                 </div>
@@ -35,9 +63,9 @@ export default function MembershipPage() {
                     height={32}
                     className="h-8 w-8 shrink-0 object-contain"
                   />
-                  <div className="text-[10px] font-semibold uppercase leading-tight text-slate-700">
-                    Boy Scouts of the Philippines
-                  </div>
+                    <div className="text-[10px] font-semibold uppercase leading-tight text-slate-700">
+                      Boy Scouts of the Philippines
+                    </div>
                 </div>
 
                 <div className="blur-[4px]">
@@ -47,7 +75,6 @@ export default function MembershipPage() {
                         <div className="h-full w-1/2 bg-red-600" />
                         <div className="h-full w-1/2 bg-blue-800" />
                       </div>
-
                       <div className="flex items-center gap-2">
                         <Image
                           src="/bsp-logo-with-bkg.svg"
@@ -141,21 +168,68 @@ export default function MembershipPage() {
               </div>
             </div>
 
-            <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[2px]">
-              <div className="w-full max-w-[280px] rounded-3xl border border-slate-200 bg-white/95 p-5 text-center shadow-xl">
-                <button className="w-full rounded-full bg-green-900 py-3 font-bold text-white transition hover:bg-green-800">
-                  <Link href="/scout/membership/membership-registration/agreement" className="text-white no-underline">
-                    Apply Membership
-                  </Link>
-                </button>
-                <p className="mt-3 text-center text-sm text-gray-700">
-                  Already a member?{' '}
-                  <Link href="/scout/membership/membership-verification" className="font-semibold text-green-700 underline hover:text-green-800">
-                    Click Here
-                  </Link>
-                </p>
+            {!showMembershipCard && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[2px]">
+                <div className="w-full max-w-[300px] rounded-3xl border border-slate-200 bg-white/95 p-5 text-center shadow-xl">
+                  {canApply && (
+                    <>
+                      {(hasRejectedApplication || hasCancelledApplication) && (
+                        <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4">
+                          <p className="font-bold text-red-700">
+                            {hasRejectedApplication
+                              ? "Application Rejected"
+                              : "Application Cancelled"}
+                          </p>
+
+                          <p className="mt-2 text-sm text-slate-600">
+                            You may submit another membership application.
+                          </p>
+                        </div>
+                      )}
+
+                      <Link
+                        href="/scout/membership/membership-registration/agreement"
+                        className="block w-full rounded-full bg-green-900 py-3 font-bold text-white transition hover:bg-green-800"
+                      >
+                        Apply Membership
+                      </Link>
+
+                      <p className="mt-3 text-center text-sm text-gray-700">
+                        Already a member?{" "}
+                        <Link
+                          href="/scout/membership/membership-verification"
+                          className="font-semibold text-green-700 underline hover:text-green-800"
+                        >
+                          Click Here
+                        </Link>
+                      </p>
+                    </>
+                  )}
+
+                  {hasPendingApplication && (
+                    <>
+                      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                        <p className="text-lg font-bold text-amber-700">
+                          Application Submitted
+                        </p>
+
+                        <p className="mt-2 text-sm text-slate-600">
+                          Your application has been forwarded to your selected council and
+                          is currently awaiting review.
+                        </p>
+                      </div>
+
+                      <button
+                        disabled
+                        className="mt-4 w-full cursor-not-allowed rounded-full bg-gray-400 py-3 font-bold text-white"
+                      >
+                        Awaiting Council Approval
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
+            )}  
           </div>
         </div>
       </div>

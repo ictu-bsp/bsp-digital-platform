@@ -52,6 +52,8 @@ export async function getCurrentUser(sessionId: string) {
     .from(users)
     .where(eq(users.id, session.userId));
 
+  console.log("USER FROM DB:", user);
+
   return user ?? null;
 }
 
