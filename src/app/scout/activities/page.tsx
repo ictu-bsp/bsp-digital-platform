@@ -1,5 +1,7 @@
 import ScoutingActivitiesScreen from './components/ScoutingActivitiesScreen';
 import type { Activity, FeaturedBanner } from '@/types/activities';
+import { getCurrentUser } from "@/lib/auth/current-user";
+import { redirect } from "next/navigation";
 
 const banners: FeaturedBanner[] = [
   { id: 'banner-1', imageUrl: '/placeholder-banner-1.svg', linkUrl: '#' },
@@ -37,11 +39,25 @@ const activities: Activity[] = [
   },
 ];
 
-export default function ActivitiesPage() {
+export default async function ActivitiesPage() {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const canViewActivities =
+  user.role === "SCOUT" ||
+  user.role === "COUNCIL_ADMIN" ||
+  user.role === "SUPER_ADMIN";
+
+  if (!canViewActivities) {
+    redirect("/scout/membership");
+  }
+
   return (
     <ScoutingActivitiesScreen
-      userName="Juan"
-      avatarUrl={undefined}
+      userName={user.firstName} avatarUrl={user.avatarUrl ?? undefined}
       banners={banners}
       activities={activities}
     />

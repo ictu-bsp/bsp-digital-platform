@@ -413,7 +413,34 @@ export async function getPendingRegistrations(): Promise<PendingRegistrationReco
   });
 }
 
-export async function approveRegistration(registrationId: string) {
+export async function approveRegistration(
+  registrationId: string
+) {
+  // Find the registration
+  const [registration] = await db
+    .select({
+      scoutId: registrations.scoutId,
+    })
+    .from(registrations)
+    .where(eq(registrations.id, registrationId));
+
+  if (!registration) {
+    throw new Error("Registration not found.");
+  }
+
+  // Find the scout
+  const [scout] = await db
+    .select({
+      userId: scouts.userId,
+    })
+    .from(scouts)
+    .where(eq(scouts.id, registration.scoutId));
+
+  if (!scout) {
+    throw new Error("Scout record not found.");
+  }
+
+  // Activate registration
   await db
     .update(registrations)
     .set({
@@ -421,6 +448,15 @@ export async function approveRegistration(registrationId: string) {
       updatedAt: new Date(),
     })
     .where(eq(registrations.id, registrationId));
+
+  // Promote user
+  await db
+    .update(users)
+    .set({
+      role: "SCOUT",
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, scout.userId));
 }
 
 export async function rejectRegistration(

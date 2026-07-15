@@ -10,7 +10,6 @@ import {
 
 import path from "path";
 import crypto from "crypto";
-import sharp from "sharp";
 
 import { getCurrentUser } from "@/lib/auth/current-user";
 
@@ -31,15 +30,15 @@ export async function POST(
           success: false,
           message: "Unauthorized.",
         },
-        { status: 401 }
+        {
+          status: 401,
+        }
       );
     }
 
-    const formData =
-      await request.formData();
+    const formData = await request.formData();
 
-    const file =
-      formData.get("avatar");
+    const file = formData.get("avatar");
 
     if (!(file instanceof File)) {
       return NextResponse.json(
@@ -47,7 +46,9 @@ export async function POST(
           success: false,
           message: "No file uploaded.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
@@ -55,61 +56,45 @@ export async function POST(
       return NextResponse.json(
         {
           success: false,
-          message:
-            "Only image uploads are allowed.",
+          message: "Only image uploads are allowed.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
-    const previousAvatar =
-      await getAvatar(user.id);
+    const previousAvatar = await getAvatar(user.id);
 
-    const bytes =
-      await file.arrayBuffer();
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
 
-    const buffer =
-      Buffer.from(bytes);
-
-    const optimizedImage =
-      await sharp(buffer)
-        .resize(512, 512, {
-          fit: "cover",
-          position: "centre",
-        })
-        .webp({
-          quality: 85,
-        })
-        .toBuffer();
+    const extension =
+      path.extname(file.name) || ".png";
 
     const filename =
-      `${crypto.randomUUID()}.webp`;
+      `${crypto.randomUUID()}${extension}`;
 
-    const uploadFolder =
-      path.join(
-        process.cwd(),
-        "public",
-        "uploads",
-        "avatars"
-      );
+    const uploadFolder = path.join(
+      process.cwd(),
+      "public",
+      "uploads",
+      "avatars"
+    );
 
     await mkdir(uploadFolder, {
       recursive: true,
     });
 
-    const filePath =
-      path.join(
-        uploadFolder,
-        filename
-      );
-
-    await writeFile(
-      filePath,
-      optimizedImage
+    const filePath = path.join(
+      uploadFolder,
+      filename
     );
 
+    await writeFile(filePath, buffer);
+
     const avatarUrl =
-      `/public/uploads/avatars/${filename}`;
+      `/uploads/avatars/${filename}`;
 
     await updateAvatar(
       user.id,
@@ -118,15 +103,15 @@ export async function POST(
 
     if (previousAvatar) {
       try {
-        await unlink(
-          path.join(
-            process.cwd(),
-            "public",
-            previousAvatar
-          )
+        const oldAvatar = path.join(
+          process.cwd(),
+          "public",
+          previousAvatar.replace(/^\/+/, "")
         );
+
+        await unlink(oldAvatar);
       } catch {
-        // Ignore missing files.
+        // Ignore if the old file doesn't exist.
       }
     }
 
@@ -140,8 +125,7 @@ export async function POST(
     return NextResponse.json(
       {
         success: false,
-        message:
-          "Failed to upload avatar.",
+        message: "Failed to upload avatar.",
       },
       {
         status: 500,
