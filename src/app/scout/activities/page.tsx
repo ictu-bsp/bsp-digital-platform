@@ -45,6 +45,16 @@ export default async function ActivitiesPage() {
   if (!user) {
     redirect("/login");
   }
+
+  const canViewActivities =
+  user.role === "SCOUT" ||
+  user.role === "COUNCIL_ADMIN" ||
+  user.role === "SUPER_ADMIN";
+
+  if (!canViewActivities) {
+    redirect("/scout/membership");
+  }
+
   return (
     <ScoutingActivitiesScreen
       userName={user.firstName} avatarUrl={user.avatarUrl ?? undefined}

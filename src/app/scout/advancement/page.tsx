@@ -39,6 +39,15 @@ export default async function AdvancementPage() {
     redirect("/login");
   }
 
+  const canViewAdvancement =
+  user.role === "SCOUT" ||
+  user.role === "COUNCIL_ADMIN" ||
+  user.role === "SUPER_ADMIN";
+
+  if (!canViewAdvancement) {
+    redirect("/scout/membership");
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-white via-[#f7fdf8] to-[#e7f6ea] text-slate-950">
       <div className="mx-auto flex min-h-screen max-w-md flex-col">
