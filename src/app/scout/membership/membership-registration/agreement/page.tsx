@@ -1,3 +1,5 @@
+//src/app/scout/membership/membership-registration/agreement/page.tsx
+
 "use client";
 
 import { useState } from "react";

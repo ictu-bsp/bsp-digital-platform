@@ -3,11 +3,13 @@
 import { redirect } from "next/navigation";
 
 import Header from "./components/Header";
-import PromoCarousel, {
-  PromoBanner,
-} from "./components/PromoCarousel";
-import DashboardGrid from "./components/DashboardGrid";
 import BottomNav from "./components/BottomNav";
+import ActivitySection from "./components/ActivitySection";
+import ProgressSection from "./components/ProgressSection";
+import NotificationSection from "./components/NotificationSection";
+import AnnouncementSection from "./components/AnnouncementSection";
+import PromoCarousel, { PromoBanner, } from "./components/PromoCarousel";
+
 
 import { getCurrentUser } from "@/lib/auth/current-user";
 
@@ -15,43 +17,31 @@ const promoBanners: PromoBanner[] = [
   {
     id: "banner-1",
     backgroundColor: "#daf5e7",
-    linkUrl: "/scout?promo=1",
+    linkUrl: "#",
     label: "",
   },
   {
     id: "banner-2",
     backgroundColor: "#e7f2df",
-    linkUrl: "/scout?promo=2",
+    linkUrl: "#",
     label: "",
   },
   {
     id: "banner-3",
     backgroundColor: "#d7f0fc",
-    linkUrl: "/scout?promo=3",
+    linkUrl: "#",
     label: "",
   },
   {
     id: "banner-4",
     backgroundColor: "#f1f8e7",
-    linkUrl: "/scout?promo=4",
+    linkUrl: "#",
     label: "",
   },
   {
     id: "banner-5",
     backgroundColor: "#e9f6ea",
-    linkUrl: "/scout?promo=5",
-    label: "",
-  },
-  {
-    id: "banner-6",
-    backgroundColor: "#dff4f9",
-    linkUrl: "/scout?promo=6",
-    label: "",
-  },
-  {
-    id: "banner-7",
-    backgroundColor: "#e8f8ea",
-    linkUrl: "/scout?promo=7",
+    linkUrl: "#",
     label: "",
   },
 ];
@@ -63,11 +53,16 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
+  const isScout =
+    user.role === "SCOUT" ||
+    user.role === "COUNCIL_ADMIN" ||
+    user.role === "SUPER_ADMIN";
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-white via-[#f7fdf8] to-[#e7f6ea] text-slate-950">
       <div className="mx-auto flex min-h-screen max-w-md flex-col">
 
-        <div className="flex-1 w-full pb-28">
+        <div className="flex-1 pb-28">
 
           <Header
             userName={user.firstName}
@@ -78,7 +73,21 @@ export default async function DashboardPage() {
             banners={promoBanners}
           />
 
-          <DashboardGrid />
+          <NotificationSection
+            role={user.role}
+          />
+
+          <AnnouncementSection
+            role={user.role}
+          />
+
+          <ActivitySection
+            role={user.role}
+          />
+
+          {isScout && (
+            <ProgressSection />
+          )}
 
         </div>
 
