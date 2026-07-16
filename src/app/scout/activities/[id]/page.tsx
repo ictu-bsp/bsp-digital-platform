@@ -3,6 +3,9 @@ import BottomNav from '@/app/scout/components/BottomNav';
 import ActivityMetaBadges from '@/app/scout/activities/components/ActivityMetaBadges';
 import JoinButton from '@/app/(public)/components/JoinButton';
 import type { ActivityDetail, PageProps } from '@/types/activity-details';
+import { getCurrentUser } from '@/lib/auth/current-user';
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
 const activities: ActivityDetail[] = [
   {
@@ -44,6 +47,12 @@ const activities: ActivityDetail[] = [
 ];
 
 export default async function ActivityDetailPage({ params }: PageProps) {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    redirect('/login');
+  }
+
   const { id } = await params;
   const activity = activities.find((item) => item.id === id);
 
@@ -51,7 +60,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
     return (
       <main className="min-h-screen bg-gradient-to-b from-white via-[#f7fdf8] to-[#e7f6ea] text-slate-900">
         <div className="mx-auto flex min-h-screen max-w-md flex-col">
-          <Header userName="Juan" avatarUrl={undefined} />
+          <Header userName={user.firstName} avatarUrl={user.avatarUrl ?? undefined} />
           <div className="flex-1 px-4 py-6">
             <p className="text-sm text-slate-600">Activity not found.</p>
           </div>
@@ -64,10 +73,18 @@ export default async function ActivityDetailPage({ params }: PageProps) {
   return (
     <main className="min-h-screen bg-gradient-to-b from-white via-[#f7fdf8] to-[#e7f6ea] text-slate-900">
       <div className="mx-auto flex min-h-screen max-w-md flex-col">
-        <Header userName="Juan" avatarUrl={undefined} />
+        <Header userName={user.firstName} avatarUrl={user.avatarUrl ?? undefined} />
 
         <div className="flex-1 overflow-y-auto pb-28">
           <div className="space-y-5 px-4 py-4">
+            <Link
+              href="/scout/activities"
+              className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-2 text-sm font-semibold text-emerald-800 shadow-sm"
+            >
+              <span aria-hidden="true">←</span>
+              Back to activities
+            </Link>
+
             <p className="text-sm font-semibold uppercase tracking-[0.3em] text-green-700">
               Scouting Activities
             </p>
