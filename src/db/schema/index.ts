@@ -12,3 +12,5 @@ export * from "./enums";
 export * from "./sessions";
 export * from "./email-verifications";
 export * from "./pending-user-registrations";
+export * from "./announcements";
+export * from "./scoutApplications";

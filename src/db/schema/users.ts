@@ -31,6 +31,18 @@ export const users = pgTable("users", {
 
   gender: text("gender").notNull(),
 
+  role: text("role")
+  .$type<
+    | "VISITOR"
+    | "SCOUT"
+    | "COUNCIL_ADMIN"
+    | "SUPER_ADMIN"
+  >()
+  .default("VISITOR")
+  .notNull(),
+
+  avatarUrl: text("avatar_url"),
+
   createdAt: timestamp("created_at")
     .defaultNow()
     .notNull(),

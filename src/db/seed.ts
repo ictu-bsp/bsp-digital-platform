@@ -1,8 +1,10 @@
+import { Pool } from "pg";
+import * as dotenv from "dotenv";
+import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-import { users, councils } from "./schema";
+import { users } from "./schema";
 import { hashPassword } from "../lib/auth/hash";
-import * as dotenv from "dotenv";
 
 dotenv.config({ path: ".env.local" });
 
@@ -15,6 +17,9 @@ const pool = new Pool({
 });
 
 const db = drizzle(pool);
+
+// Tell TypeScript exactly what a new user looks like.
+type NewUser = typeof users.$inferInsert;
 
 async function main() {
   console.log("🌱 Seeding database...");
@@ -32,38 +37,90 @@ async function main() {
     await db.insert(councils).values({ name }).onConflictDoNothing();
   }
 
-  // Clear existing users
-  await db.delete(users);
+  // Reset database
+  await db.execute(sql`
+    TRUNCATE TABLE
+      scouts,
+      users,
+      councils,
+      sessions,
+      scout_registrations
+    RESTART IDENTITY CASCADE;
+  `);
 
-  const defaultPassword = await hashPassword("Password123!");
+  //Seed Councils
 
-  await db.insert(users).values({
-    email: "rjd.testscout1@bsp.ph",
-    passwordHash: defaultPassword,
-    firstName: "Reuben Jonn",
-    middleName: null,
-    lastName: "De Las Alas",
-    gender: "male",
-    birthdate: new Date("2003-06-02"),
-  });
+  const councilNames = [
+    "Abra Council",
+    "Agusan Council",
+    "Albay Council",
+    "Baguio Council",
+    "Batangas Council",
+    "Benguet Council",
+    "Bohol Council",
+    "Bulacan Council",
+    "Cagayan Council",
+    "Camarines Norte Council",
+    "Camarines Sur Council",
+    "Cavite Council",
+    "Cebu Council",
+    "Davao Council",
+    "Iloilo Council",
+    "Laguna Council",
+    "Leyte Council",
+    "Manila Council",
+    "Marikina Council",
+    "Makati Council",
+    "Negros Occidental Council",
+    "Nueva Ecija Council",
+    "Palawan Council",
+    "Pampanga Council",
+    "Pasig Council",
+    "Quezon City Council",
+    "Rizal Council",
+    "Tacloban Council",
+    "Taguig Council",
+    "Zambales Council",
+  ];
 
-  await db.insert(users).values({
-    email: "mjs.testscout2@bsp.ph",
-    passwordHash: defaultPassword,
-    firstName: "Marc James",
-    middleName: null,
-    lastName: "Santos",
-    gender: "male",
-    birthdate: new Date("2004-05-29"),
-  });
+  await db.insert(councils).values(
+    councilNames.map((name) => ({ name }))
+  );
 
-  console.log("Database seeded successfully.");
+  console.log(`✅ Seeded ${councilNames.length} councils.`);
+
+  // Seed Users
+
+  const passwordHash = await hashPassword("Password123$");
+
+  await db.insert(users).values([
+    {
+      email: "rjd.testscout1@bsp.ph",
+      passwordHash: defaultPassword,
+      firstName: "Reuben Jonn",
+      middleName: null,
+      lastName: "De Las Alas",
+      birthdate: new Date("2003-06-02"),
+    },
+    {
+      email: "mjs.testscout2@bsp.ph",
+      passwordHash: defaultPassword,
+      firstName: "Marc James",
+      middleName: null,
+      lastName: "Santos",
+      birthdate: new Date("2004-05-29"),
+    },
+  ]);
+
+  console.log("✅ Database seeded successfully.");
 
   await pool.end();
 }
 
-main().catch(async (err) => {
-  console.error(err);
+main().catch(async (error) => {
+  console.error(error);
+
   await pool.end();
+
   process.exit(1);
 });
