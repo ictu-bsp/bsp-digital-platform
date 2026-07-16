@@ -1,16 +1,6 @@
 // src/types/activities.ts
 
 export type ActivityCategory =
-  | "CAMPING"
-  | "TRAINING"
-  | "COMMUNITY_SERVICE"
-  | "SEMINAR"
-  | "COMPETITION"
-  | "CEREMONY"
-  | "MEETING"
-  | "OTHER";
-
-export type ActivityScope =
   | "COUNCIL"
   | "REGIONAL"
   | "NATIONAL";
@@ -31,8 +21,6 @@ export interface Activity {
 
   // Classification
   category: ActivityCategory;
-
-  scope: ActivityScope;
 
   councilId?: string | null;
   

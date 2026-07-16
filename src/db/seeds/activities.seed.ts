@@ -27,8 +27,7 @@ export async function seedActivities(
       title: "2026 National Summer Camping",
       description:
         "A week-long outdoor camping experience focusing on survival skills, teamwork, and leadership.",
-      category: "CAMPING",
-      scope: "NATIONAL",
+      category: "NATIONAL",
       councilId: null,
       location: "Mt. Makiling, Laguna",
       startDate: new Date("2026-05-04T08:00:00"),
@@ -44,8 +43,7 @@ export async function seedActivities(
       title: "Scout Leadership Training",
       description:
         "Leadership and troop management training for aspiring patrol leaders and senior scouts.",
-      category: "TRAINING",
-      scope: "NATIONAL",
+      category: "NATIONAL",
       councilId: null,
       location: "BSP National Office, Manila",
       startDate: new Date("2026-06-06T09:00:00"),
@@ -61,8 +59,7 @@ export async function seedActivities(
       title: "Community Tree Planting Drive",
       description:
         "Join fellow scouts in restoring local forests through tree planting and environmental conservation.",
-      category: "COMMUNITY_SERVICE",
-      scope: "COUNCIL",
+      category: "COUNCIL",
       councilId: councilMap["Quezon City Council"],
       location: "Quezon Memorial Circle",
       startDate: new Date("2026-07-18T07:00:00"),
@@ -78,8 +75,7 @@ export async function seedActivities(
       title: "Youth Development Seminar",
       description:
         "Guest speakers discuss youth leadership, ethics, and civic responsibility.",
-      category: "SEMINAR",
-      scope: "NATIONAL",
+      category: "NATIONAL",
       councilId: null,
       location: "SMX Convention Center",
       startDate: new Date("2026-08-15T09:00:00"),
@@ -95,8 +91,7 @@ export async function seedActivities(
       title: "Regional Scout Skills Competition",
       description:
         "Compete in pioneering, knot tying, first aid, navigation, and emergency preparedness.",
-      category: "COMPETITION",
-      scope: "REGIONAL",
+      category: "REGIONAL",
       councilId: null,
       location: "Clark Parade Grounds",
       startDate: new Date("2026-09-05T08:00:00"),
@@ -112,8 +107,7 @@ export async function seedActivities(
       title: "Scout Investiture Ceremony",
       description:
         "Formal ceremony welcoming newly registered scouts into the organization.",
-      category: "CEREMONY",
-      scope: "NATIONAL",
+      category: "NATIONAL",
       councilId: null,
       location: "BSP Headquarters",
       startDate: new Date("2026-10-03T14:00:00"),
@@ -129,8 +123,7 @@ export async function seedActivities(
       title: "Council Monthly Meeting",
       description:
         "Monthly planning meeting for council officers and troop leaders.",
-      category: "MEETING",
-      scope: "COUNCIL",
+      category: "COUNCIL",
       councilId: councilMap["Manila Council"],
       location: "Manila Council Office",
       startDate: new Date("2026-11-14T09:00:00"),
@@ -146,8 +139,7 @@ export async function seedActivities(
       title: "Scout Fellowship Day",
       description:
         "A day of games, fellowship, exhibitions, and cultural performances for all scouts.",
-      category: "OTHER",
-      scope: "COUNCIL",
+      category: "COUNCIL",
       councilId: councilMap["Rizal Council"],
       location: "Rizal Park",
       startDate: new Date("2026-12-12T08:00:00"),
