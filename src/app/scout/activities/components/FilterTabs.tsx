@@ -6,14 +6,9 @@ import type { FilterTabsProps } from "@/types/activities";
 
 const filters = [
   { value: "all", label: "All" },
-  { value: "CAMPING", label: "Camping" },
-  { value: "TRAINING", label: "Training" },
-  { value: "COMMUNITY_SERVICE", label: "Community Service" },
-  { value: "SEMINAR", label: "Seminar" },
-  { value: "COMPETITION", label: "Competition" },
-  { value: "CEREMONY", label: "Ceremony" },
-  { value: "MEETING", label: "Meeting" },
-  { value: "OTHER", label: "Other" },
+  { value: "NATIONAL", label: "NATIONAL" },
+  { value: "REGIONAL", label: "REGIONAL" },
+  { value: "COUNCIL", label: "COUNCIL" },
 ] as const;
 
 export default function FilterTabs({

@@ -2,7 +2,7 @@
 
 import { users } from "./users";
 import { councils } from "./councils";
-import { activityCategoryEnum, activityScopeEnum, } from "./enums";
+import { activityCategoryEnum } from "./enums";
 import { boolean, integer, pgTable, text, timestamp, uuid, } from "drizzle-orm/pg-core";
 
 export const activities = pgTable("activities", {
@@ -28,10 +28,6 @@ export const activities = pgTable("activities", {
   // Classification
 
   category: activityCategoryEnum("category").notNull(),
-
-  scope: activityScopeEnum("scope")
-    .default("COUNCIL")
-    .notNull(),
 
   councilId: uuid("council_id")
     .references(() => councils.id),
