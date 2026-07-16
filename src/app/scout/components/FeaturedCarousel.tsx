@@ -28,13 +28,13 @@ export default function FeaturedCarousel({ banners }: FeaturedCarouselProps) {
   }
 
   const slides = [
-    { id: 'blank-0', bgClass: 'bg-emerald-200', dotClass: 'bg-emerald-700' },
-    { id: 'blank-1', bgClass: 'bg-blue-200', dotClass: 'bg-blue-700' },
-    { id: 'blank-2', bgClass: 'bg-amber-200', dotClass: 'bg-amber-700' },
-    { id: 'blank-3', bgClass: 'bg-rose-200', dotClass: 'bg-rose-700' },
-    { id: 'blank-4', bgClass: 'bg-violet-200', dotClass: 'bg-violet-700' },
-    { id: 'blank-5', bgClass: 'bg-sky-200', dotClass: 'bg-sky-700' },
-    { id: 'blank-6', bgClass: 'bg-lime-200', dotClass: 'bg-lime-700' },
+    { id: 'blank-0', bgClass: 'bg-[linear-gradient(135deg,_#d9f5e6_0%,_#a7f3d0_100%)]', dotClass: 'bg-emerald-700' },
+    { id: 'blank-1', bgClass: 'bg-[linear-gradient(135deg,_#ecfdf5_0%,_#bbf7d0_100%)]', dotClass: 'bg-green-700' },
+    { id: 'blank-2', bgClass: 'bg-[linear-gradient(135deg,_#f0fdf4_0%,_#86efac_100%)]', dotClass: 'bg-emerald-800' },
+    { id: 'blank-3', bgClass: 'bg-[linear-gradient(135deg,_#dcfce7_0%,_#4ade80_100%)]', dotClass: 'bg-green-800' },
+    { id: 'blank-4', bgClass: 'bg-[linear-gradient(135deg,_#e6ffef_0%,_#34d399_100%)]', dotClass: 'bg-emerald-900' },
+    { id: 'blank-5', bgClass: 'bg-[linear-gradient(135deg,_#f7fee7_0%,_#bef264_100%)]', dotClass: 'bg-lime-700' },
+    { id: 'blank-6', bgClass: 'bg-[linear-gradient(135deg,_#eefcf3_0%,_#6ee7b7_100%)]', dotClass: 'bg-teal-700' },
   ];
   const dots = Array.from({ length: 3 }, (_, index) => index);
 
