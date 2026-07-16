@@ -51,3 +51,14 @@ export const applicationStatusEnum = pgEnum(
     "CANCELLED",
   ]
 );
+
+export const activityCategoryEnum = pgEnum("activity_category", [
+  "CAMPING",
+  "TRAINING",
+  "COMMUNITY_SERVICE",
+  "SEMINAR",
+  "COMPETITION",
+  "CEREMONY",
+  "MEETING",
+  "OTHER",
+]);

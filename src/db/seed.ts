@@ -113,7 +113,7 @@ async function main() {
       email: "grd.testscout3@bsp.ph",
       passwordHash,
       firstName: "Giuliano",
-      middleName: "Ramos",
+      middleName: "Regis",
       lastName: "De Guzman",
       suffix: null,
       birthdate: new Date("2002-10-27"),
