@@ -62,3 +62,9 @@ export const activityCategoryEnum = pgEnum("activity_category", [
   "MEETING",
   "OTHER",
 ]);
+
+export const activityScopeEnum = pgEnum("activity_scope", [
+  "COUNCIL",
+  "REGIONAL",
+  "NATIONAL",
+]);

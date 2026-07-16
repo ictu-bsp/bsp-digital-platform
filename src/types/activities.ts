@@ -1,17 +1,53 @@
+// src/types/activities.ts
+
+export type ActivityCategory =
+  | "CAMPING"
+  | "TRAINING"
+  | "COMMUNITY_SERVICE"
+  | "SEMINAR"
+  | "COMPETITION"
+  | "CEREMONY"
+  | "MEETING"
+  | "OTHER";
+
+export type ActivityScope =
+  | "COUNCIL"
+  | "REGIONAL"
+  | "NATIONAL";
+
 export interface Activity {
   id: string;
+
+  // Basic Information
   title: string;
+  description: string;
+
+  // Schedule
   startDate: string;
   endDate: string;
+
+  // Location
   location: string;
-  category: 'national' | 'regional' | 'council';
-  thumbnailColor: string;
-  badgeImageUrl?: string;
+
+  // Classification
+  category: ActivityCategory;
+
+  scope: ActivityScope;
+
+  councilId?: string | null;
+  
+  // Media
+  imageUrl?: string | null;
+
+  // Audit
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface FeaturedBanner {
   id: string;
-  imageUrl?: string;
+  title: string;
+  imageUrl?: string | null;
   linkUrl?: string;
 }
 
@@ -25,13 +61,13 @@ export interface FeaturedCarouselProps {
 }
 
 export interface FilterTabsProps {
-  activeFilter: string;
-  onFilterChange: (filter: string) => void;
+  activeFilter: ActivityCategory | "all";
+  onFilterChange: (filter: ActivityCategory | "all") => void;
 }
 
 export interface ActivityListProps {
   activities: Activity[];
-  activeFilter: string;
+  activeFilter: ActivityCategory | "all";
 }
 
 export interface ActivityCardProps {
