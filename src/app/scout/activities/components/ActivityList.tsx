@@ -1,3 +1,5 @@
+//src/app/scout/activities/components/ActivityList.tsx
+
 import ActivityCard from '../components/ActivityCard';
 import type { ActivityListProps } from '@/types/activities';
 

@@ -1,12 +1,14 @@
+//src/app/scout/activities/components/ScoutingActivitiesScreen.tsx
+
 'use client';
 
 import { useState } from 'react';
-import ActivityList from '../components/ActivityList';
-import BottomNav from '../../components/BottomNav';
-import FeaturedCarousel from '../../components/FeaturedCarousel';
-import FilterTabs from '../components/FilterTabs';
 import Header from '../../components/Header';
-import type { Activity, FeaturedBanner } from '@/types/activities';
+import FilterTabs from '../components/FilterTabs';
+import BottomNav from '../../components/BottomNav';
+import ActivityList from '../components/ActivityList';
+import FeaturedCarousel from '../../components/FeaturedCarousel';
+import type { Activity, ActivityCategory, FeaturedBanner, } from "@/types/activities";
 
 interface ScoutingActivitiesScreenProps {
   userName: string;
@@ -21,7 +23,7 @@ export default function ScoutingActivitiesScreen({
   banners,
   activities,
 }: ScoutingActivitiesScreenProps) {
-  const [activeFilter, setActiveFilter] = useState<string>('all');
+  const [activeFilter, setActiveFilter] = useState<ActivityCategory | "all">("all");
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-white via-[#f7fdf8] to-[#e7f6ea] text-slate-950">

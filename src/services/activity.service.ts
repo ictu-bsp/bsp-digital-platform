@@ -1,3 +1,5 @@
+//src/services/activity.service.ts
+
 import { db } from "@/db";
 import { activities } from "@/db/schema/activities";
 import { desc, eq } from "drizzle-orm";
@@ -11,7 +13,7 @@ export async function getActivities() {
 export async function getPublishedActivities() {
   return db.query.activities.findMany({
     where: eq(activities.isPublished, true),
-    orderBy: desc(activities.startDate),
+    orderBy: desc(activities.createdAt),
   });
 }
 
