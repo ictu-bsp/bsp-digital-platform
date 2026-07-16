@@ -56,6 +56,7 @@ export interface FilterTabsProps {
 export interface ActivityListProps {
   activities: Activity[];
   activeFilter: ActivityCategory | "all";
+  emptyMessage?: string;
 }
 
 export interface ActivityCardProps {
