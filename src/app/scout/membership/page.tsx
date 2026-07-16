@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import PageLayout from "../../components/PageLayout";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { getApplicationByUser } from "@/services/application.service";
+import PendingStatusPoller from "./PendingStatusPoller";
 
 export default async function MembershipPage() {
   const user = await getCurrentUser();
@@ -16,24 +17,17 @@ export default async function MembershipPage() {
 
   const application = await getApplicationByUser(user.id);
 
-  const showMembershipCard =
-    user.role === "SCOUT" ||
-    user.role === "COUNCIL_ADMIN" ||
-    user.role === "SUPER_ADMIN";
+  // Approved → this page's job is done, go straight to the real card.
+  if (application?.status === "APPROVED") {
+    redirect("/scout/membership/verified-member");
+  }
 
-  const hasPendingApplication =
-    application?.status === "PENDING";
-
-  const hasRejectedApplication =
-    application?.status === "REJECTED";
-
-  const hasCancelledApplication =
-    application?.status === "CANCELLED";
+  const hasPendingApplication = application?.status === "PENDING";
+  const hasRejectedApplication = application?.status === "REJECTED";
+  const hasCancelledApplication = application?.status === "CANCELLED";
 
   const canApply =
-    !application ||
-    hasRejectedApplication ||
-    hasCancelledApplication;
+    !application || hasRejectedApplication || hasCancelledApplication;
 
   return (
     <PageLayout userName={user.firstName} avatarUrl={user.avatarUrl ?? undefined}>
@@ -50,7 +44,7 @@ export default async function MembershipPage() {
                 </div>
 
                 <div className="rounded-full bg-green-900 px-3 py-1 text-xs font-semibold text-white">
-                  VALID
+                  PENDING
                 </div>
               </div>
 
@@ -68,6 +62,10 @@ export default async function MembershipPage() {
                     </div>
                 </div>
 
+                {/* This card is always blurred here — this page is a status
+                    gate only. The real, unblurred card lives on
+                    /scout/membership/verified-member, which this page
+                    redirects to once the application is APPROVED. */}
                 <div className="blur-[4px]">
                   <div className="w-full aspect-[1.58/1] [perspective:1000px]">
                     <div className="relative h-full w-full rounded-2xl border border-gray-200 bg-[#F1F7EC] p-4 shadow-md overflow-hidden flex flex-col justify-between pl-9">
@@ -95,7 +93,7 @@ export default async function MembershipPage() {
                           Membership Card
                         </h3>
                         <span className="text-[7px] font-bold text-blue-900 uppercase">
-                          Valid Until: June 25, 2027
+                          Valid Until: —
                         </span>
                       </div>
 
@@ -103,21 +101,21 @@ export default async function MembershipPage() {
                         <div className="col-span-2 space-y-2 text-[10px] pb-1">
                           <div className="flex flex-col">
                             <span className="font-bold text-blue-900 border-b border-blue-900/40 pb-0.5 leading-none">
-                              Dela Cruz, Lebron James D.
+                              —
                             </span>
                             <span className="text-[5px] text-gray-400 uppercase font-bold tracking-tight pt-0.5">Name</span>
                           </div>
 
                           <div className="flex flex-col">
                             <span className="font-bold text-blue-900 border-b border-blue-900/40 pb-0.5 leading-none">
-                              Senior Scout
+                              —
                             </span>
                             <span className="text-[5px] text-gray-400 uppercase font-bold tracking-tight pt-0.5">Designation</span>
                           </div>
 
                           <div className="flex flex-col">
                             <span className="font-bold text-blue-900 border-b border-blue-900/40 pb-0.5 leading-none">
-                              Camarines Sur Council
+                              —
                             </span>
                             <span className="text-[5px] text-gray-400 uppercase font-bold tracking-tight pt-0.5">Council</span>
                           </div>
@@ -146,7 +144,7 @@ export default async function MembershipPage() {
                           </div>
                         </div>
                         <div className="text-right font-serif text-sm font-bold text-red-600 tracking-tight leading-none">
-                          № <span className="tracking-normal">09109090</span>
+                          № <span className="tracking-normal">—</span>
                         </div>
                       </div>
                     </div>
@@ -161,75 +159,88 @@ export default async function MembershipPage() {
                       Membership Status
                     </p>
                     <p className="mt-2 text-4xl font-black tracking-[0.25em] text-slate-900">
-                      VALID
+                      PENDING
                     </p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {!showMembershipCard && (
-              <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[2px]">
-                <div className="w-full max-w-[300px] rounded-3xl border border-slate-200 bg-white/95 p-5 text-center shadow-xl">
-                  {canApply && (
-                    <>
-                      {(hasRejectedApplication || hasCancelledApplication) && (
-                        <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4">
-                          <p className="font-bold text-red-700">
-                            {hasRejectedApplication
-                              ? "Application Rejected"
-                              : "Application Cancelled"}
-                          </p>
-
-                          <p className="mt-2 text-sm text-slate-600">
-                            You may submit another membership application.
-                          </p>
-                        </div>
-                      )}
-
-                      <Link
-                        href="/scout/membership/membership-registration/agreement"
-                        className="block w-full rounded-full bg-green-900 py-3 font-bold text-white transition hover:bg-green-800"
-                      >
-                        Apply Membership
-                      </Link>
-
-                      <p className="mt-3 text-center text-sm text-gray-700">
-                        Already a member?{" "}
-                        <Link
-                          href="/scout/membership/membership-verification"
-                          className="font-semibold text-green-700 underline hover:text-green-800"
-                        >
-                          Click Here
-                        </Link>
-                      </p>
-                    </>
-                  )}
-
-                  {hasPendingApplication && (
-                    <>
-                      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-                        <p className="text-lg font-bold text-amber-700">
-                          Application Submitted
+            <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[2px]">
+              <div className="w-full max-w-[300px] rounded-3xl border border-slate-200 bg-white/95 p-5 text-center shadow-xl">
+                {canApply && (
+                  <>
+                    {hasRejectedApplication && (
+                      <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4">
+                        <p className="font-bold text-red-700">
+                          Application Rejected
                         </p>
 
                         <p className="mt-2 text-sm text-slate-600">
-                          Your application has been forwarded to your selected council and
-                          is currently awaiting review.
+                          Your payment has been refunded. You may submit
+                          another membership application.
                         </p>
                       </div>
+                    )}
 
-                      <button
-                        disabled
-                        className="mt-4 w-full cursor-not-allowed rounded-full bg-gray-400 py-3 font-bold text-white"
+                    {hasCancelledApplication && (
+                      <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4">
+                        <p className="font-bold text-red-700">
+                          Application Cancelled
+                        </p>
+
+                        <p className="mt-2 text-sm text-slate-600">
+                          You may submit another membership application.
+                        </p>
+                      </div>
+                    )}
+
+                    <Link
+                      href="/scout/membership/membership-registration/agreement"
+                      className="block w-full rounded-full bg-green-900 py-3 font-bold text-white transition hover:bg-green-800"
+                    >
+                      {hasRejectedApplication || hasCancelledApplication
+                        ? "Apply Again"
+                        : "Apply Membership"}
+                    </Link>
+
+                    <p className="mt-3 text-center text-sm text-gray-700">
+                      Already a member?{" "}
+                      <Link
+                        href="/scout/membership/membership-verification"
+                        className="font-semibold text-green-700 underline hover:text-green-800"
                       >
-                        Awaiting Council Approval
-                      </button>
-                    </>
-                  )}
-                </div>
+                        Click Here
+                      </Link>
+                    </p>
+                  </>
+                )}
+
+                {hasPendingApplication && (
+                  <>
+                    <PendingStatusPoller />
+
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                      <p className="text-lg font-bold text-amber-700">
+                        Application Submitted
+                      </p>
+
+                      <p className="mt-2 text-sm text-slate-600">
+                        Your application has been forwarded to your selected
+                        council and is currently awaiting review.
+                      </p>
+                    </div>
+
+                    <button
+                      disabled
+                      className="mt-4 w-full cursor-not-allowed rounded-full bg-gray-400 py-3 font-bold text-white"
+                    >
+                      Awaiting Council Approval
+                    </button>
+                  </>
+                )}
               </div>
-            )}  
+            </div>
           </div>
         </div>
       </div>
