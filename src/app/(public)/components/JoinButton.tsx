@@ -1,26 +1,55 @@
-'use client';
+//src/app/(public)/components/JoinButton.tsx
 
-import { useState } from 'react';
-import type { JoinButtonProps } from '@/types/activity-details';
+"use client";
 
-export default function JoinButton({ activityId }: JoinButtonProps) {
-  const [loading, setLoading] = useState(false);
+import Link from "next/link";
 
-  const handleJoin = async () => {
-    setLoading(true);
-    await new Promise((resolve) => window.setTimeout(resolve, 800));
-    setLoading(false);
-    console.info(`Joined activity ${activityId}`);
-  };
+interface JoinButtonProps {
+  activityId: string;
+  registrationDeadline?: Date | string | null;
+  alreadyJoined?: boolean;
+}
 
+export default function JoinButton({
+  activityId,
+  registrationDeadline,
+  alreadyJoined = false,
+}: JoinButtonProps) {
+  const registrationClosed =
+    registrationDeadline != null &&
+    new Date(registrationDeadline) < new Date();
+
+  // Scout has already joined
+  if (alreadyJoined) {
+    return (
+      <button
+        disabled
+        className="w-full cursor-default rounded-xl bg-blue-700 px-4 py-3 text-base font-semibold text-white"
+      >
+        ✓ Joined
+      </button>
+    );
+  }
+
+  // Registration period is over
+  if (registrationClosed) {
+    return (
+      <button
+        disabled
+        className="w-full cursor-not-allowed rounded-xl bg-gray-500 px-4 py-3 text-base font-semibold text-white"
+      >
+        Closed
+      </button>
+    );
+  }
+
+  // Registration still open
   return (
-    <button
-      type="button"
-      onClick={handleJoin}
-      className="w-full rounded-2xl bg-green-900 px-5 py-3 text-center text-base font-semibold text-white shadow-sm transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-70"
-      disabled={loading}
+    <Link
+      href={`/scout/activities/${activityId}/join`}
+      className="block w-full rounded-xl bg-emerald-700 px-4 py-3 text-center text-base font-semibold text-white transition hover:bg-emerald-800"
     >
-      {loading ? 'Joining...' : 'Join'}
-    </button>
+      Join
+    </Link>
   );
 }
