@@ -7,7 +7,7 @@ import { scouts } from "@/db/schema/scouts";
 import { registrations } from "@/db/schema/scout-registrations";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { councils } from "@/db/schema/councils";
-
+//
 // ─────────────────────────────────────────────────────────────
 // PLACEHOLDER — BSP's real Membership ID sequencing scheme
 // (Proposal 1: Region/Local Council–Based Series, e.g. "01-01-0001")
