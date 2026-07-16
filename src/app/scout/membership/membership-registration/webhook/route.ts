@@ -1,4 +1,4 @@
-// src/app/payments/webhook/route.ts
+//src/app/scout/membership/membership-registration/webhook/route.ts
 
 import { NextResponse } from "next/server";
 import { verifyScoutPayment } from "@/app/actions/scouts";

@@ -2,6 +2,9 @@
 
 import { db } from "@/db";
 import { count, eq, inArray } from "drizzle-orm";
+import { desc } from "drizzle-orm";
+import { scoutApplications } from "@/db/schema";
+import { generateMembershipNumber } from "@/services/application.service";
 
 import {
   scouts,
@@ -149,7 +152,7 @@ export async function getAllScouts(): Promise<AdminScoutRecord[]> {
     .select({
       id: scouts.id,
       userId: scouts.userId,
-      scoutIdNumber: scouts.scoutIdNumber,
+      scoutIdNumber: scouts.membershipNumber,
 
       firstName: users.firstName,
       lastName: users.lastName,
@@ -177,7 +180,7 @@ export async function getCouncilScouts(
     .select({
       id: scouts.id,
       userId: scouts.userId,
-      scoutIdNumber: scouts.scoutIdNumber,
+      scoutIdNumber: scouts.membershipNumber,
 
       firstName: users.firstName,
       lastName: users.lastName,
@@ -206,7 +209,7 @@ export async function getScoutById(
     .select({
       id: scouts.id,
       userId: scouts.userId,
-      scoutIdNumber: scouts.scoutIdNumber,
+      scoutIdNumber: scouts.membershipNumber,
 
       firstName: users.firstName,
       lastName: users.lastName,
@@ -298,7 +301,7 @@ export async function getPendingRegistrations(): Promise<PendingRegistrationReco
     .select({
       id: registrations.id,
       scoutId: registrations.scoutId,
-      scoutIdNumber: scouts.scoutIdNumber,
+      scoutIdNumber: scouts.membershipNumber,
 
       firstName: users.firstName,
       lastName: users.lastName,
@@ -428,10 +431,12 @@ export async function approveRegistration(
     throw new Error("Registration not found.");
   }
 
-  // Find the scout
+  // Find the scout (need membershipNumber too, for retainment check)
   const [scout] = await db
     .select({
+      id: scouts.id,
       userId: scouts.userId,
+      membershipNumber: scouts.membershipNumber,
     })
     .from(scouts)
     .where(eq(scouts.id, registration.scoutId));
@@ -457,6 +462,44 @@ export async function approveRegistration(
       updatedAt: new Date(),
     })
     .where(eq(users.id, scout.userId));
+
+  // Mark the scout verified/active and assign a membership number,
+  // retaining any existing one (e.g. renewal approvals shouldn't
+  // issue a new number).
+  const membershipNumber =
+    scout.membershipNumber ?? (await generateMembershipNumber());
+
+  await db
+    .update(scouts)
+    .set({
+      status: "ACTIVE",
+      verificationStatus: "active",
+      membershipNumber,
+      approvedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(scouts.id, scout.id));
+
+  // Mirror the approval onto the scout's latest scoutApplications row,
+  // if one exists — this is what the membership card / unblur logic
+  // on /scout/membership actually reads from.
+  const [latestApplication] = await db
+    .select({ id: scoutApplications.id })
+    .from(scoutApplications)
+    .where(eq(scoutApplications.userId, scout.userId))
+    .orderBy(desc(scoutApplications.createdAt))
+    .limit(1);
+
+  if (latestApplication) {
+    await db
+      .update(scoutApplications)
+      .set({
+        status: "APPROVED",
+        reviewedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(scoutApplications.id, latestApplication.id));
+  }
 }
 
 export async function rejectRegistration(
@@ -464,7 +507,10 @@ export async function rejectRegistration(
   feedback: string
 ) {
   const [existing] = await db
-    .select({ remarks: registrations.remarks })
+    .select({
+      remarks: registrations.remarks,
+      scoutId: registrations.scoutId,
+    })
     .from(registrations)
     .where(eq(registrations.id, registrationId));
 
@@ -487,6 +533,37 @@ export async function rejectRegistration(
       updatedAt: new Date(),
     })
     .where(eq(registrations.id, registrationId));
+
+  // Mirror the rejection onto the scout's latest scoutApplications row,
+  // if one exists, so /scout/membership shows the rejected state
+  // instead of staying stuck on "PENDING" indefinitely.
+  if (existing?.scoutId) {
+    const [scout] = await db
+      .select({ userId: scouts.userId })
+      .from(scouts)
+      .where(eq(scouts.id, existing.scoutId));
+
+    if (scout) {
+      const [latestApplication] = await db
+        .select({ id: scoutApplications.id })
+        .from(scoutApplications)
+        .where(eq(scoutApplications.userId, scout.userId))
+        .orderBy(desc(scoutApplications.createdAt))
+        .limit(1);
+
+      if (latestApplication) {
+        await db
+          .update(scoutApplications)
+          .set({
+            status: "REJECTED",
+            remarks: feedback,
+            reviewedAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .where(eq(scoutApplications.id, latestApplication.id));
+      }
+    }
+  }
 }
 
 export async function assignAdministratorRole(

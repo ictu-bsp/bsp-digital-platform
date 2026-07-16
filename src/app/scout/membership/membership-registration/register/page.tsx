@@ -1,3 +1,5 @@
+//src/app/scout/membership/membership-registration/register/page.tsx
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -86,6 +88,16 @@ const [councilsLoading, setCouncilsLoading] = useState(true);
 
     requestedRegistrationYears:
         Number(membershipValidity),
+
+    bloodType: localStorage.getItem("personalBloodType") ?? "",
+    address: localStorage.getItem("personalAddress") ?? "",
+    telephone: localStorage.getItem("personalTelephone") ?? "",
+    emergencyContactName:
+        localStorage.getItem("personalEmergencyContactName") ?? "",
+    emergencyContactRelationship:
+        localStorage.getItem("personalEmergencyContactRelationship") ?? "",
+    emergencyContactNumber:
+        localStorage.getItem("personalEmergencyContactNumber") ?? "",
   });
 
     if (!result.success || !result.data) {
@@ -143,15 +155,19 @@ localStorage.setItem("paymentCouncilId", councilId);
             1
           </span>
           <span>|</span>
+          <span className="w-8 h-8 rounded-full border-2 border-green-800 flex items-center justify-center">
+            2
+          </span>
+          <span>|</span>
           <span className="flex items-center gap-2 bg-green-800 text-white rounded-full px-4 py-1.5">
             <span className="w-6 h-6 rounded-full bg-white text-green-800 flex items-center justify-center text-sm font-semibold">
-              2
+              3
             </span>
             Scout Information
           </span>
           <span>|</span>
           <span className="w-8 h-8 rounded-full border-2 border-green-800 flex items-center justify-center">
-            3
+            4
           </span>
         </div>
 

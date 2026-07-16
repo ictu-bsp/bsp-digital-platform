@@ -12,7 +12,7 @@ export default function AgreementPage() {
 
   const onNext = () => {
     if (!agreed) return;
-    router.push("/scout/membership/membership-registration/register");
+    router.push("/scout/membership/membership-registration/personal-info");
   };
 
   return (
@@ -52,6 +52,10 @@ export default function AgreementPage() {
           <span>|</span>
           <span className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 border-green-800 flex items-center justify-center">
             3
+          </span>
+          <span>|</span>
+          <span className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 border-green-800 flex items-center justify-center">
+            4
           </span>
         </div>
 

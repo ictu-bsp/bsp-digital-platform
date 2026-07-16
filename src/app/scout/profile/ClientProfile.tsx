@@ -28,10 +28,16 @@ interface ProfileClientProps {
     gender: string;
     avatarUrl?: string | null;
   };
+  membershipData: MembershipData;
 }
+
+type MembershipData = Awaited<
+  ReturnType<typeof import("@/services/application.service").getMembershipCardData>
+>;
 
 export default function ProfileClient({
   user,
+  membershipData,
 }: ProfileClientProps) {
   const router = useRouter();
 
@@ -47,7 +53,8 @@ export default function ProfileClient({
   const [profile, setProfile] =
     useState(user);
 
-  const membershipStatus = false;
+  const membershipStatus =
+    membershipData?.scout.verificationStatus === "active";
 
   const fullName = [
     profile.firstName,
@@ -91,6 +98,7 @@ export default function ProfileClient({
 
           <MembershipCta
             membershipStatus={membershipStatus}
+            membershipData={membershipData}
           />
 
           <EditProfileButton
