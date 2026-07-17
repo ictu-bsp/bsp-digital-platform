@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { setPaymentProviderIdAction } from "@/app/actions/payment";
+import { verifyScoutPayment } from "@/app/actions/scouts";
 
 type QRPayProps = {
   amount: number;
@@ -153,6 +154,15 @@ export default function QRPay({
 
         if (data.attributes.status === "succeeded") {
           setStatus("Payment Success");
+
+          // Mark the payment record as paid in the DB — without this,
+          // admin's membership-review page never sees this registration
+          // because it only shows registrations with a "paid" payment.
+          const verifyResult = await verifyScoutPayment(paymentRecordId, "paid");
+          if (!verifyResult.success) {
+            console.error("Failed to mark payment as paid:", verifyResult.error);
+          }
+
           localStorage.setItem("paymentTransactionId", paymentIntentId);
           localStorage.setItem("paymentMethodLabel", "QR Ph");
           router.push("/scout/membership/membership-registration/success?status=success");

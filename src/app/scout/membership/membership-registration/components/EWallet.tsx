@@ -4,6 +4,7 @@
 
 import { useState } from "react";
 import { setPaymentProviderIdAction } from "@/app/actions/payment";
+import { verifyScoutPayment } from "@/app/actions/scouts";
 
 export type WalletType = "gcash" | "grab_pay" | "paymaya" | "shopee_pay";
 
@@ -179,11 +180,19 @@ export default function EWallet({
           setPaymentStatus(`Redirecting to ${label}...`);
           localStorage.setItem("paymentIntentClientKey", paymentIntent.attributes.client_key);
           localStorage.setItem("paymentMethodLabel", label);
+          localStorage.setItem("paymentRecordId", paymentRecordId);
           window.location.href = paymentIntent.attributes.next_action.redirect.url;
         } else if (status === "succeeded") {
           // Rare case: PayMongo confirmed the payment immediately, with
           // no redirect to Maya/ShopeePay needed.
           setPaymentStatus("Payment Success");
+
+          verifyScoutPayment(paymentRecordId, "paid").then((verifyResult) => {
+            if (!verifyResult.success) {
+              console.error("Failed to mark payment as paid:", verifyResult.error);
+            }
+          });
+
           localStorage.setItem("paymentTransactionId", intent.id);
           localStorage.setItem("paymentMethodLabel", label);
           window.location.href = "/scout/membership/membership-registration/success?status=success";

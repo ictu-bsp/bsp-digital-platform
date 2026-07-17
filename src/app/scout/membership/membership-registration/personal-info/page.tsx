@@ -21,15 +21,35 @@ const fieldShellClass = (filled: boolean) =>
       : "border-zinc-300 bg-white text-zinc-400"
   }`;
 
+// Strips anything that isn't a digit, then caps length at 11
+// (PH mobile format: 09XXXXXXXXX). Used on phone-type fields only.
+const digitsOnly = (value: string) => value.replace(/\D/g, "").slice(0, 11);
+
+// Reads a previously-saved value back out of localStorage so that
+// navigating back into this step mid-flow doesn't wipe what the user
+// already typed. Guarded for SSR since localStorage doesn't exist
+// server-side (useState initializers can run during the initial
+// render, so this must be safe to call in both environments).
+const readSaved = (key: string) => {
+  if (typeof window === "undefined") return "";
+  return localStorage.getItem(key) ?? "";
+};
+
 export default function PersonalInfoPage() {
   const router = useRouter();
 
-  const [bloodType, setBloodType] = useState("");
-  const [address, setAddress] = useState("");
-  const [telephone, setTelephone] = useState("");
-  const [emergencyContactName, setEmergencyContactName] = useState("");
-  const [emergencyContactRelationship, setEmergencyContactRelationship] = useState("");
-  const [emergencyContactNumber, setEmergencyContactNumber] = useState("");
+  const [bloodType, setBloodType] = useState(() => readSaved("personalBloodType"));
+  const [address, setAddress] = useState(() => readSaved("personalAddress"));
+  const [telephone, setTelephone] = useState(() => readSaved("personalTelephone"));
+  const [emergencyContactName, setEmergencyContactName] = useState(() =>
+    readSaved("personalEmergencyContactName")
+  );
+  const [emergencyContactRelationship, setEmergencyContactRelationship] = useState(() =>
+    readSaved("personalEmergencyContactRelationship")
+  );
+  const [emergencyContactNumber, setEmergencyContactNumber] = useState(() =>
+    readSaved("personalEmergencyContactNumber")
+  );
 
   const onNext = (event: React.FormEvent) => {
     event.preventDefault();
@@ -136,16 +156,23 @@ export default function PersonalInfoPage() {
         {/* Telephone Number */}
         <div className="relative">
           <input
-            placeholder="Telephone Number"
+            placeholder="Telephone Number (e.g. 09171234567)"
+            inputMode="numeric"
+            maxLength={11}
             className={`${fieldShellClass(telephone !== "")} pl-4 pr-10`}
             value={telephone}
-            onChange={(e) => setTelephone(e.target.value)}
+            onChange={(e) => setTelephone(digitsOnly(e.target.value))}
             required
           />
           {telephone !== "" && (
             <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
           )}
         </div>
+        {telephone !== "" && telephone.length < 11 && (
+          <p className="text-xs text-amber-600 -mt-3">
+            Enter a full 11-digit number (e.g. 09171234567)
+          </p>
+        )}
 
         <hr className="my-2" />
         <label className="block text-lg font-medium -mb-2">
@@ -184,10 +211,12 @@ export default function PersonalInfoPage() {
           {/* Emergency Contact Number */}
           <div className="relative">
             <input
-              placeholder="Contact Number"
+              placeholder="Contact Number (e.g. 09171234567)"
+              inputMode="numeric"
+              maxLength={11}
               className={`${fieldShellClass(emergencyContactNumber !== "")} pl-4 pr-10`}
               value={emergencyContactNumber}
-              onChange={(e) => setEmergencyContactNumber(e.target.value)}
+              onChange={(e) => setEmergencyContactNumber(digitsOnly(e.target.value))}
               required
             />
             {emergencyContactNumber !== "" && (

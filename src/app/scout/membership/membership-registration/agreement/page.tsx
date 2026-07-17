@@ -2,13 +2,45 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
 export default function AgreementPage() {
   const router = useRouter();
   const [agreed, setAgreed] = useState(false);
+
+  // Reaching this page means the user is starting a fresh application —
+  // clear out anything left over from a previous attempt (whether they
+  // finished, abandoned mid-payment, or got rejected) so stale personal
+  // info / registration details never leak into a new submission.
+  useEffect(() => {
+    const wizardKeys = [
+      "personalBloodType",
+      "personalAddress",
+      "personalTelephone",
+      "personalEmergencyContactName",
+      "personalEmergencyContactRelationship",
+      "personalEmergencyContactNumber",
+      "registerScoutingPosition",
+      "registerAdvancementRank",
+      "registerTenure",
+      "registerRegion",
+      "registerCouncilId",
+      "registerIsCommunityBased",
+      "registerSponsoringInstitution",
+      "registerMembershipValidity",
+      "registrationId",
+      "paymentAmount",
+      "paymentDescription",
+      "paymentYears",
+      "paymentCouncil",
+      "paymentCouncilId",
+      "paymentIsCommunityBased",
+      "paymentSponsoringInstitution",
+    ];
+    wizardKeys.forEach((key) => localStorage.removeItem(key));
+  }, []);
 
   const onNext = () => {
     if (!agreed) return;

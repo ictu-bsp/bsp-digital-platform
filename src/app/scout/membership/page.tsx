@@ -5,7 +5,10 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import PageLayout from "../../components/PageLayout";
 import { getCurrentUser } from "@/lib/auth/current-user";
-import { getApplicationByUser } from "@/services/application.service";
+import {
+  getApplicationByUser,
+  getMembershipCardData,
+} from "@/services/application.service";
 import PendingStatusPoller from "./PendingStatusPoller";
 
 export default async function MembershipPage() {
@@ -16,18 +19,33 @@ export default async function MembershipPage() {
   }
 
   const application = await getApplicationByUser(user.id);
+  const cardData = await getMembershipCardData(user.id);
 
-  // Approved → this page's job is done, go straight to the real card.
-  if (application?.status === "APPROVED") {
+  // An application can say APPROVED while the underlying scout record no
+  // longer exists (e.g. permanently deleted via the admin roster for
+  // testing). Only trust APPROVED if there's still a live, active scout
+  // record backing it — otherwise this would redirect to
+  // verified-member, which would bounce right back here.
+  const hasActiveScout =
+    cardData !== null && cardData.scout.verificationStatus === "active";
+
+  // Approved â†’ this page's job is done, go straight to the real card.
+  if (application?.status === "APPROVED" && hasActiveScout) {
     redirect("/scout/membership/verified-member");
   }
+
+  const isOrphanedApproval =
+    application?.status === "APPROVED" && !hasActiveScout;
 
   const hasPendingApplication = application?.status === "PENDING";
   const hasRejectedApplication = application?.status === "REJECTED";
   const hasCancelledApplication = application?.status === "CANCELLED";
 
   const canApply =
-    !application || hasRejectedApplication || hasCancelledApplication;
+    !application ||
+    hasRejectedApplication ||
+    hasCancelledApplication ||
+    isOrphanedApproval;
 
   return (
     <PageLayout userName={user.firstName} avatarUrl={user.avatarUrl ?? undefined}>

@@ -374,46 +374,57 @@ export async function getPendingRegistrations(): Promise<PendingRegistrationReco
     }
   }
 
-  return pendingRecords.map((record) => {
-    let extraDetails: PendingRegistrationRecord["extraDetails"] = {};
+  return pendingRecords
+    .filter((record) => {
+      // Only show registrations that have actually been paid for.
+      // A "pending" registration row is created as soon as the user
+      // finishes the Register step, before they've picked a payment
+      // method or paid anything — so without this filter, admins would
+      // see every abandoned/mid-payment attempt as if it were a
+      // completed application awaiting review.
+      const bestPayment = bestPaymentByRegId.get(record.id);
+      return bestPayment?.paymentStatus === "paid";
+    })
+    .map((record) => {
+      let extraDetails: PendingRegistrationRecord["extraDetails"] = {};
 
-    if (record.remarks) {
-      try {
-        extraDetails = JSON.parse(record.remarks);
-      } catch {
-        extraDetails = {};
+      if (record.remarks) {
+        try {
+          extraDetails = JSON.parse(record.remarks);
+        } catch {
+          extraDetails = {};
+        }
       }
-    }
 
-    const bestPayment = bestPaymentByRegId.get(record.id);
+      const bestPayment = bestPaymentByRegId.get(record.id);
 
-    return {
-      id: record.id,
-      scoutId: record.scoutId,
-      scoutIdNumber: record.scoutIdNumber,
+      return {
+        id: record.id,
+        scoutId: record.scoutId,
+        scoutIdNumber: record.scoutIdNumber,
 
-      fullName: `${record.lastName}, ${record.firstName}`,
-      email: record.email,
-      birthdate: record.birthdate,
-      gender: record.gender,
+        fullName: `${record.lastName}, ${record.firstName}`,
+        email: record.email,
+        birthdate: record.birthdate,
+        gender: record.gender,
 
-      council: record.council,
+        council: record.council,
 
-      registrationYears: record.registrationYears,
-      startDate: record.startDate,
-      endDate: record.endDate,
-      status: record.status,
+        registrationYears: record.registrationYears,
+        startDate: record.startDate,
+        endDate: record.endDate,
+        status: record.status,
 
-      isExistingScout: activeScoutIds.has(record.scoutId),
+        isExistingScout: activeScoutIds.has(record.scoutId),
 
-      paymentStatus: bestPayment?.paymentStatus ?? null,
-      paymentIntentId: bestPayment?.paymentIntentId ?? null,
+        paymentStatus: bestPayment?.paymentStatus ?? null,
+        paymentIntentId: bestPayment?.paymentIntentId ?? null,
 
-      extraDetails,
+        extraDetails,
 
-      createdAt: record.createdAt,
-    };
-  });
+        createdAt: record.createdAt,
+      };
+    });
 }
 
 export async function approveRegistration(
