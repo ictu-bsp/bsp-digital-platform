@@ -5,13 +5,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import ProfileHeader from "./components/ProfileHeader";
+import Header from "../components/Header";
+import BottomNav from "../components/BottomNav";
 import ProfileAvatar from "./components/ProfileAvatar";
 import UserInfoCard from "./components/UserInfoCard";
 import AccountInformationCard from "./components/AccountInformationCard";
 import MembershipCta from "./components/MembershipCta";
 import EditProfileButton from "./components/EditProfileButton";
-import ProfileBottomNav from "./components/ProfileBottomNav";
 
 import VerifyPasswordModal from "./components/VerifyPasswordModal";
 import EditProfileModal from "./components/EditProfileModal";
@@ -70,49 +70,42 @@ export default function ProfileClient({
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="mx-auto flex min-h-screen max-w-md flex-col bg-white">
-
-        <ProfileHeader
-          onLogout={handleLogout}
-        />
-
-        <div className="flex-1 overflow-y-auto pb-24">
-
-          <ProfileAvatar
-            avatarUrl={
-              profile.avatarUrl ?? null
-            }
+    <main className="min-h-screen bg-gradient-to-b from-white via-[#f7fdf8] to-[#e7f6ea] text-slate-950">
+      <div className="mx-auto flex min-h-screen max-w-md flex-col">
+        <div className="flex-1 pb-28">
+          <Header
+            userName={profile.firstName}
+            avatarUrl={profile.avatarUrl ?? undefined}
           />
 
-          <UserInfoCard
-            status="Visitor"
-            name={fullName}
-          />
+          <div className="overflow-y-auto px-4 py-4 sm:px-5">
+            <ProfileAvatar
+              avatarUrl={profile.avatarUrl ?? null}
+            />
 
-          <AccountInformationCard
-            email={profile.email}
-            birthdate={profile.birthdate}
-            gender={profile.gender}
-          />
+            <UserInfoCard
+              status="Visitor"
+              name={fullName}
+            />
 
-          <MembershipCta
-            membershipStatus={membershipStatus}
-            membershipData={membershipData}
-          />
+            <AccountInformationCard
+              email={profile.email}
+              birthdate={profile.birthdate}
+              gender={profile.gender}
+            />
 
-          <EditProfileButton
-            onClick={() =>
-              setShowPasswordModal(true)
-            }
-          />
+            <MembershipCta
+              membershipStatus={membershipStatus}
+              membershipData={membershipData}
+            />
 
+            <EditProfileButton
+              onClick={() => setShowPasswordModal(true)}
+            />
+          </div>
         </div>
 
-        <ProfileBottomNav
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
+        <BottomNav />
 
         {showPasswordModal && (
           <VerifyPasswordModal
