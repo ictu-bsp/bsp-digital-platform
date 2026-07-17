@@ -1,7 +1,7 @@
 import Header from '../components/Header';
 import BottomNav from '../components/BottomNav';
-import RankSelector from '../components/RankSelector';
-import MeritBadgeList from '../components/MeritBadgeList';
+import RankSelector from './components/RankSelector';
+import MeritBadgeList from './components/MeritBadgeList';
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/current-user";
 

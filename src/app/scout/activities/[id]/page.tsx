@@ -1,79 +1,85 @@
-import Header from '@/app/scout/components/Header';
-import BottomNav from '@/app/scout/components/BottomNav';
-import ActivityMetaBadges from '@/app/scout/activities/components/ActivityMetaBadges';
-import JoinButton from '@/app/(public)/components/JoinButton';
-import type { ActivityDetail, PageProps } from '@/types/activity-details';
-import { getCurrentUser } from '@/lib/auth/current-user';
-import Link from 'next/link';
-import { redirect } from 'next/navigation';
+// src/app/scout/activities/[id]/page.tsx
 
-const activities: ActivityDetail[] = [
-  {
-    id: 'activity-1',
-    title: 'aaa',
-    description:
-      'aaa',
-    startDate: 'aaa',
-    endDate: 'aaa',
-    location: 'aaa',
-    cost: 'aaa',
-    status: 'upcoming',
-    logoUrl: 'aaa',
-  },
-  {
-    id: 'activity-2',
-    title: 'aaa',
-    description:
-      'aaa',
-    startDate: 'aaa',
-    endDate: 'aaa',
-    location: 'aaa',
-    cost: 'aaa',
-    status: 'upcoming',
-    logoUrl: 'aaa',
-  },
-  {
-    id: 'activity-3',
-    title: 'aaa',
-    description:
-      'aaa',
-    startDate: 'aaa',
-    endDate: 'aaa',
-    location: 'aaa',
-    cost: 'aaa',
-    status: 'upcoming',
-    logoUrl: '/placeholder-banner-3.svg',
-  },
-];
+import Link from "next/link";
+import { redirect } from "next/navigation";
 
-export default async function ActivityDetailPage({ params }: PageProps) {
+import Header from "@/app/scout/components/Header";
+import BottomNav from "@/app/scout/components/BottomNav";
+import JoinButton from "@/app/(public)/components/JoinButton";
+import ActivityMetaBadges from "@/app/scout/activities/components/ActivityMetaBadges";
+
+import { getCurrentUser } from "@/lib/auth/current-user";
+import { getActivityById } from "@/services/activity.service";
+import {
+  getScoutByUserId,
+  isScoutRegistered,
+} from "@/services/activity-registration.service";
+
+import type { PageProps } from "@/types/activity-details";
+
+export default async function ActivityDetailPage({
+  params,
+}: PageProps) {
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect('/login');
+    redirect("/login");
   }
 
   const { id } = await params;
-  const activity = activities.find((item) => item.id === id);
 
+  // Get activity first
+  const activity = await getActivityById(id);
+
+  // Activity doesn't exist
   if (!activity) {
     return (
       <main className="min-h-screen bg-gradient-to-b from-white via-[#f7fdf8] to-[#e7f6ea] text-slate-900">
         <div className="mx-auto flex min-h-screen max-w-md flex-col">
-          <Header userName={user.firstName} avatarUrl={user.avatarUrl ?? undefined} />
+          <Header
+            userName={user.firstName}
+            avatarUrl={user.avatarUrl ?? undefined}
+          />
+
           <div className="flex-1 px-4 py-6">
-            <p className="text-sm text-slate-600">Activity not found.</p>
+            <p className="text-sm text-slate-600">
+              Activity not found.
+            </p>
           </div>
+
           <BottomNav />
         </div>
       </main>
     );
   }
 
+  // Get scout profile
+  const scout = await getScoutByUserId(user.id);
+
+  // User isn't a scout yet
+  if (!scout) {
+    redirect("/scout/membership");
+  }
+
+  // Safe to check registration now
+  const alreadyJoined = await isScoutRegistered(
+    scout.id,
+    activity.id
+  );
+
+  const formatDate = (date: Date) =>
+    date.toLocaleString("en-PH", {
+      dateStyle: "long",
+      timeStyle: "short",
+    });
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-white via-[#f7fdf8] to-[#e7f6ea] text-slate-900">
       <div className="mx-auto flex min-h-screen max-w-md flex-col">
-        <Header userName={user.firstName} avatarUrl={user.avatarUrl ?? undefined} />
+        <Header
+          userName={user.firstName}
+          avatarUrl={user.avatarUrl ?? undefined}
+        />
 
         <div className="flex-1 overflow-y-auto pb-28">
           <div className="space-y-5 px-4 py-4">
@@ -95,21 +101,33 @@ export default async function ActivityDetailPage({ params }: PageProps) {
 
             <div className="flex flex-col gap-6 lg:flex-row">
               <div className="flex-1 space-y-4">
-                <p className="text-sm leading-7 text-slate-700">{activity.description}</p>
+                <p className="text-sm leading-7 text-slate-700">
+                  {activity.description}
+                </p>
+
                 <ActivityMetaBadges
-                  startDate={activity.startDate}
-                  endDate={activity.endDate}
+                  startDate={formatDate(activity.startDate)}
+                  endDate={
+                    activity.endDate
+                      ? formatDate(activity.endDate)
+                      : undefined
+                  }
                   location={activity.location}
-                  cost={activity.cost}
-                  status={activity.status}
+                  cost="Free"
+                  registrationDeadline={
+                    activity.registrationDeadline?.toISOString()
+                  }
                 />
               </div>
 
               <div className="flex items-center justify-center">
                 <div className="flex h-32 w-32 items-center justify-center rounded-xl border-[10px] border-emerald-200 bg-emerald-100 shadow-inner">
                   <img
-                    src={activity.logoUrl}
-                    alt={`${activity.title} logo`}
+                    src={
+                      activity.imageUrl ??
+                      "/placeholder-banner-1.svg"
+                    }
+                    alt={activity.title}
                     className="h-20 w-20 rounded-xl object-cover"
                   />
                 </div>
@@ -117,7 +135,11 @@ export default async function ActivityDetailPage({ params }: PageProps) {
             </div>
 
             <div className="pt-2">
-              <JoinButton activityId={activity.id} />
+              <JoinButton
+                activityId={activity.id}
+                registrationDeadline={activity.registrationDeadline}
+                alreadyJoined={alreadyJoined}
+              />
             </div>
           </div>
         </div>

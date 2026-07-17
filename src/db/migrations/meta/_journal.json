@@ -22,6 +22,20 @@
       "when": 1784179266361,
       "tag": "0002_serious_kid_colt",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784186099759,
+      "tag": "0003_last_banshee",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784190132884,
+      "tag": "0004_dear_tana_nile",
+      "breakpoints": true
     }
   ]
 }

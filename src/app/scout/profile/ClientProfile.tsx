@@ -1,4 +1,4 @@
-//src/app/scout/profile/ClientProfile.tsx
+// src/app/scout/profile/ClientProfile.tsx
 
 "use client";
 
@@ -16,6 +16,12 @@ import EditProfileButton from "./components/EditProfileButton";
 import VerifyPasswordModal from "./components/VerifyPasswordModal";
 import EditProfileModal from "./components/EditProfileModal";
 
+type MembershipData = Awaited<
+  ReturnType<
+    typeof import("@/services/application.service").getMembershipCardData
+  >
+>;
+
 interface ProfileClientProps {
   user: {
     id: string;
@@ -30,10 +36,6 @@ interface ProfileClientProps {
   };
   membershipData: MembershipData;
 }
-
-type MembershipData = Awaited<
-  ReturnType<typeof import("@/services/application.service").getMembershipCardData>
->;
 
 export default function ProfileClient({
   user,
@@ -54,7 +56,13 @@ export default function ProfileClient({
     useState(user);
 
   const membershipStatus =
-    membershipData?.scout.verificationStatus === "active";
+    membershipData?.scout?.verificationStatus === "active";
+
+  const status = membershipData?.scout
+    ? membershipStatus
+      ? "Scout"
+      : "Pending Verification"
+    : "Visitor";
 
   const fullName = [
     profile.firstName,
@@ -72,6 +80,7 @@ export default function ProfileClient({
   return (
     <main className="min-h-screen bg-gradient-to-b from-white via-[#f7fdf8] to-[#e7f6ea] text-slate-950">
       <div className="mx-auto flex min-h-screen max-w-md flex-col">
+<<<<<<< HEAD
         <div className="flex-1 pb-28">
           <Header
             userName={profile.firstName}
@@ -82,6 +91,27 @@ export default function ProfileClient({
             <ProfileAvatar
               avatarUrl={profile.avatarUrl ?? null}
             />
+=======
+
+        <ProfileHeader
+          onLogout={handleLogout}
+        />
+
+        <div className="flex-1 pb-28">
+          
+          <div className="space-y-5 px-1 py-5">
+
+          <ProfileAvatar
+            avatarUrl={
+              profile.avatarUrl ?? null
+            }
+          />
+
+          <UserInfoCard
+            status={status}
+            name={fullName}
+          />
+>>>>>>> f209ae8ae7678bf27b649bcc0898e830ee481d71
 
             <UserInfoCard
               status="Visitor"
@@ -135,7 +165,7 @@ export default function ProfileClient({
             }}
           />
         )}
-
+        </div>
       </div>
     </main>
   );

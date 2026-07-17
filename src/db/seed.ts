@@ -9,6 +9,8 @@ import * as schema from "./schema";
 import { seedCouncils } from "./seeds/councils.seed";
 import { seedUsers } from "./seeds/users.seed";
 import { seedActivities } from "./seeds/activities.seed";
+import { seedScouts } from "./seeds/scouts.seed";
+import { seedScoutApplications } from "./seeds/scoutApplications.seed";
 
 dotenv.config({ path: ".env.local" });
 
@@ -23,17 +25,20 @@ async function main() {
 
   await db.execute(sql`
     TRUNCATE TABLE
+      activity_registrations,
       scouts,
       activities,
       users,
       councils,
       sessions,
-      scout_registrations
+      scout_applications
     RESTART IDENTITY CASCADE;
   `);
 
   await seedCouncils(db);
   await seedUsers(db);
+  await seedScouts(db);
+  await seedScoutApplications(db);
   await seedActivities(db);
 
   console.log("🎉 Database seeded successfully.");

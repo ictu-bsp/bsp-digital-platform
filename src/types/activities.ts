@@ -1,16 +1,6 @@
 // src/types/activities.ts
 
 export type ActivityCategory =
-  | "CAMPING"
-  | "TRAINING"
-  | "COMMUNITY_SERVICE"
-  | "SEMINAR"
-  | "COMPETITION"
-  | "CEREMONY"
-  | "MEETING"
-  | "OTHER";
-
-export type ActivityScope =
   | "COUNCIL"
   | "REGIONAL"
   | "NATIONAL";
@@ -26,13 +16,14 @@ export interface Activity {
   startDate: string;
   endDate: string;
 
+  // Registration
+  registrationOpen: boolean;
+
   // Location
   location: string;
 
   // Classification
   category: ActivityCategory;
-
-  scope: ActivityScope;
 
   councilId?: string | null;
   
@@ -49,6 +40,7 @@ export interface FeaturedBanner {
   title: string;
   imageUrl?: string | null;
   linkUrl?: string;
+  backgroundColor?: string;
 }
 
 export interface HeaderProps {
@@ -68,6 +60,7 @@ export interface FilterTabsProps {
 export interface ActivityListProps {
   activities: Activity[];
   activeFilter: ActivityCategory | "all";
+  emptyMessage?: string;
 }
 
 export interface ActivityCardProps {

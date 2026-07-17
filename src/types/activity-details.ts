@@ -1,21 +1,8 @@
-export interface ActivityDetail {
-  id: string;
-  title: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  location: string;
-  cost: string;
-  status: 'ongoing' | 'closed' | 'upcoming';
-  logoUrl: string;
-}
-
 export interface ActivityMetaBadgesProps {
   startDate: string;
-  endDate: string;
+  endDate?: string;
   location: string;
-  cost: string;
-  status: 'ongoing' | 'closed' | 'upcoming';
+  cost?: string;
 }
 
 export interface JoinButtonProps {
@@ -23,5 +10,7 @@ export interface JoinButtonProps {
 }
 
 export interface PageProps {
-  params: Promise<{ id: string }>;
+  params: Promise<{
+    id: string;
+  }>;
 }

@@ -57,7 +57,7 @@ export default function ProfileBottomNav({
         router.push("/scout/advancement");
         break;
       case "activities":
-        router.push("/scout/activities/activity-1");
+        router.push("/scout/activities");
         break;
     }
   };
