@@ -31,7 +31,7 @@ export default async function MembershipPage() {
 
   return (
     <PageLayout userName={user.firstName} avatarUrl={user.avatarUrl ?? undefined}>
-      <div className="space-y-4 px-4 py-6">
+      <div className="space-y-4 px-5 py-6">
         <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
           <div className="relative">
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
