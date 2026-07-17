@@ -9,6 +9,7 @@ import * as schema from "./schema";
 import { seedCouncils } from "./seeds/councils.seed";
 import { seedUsers } from "./seeds/users.seed";
 import { seedActivities } from "./seeds/activities.seed";
+import { seedScouts } from "./seeds/scouts.seed";
 
 dotenv.config({ path: ".env.local" });
 
@@ -23,6 +24,7 @@ async function main() {
 
   await db.execute(sql`
     TRUNCATE TABLE
+      activity_registrations,
       scouts,
       activities,
       users,
@@ -35,6 +37,7 @@ async function main() {
   await seedCouncils(db);
   await seedUsers(db);
   await seedActivities(db);
+  await seedScouts(db);
 
   console.log("🎉 Database seeded successfully.");
 

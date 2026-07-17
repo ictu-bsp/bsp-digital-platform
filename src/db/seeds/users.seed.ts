@@ -74,7 +74,7 @@ export async function seedUsers(
       middleName: null,
       birthdate: new Date("2004-05-29"),
       gender: "Male",
-      role: "VISITOR",
+      role: "SCOUT",
       avatarUrl:
         "/uploads/avatars/a9d46276-0e0a-409d-bd75-93cfbc9ece15.jpg",
       emailVerified: new Date(),
