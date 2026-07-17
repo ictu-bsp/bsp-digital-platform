@@ -41,6 +41,18 @@ export const scoutApplications = pgTable("scout_applications", {
   requestedRegistrationYears: integer("requested_registration_years")
     .notNull(),
 
+  // Personal & emergency-contact info — added to replace the temporary
+  // JSON-in-remarks workaround. Existing approved applications created
+  // before this migration still have this data only inside `remarks`;
+  // getMembershipCardData() falls back to parsing that JSON when these
+  // columns are empty.
+  bloodType: text("blood_type"),
+  address: text("address"),
+  telephoneNumber: text("telephone_number"),
+  emergencyContactName: text("emergency_contact_name"),
+  emergencyContactRelationship: text("emergency_contact_relationship"),
+  emergencyContactNumber: text("emergency_contact_number"),
+
   remarks: text("remarks"),
 
   status: applicationStatusEnum("status")

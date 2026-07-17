@@ -32,6 +32,9 @@ export type PendingRegistrationRecord = {
   birthdate: Date;
   gender: string;
 
+  address: string | null;
+  telephoneNumber: string | null;
+
   council: string;
 
   registrationYears: number;
@@ -302,6 +305,7 @@ export async function getPendingRegistrations(): Promise<PendingRegistrationReco
       id: registrations.id,
       scoutId: registrations.scoutId,
       scoutIdNumber: scouts.membershipNumber,
+      userId: scouts.userId,
 
       firstName: users.firstName,
       lastName: users.lastName,
@@ -332,6 +336,36 @@ export async function getPendingRegistrations(): Promise<PendingRegistrationReco
     .where(eq(registrations.status, "active"));
 
   const activeScoutIds = new Set(activeRegs.map((r) => r.scoutId));
+
+  // Fetch scoutApplications separately (not via leftJoin) to avoid
+  // duplicate registration rows — same reasoning as the payments fix
+  // below. A user can have more than one application (e.g. renewals),
+  // so pick the most recent one per user.
+  const pendingUserIds = pendingRecords.map((r) => r.userId);
+
+  const relatedApplications = pendingUserIds.length
+    ? await db
+        .select({
+          userId: scoutApplications.userId,
+          address: scoutApplications.address,
+          telephoneNumber: scoutApplications.telephoneNumber,
+          createdAt: scoutApplications.createdAt,
+        })
+        .from(scoutApplications)
+        .where(inArray(scoutApplications.userId, pendingUserIds))
+    : [];
+
+  const latestApplicationByUserId = new Map<
+    string,
+    { address: string | null; telephoneNumber: string | null; createdAt: Date }
+  >();
+
+  for (const application of relatedApplications) {
+    const current = latestApplicationByUserId.get(application.userId);
+    if (!current || application.createdAt > current.createdAt) {
+      latestApplicationByUserId.set(application.userId, application);
+    }
+  }
 
   // Fetch payments separately (not via leftJoin) to avoid duplicate
   // registration rows when a registration has more than one payment
@@ -398,6 +432,8 @@ export async function getPendingRegistrations(): Promise<PendingRegistrationReco
 
       const bestPayment = bestPaymentByRegId.get(record.id);
 
+      const application = latestApplicationByUserId.get(record.userId);
+
       return {
         id: record.id,
         scoutId: record.scoutId,
@@ -408,8 +444,10 @@ export async function getPendingRegistrations(): Promise<PendingRegistrationReco
         birthdate: record.birthdate,
         gender: record.gender,
 
-        council: record.council,
+        address: application?.address ?? null,
+        telephoneNumber: application?.telephoneNumber ?? null,
 
+        council: record.council,
         registrationYears: record.registrationYears,
         startDate: record.startDate,
         endDate: record.endDate,

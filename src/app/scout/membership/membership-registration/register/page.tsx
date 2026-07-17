@@ -8,9 +8,11 @@ import Image from "next/image";
 import { CheckCircleIcon, ChevronDownIcon, LockClosedIcon } from "@heroicons/react/24/solid";
 import { submitApplicationAction } from "@/app/actions/application";
 import { getCouncilsAction } from "@/app/actions/councils";
+import { useWizard } from "../WizardContext";
 
 const FEE_PER_YEAR = 100;
 
+// single export only
 // Reads a previously-saved value back out of localStorage so that
 // navigating back into this step mid-flow doesn't wipe what the user
 // already selected. Guarded for SSR since localStorage doesn't exist
@@ -37,6 +39,14 @@ const fieldShellClass = (filled: boolean, locked?: boolean) =>
 
 export default function RegisterPage() {
   const router = useRouter();
+  const {
+    bloodType,
+    address,
+    telephone,
+    emergencyContactName,
+    emergencyContactRelationship,
+    emergencyContactNumber,
+  } = useWizard();
 
   const [scoutingPosition, setScoutingPosition] = useState(() =>
     readSaved("registerScoutingPosition")
@@ -135,15 +145,12 @@ const [councilsLoading, setCouncilsLoading] = useState(true);
     requestedRegistrationYears:
         Number(membershipValidity),
 
-    bloodType: localStorage.getItem("personalBloodType") ?? "",
-    address: localStorage.getItem("personalAddress") ?? "",
-    telephone: localStorage.getItem("personalTelephone") ?? "",
-    emergencyContactName:
-        localStorage.getItem("personalEmergencyContactName") ?? "",
-    emergencyContactRelationship:
-        localStorage.getItem("personalEmergencyContactRelationship") ?? "",
-    emergencyContactNumber:
-        localStorage.getItem("personalEmergencyContactNumber") ?? "",
+    bloodType,
+    address,
+    telephone,
+    emergencyContactName,
+    emergencyContactRelationship,
+    emergencyContactNumber,
   });
 
     if (!result.success || !result.data) {

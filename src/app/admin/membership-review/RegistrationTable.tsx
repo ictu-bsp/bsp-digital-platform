@@ -156,15 +156,23 @@ export default function RegistrationTable({
 
               <div className="col-span-2">
                 <label className="text-xs text-zinc-500">Address</label>
-                <p className="border rounded px-3 py-2 text-zinc-400">
-                  Not available yet
+                <p
+                  className={`border rounded px-3 py-2 ${
+                    selected.address ? "text-zinc-900" : "text-zinc-400"
+                  }`}
+                >
+                  {selected.address ?? "Not available yet"}
                 </p>
               </div>
 
               <div className="col-span-2">
                 <label className="text-xs text-zinc-500">Mobile Number</label>
-                <p className="border rounded px-3 py-2 text-zinc-400">
-                  Not available yet
+                <p
+                  className={`border rounded px-3 py-2 ${
+                    selected.telephoneNumber ? "text-zinc-900" : "text-zinc-400"
+                  }`}
+                >
+                  {selected.telephoneNumber ?? "Not available yet"}
                 </p>
               </div>
 

@@ -3,6 +3,7 @@ import { eq, inArray } from "drizzle-orm";
 import { scouts, users, councils } from "@/db/schema";
 import { registrations } from "@/db/schema/scout-registrations";
 import { payments } from "@/db/schema/payments";
+import { scoutApplications } from "@/db/schema/scoutApplications";
 
 export async function getScoutByUserId(userId: string) {
   const [scout] = await db
@@ -67,36 +68,44 @@ export async function setScoutMembershipActive(
   return updated ?? null;
 }
 
-// TESTING ONLY — permanently deletes a scout's membership record,
-// along with their registrations and any payments tied to those
-// registrations. Does NOT touch scoutApplications (keyed by userId,
-// not scoutId) or the users row itself — the account stays intact so
-// the person could theoretically re-register from scratch.
+// TESTING ONLY â€” permanently deletes a scout's membership record,
+// their registrations, any payments tied to those registrations, AND
+// their scoutApplications rows (keyed by userId, not scoutId, so we
+// fetch userId first before the scouts row is gone). The users row
+// itself is left intact so the account could theoretically
+// re-register from scratch with a clean application history.
 // Runs in a transaction: no partial deletes if any step fails.
 export async function deleteScoutPermanently(scoutId: string) {
   return await db.transaction(async (tx) => {
+    const [scout] = await tx
+      .select({ userId: scouts.userId })
+      .from(scouts)
+      .where(eq(scouts.id, scoutId));
+
     const scoutRegistrations = await tx
       .select({ id: registrations.id })
       .from(registrations)
       .where(eq(registrations.scoutId, scoutId));
-
     const registrationIds = scoutRegistrations.map((r) => r.id);
-
     if (registrationIds.length > 0) {
       await tx
         .delete(payments)
         .where(inArray(payments.registrationId, registrationIds));
-
       await tx
         .delete(registrations)
         .where(inArray(registrations.id, registrationIds));
+    }
+
+    if (scout) {
+      await tx
+        .delete(scoutApplications)
+        .where(eq(scoutApplications.userId, scout.userId));
     }
 
     const [deleted] = await tx
       .delete(scouts)
       .where(eq(scouts.id, scoutId))
       .returning();
-
     return deleted ?? null;
   });
 }

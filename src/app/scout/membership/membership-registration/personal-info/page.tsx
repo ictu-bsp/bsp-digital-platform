@@ -9,10 +9,10 @@
 // submitApplicationAction call (serialized into scoutApplications.remarks
 // as a temporary workaround until Reuben adds real columns).
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
+import { useWizard } from "../WizardContext";
 
 const fieldShellClass = (filled: boolean) =>
   `w-full rounded-lg py-3 text-lg border transition-colors ${
@@ -25,48 +25,31 @@ const fieldShellClass = (filled: boolean) =>
 // (PH mobile format: 09XXXXXXXXX). Used on phone-type fields only.
 const digitsOnly = (value: string) => value.replace(/\D/g, "").slice(0, 11);
 
-// Reads a previously-saved value back out of localStorage so that
-// navigating back into this step mid-flow doesn't wipe what the user
-// already typed. Guarded for SSR since localStorage doesn't exist
-// server-side (useState initializers can run during the initial
-// render, so this must be safe to call in both environments).
-const readSaved = (key: string) => {
-  if (typeof window === "undefined") return "";
-  return localStorage.getItem(key) ?? "";
-};
+
 
 export default function PersonalInfoPage() {
   const router = useRouter();
 
-  const [bloodType, setBloodType] = useState(() => readSaved("personalBloodType"));
-  const [address, setAddress] = useState(() => readSaved("personalAddress"));
-  const [telephone, setTelephone] = useState(() => readSaved("personalTelephone"));
-  const [emergencyContactName, setEmergencyContactName] = useState(() =>
-    readSaved("personalEmergencyContactName")
-  );
-  const [emergencyContactRelationship, setEmergencyContactRelationship] = useState(() =>
-    readSaved("personalEmergencyContactRelationship")
-  );
-  const [emergencyContactNumber, setEmergencyContactNumber] = useState(() =>
-    readSaved("personalEmergencyContactNumber")
-  );
+  const {
+    bloodType,
+    setBloodType,
+    address,
+    setAddress,
+    telephone,
+    setTelephone,
+    emergencyContactName,
+    setEmergencyContactName,
+    emergencyContactRelationship,
+    setEmergencyContactRelationship,
+    emergencyContactNumber,
+    setEmergencyContactNumber,
+  } = useWizard();
 
   const onNext = (event: React.FormEvent) => {
     event.preventDefault();
-
-    localStorage.setItem("personalBloodType", bloodType);
-    localStorage.setItem("personalAddress", address);
-    localStorage.setItem("personalTelephone", telephone);
-    localStorage.setItem("personalEmergencyContactName", emergencyContactName);
-    localStorage.setItem(
-      "personalEmergencyContactRelationship",
-      emergencyContactRelationship
-    );
-    localStorage.setItem(
-      "personalEmergencyContactNumber",
-      emergencyContactNumber
-    );
-
+    // Fields already live in WizardContext via the setters above —
+    // nothing to persist here. register/page.tsx reads them straight
+    // from the same context at final submit.
     router.push("/scout/membership/membership-registration/register");
   };
 
