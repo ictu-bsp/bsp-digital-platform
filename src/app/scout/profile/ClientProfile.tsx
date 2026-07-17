@@ -1,4 +1,4 @@
-//src/app/scout/profile/ClientProfile.tsx
+// src/app/scout/profile/ClientProfile.tsx
 
 "use client";
 
@@ -16,6 +16,12 @@ import ProfileBottomNav from "./components/ProfileBottomNav";
 import VerifyPasswordModal from "./components/VerifyPasswordModal";
 import EditProfileModal from "./components/EditProfileModal";
 
+type MembershipData = Awaited<
+  ReturnType<
+    typeof import("@/services/application.service").getMembershipCardData
+  >
+>;
+
 interface ProfileClientProps {
   user: {
     id: string;
@@ -30,10 +36,6 @@ interface ProfileClientProps {
   };
   membershipData: MembershipData;
 }
-
-type MembershipData = Awaited<
-  ReturnType<typeof import("@/services/application.service").getMembershipCardData>
->;
 
 export default function ProfileClient({
   user,
@@ -54,7 +56,13 @@ export default function ProfileClient({
     useState(user);
 
   const membershipStatus =
-    membershipData?.scout.verificationStatus === "active";
+    membershipData?.scout?.verificationStatus === "active";
+
+  const status = membershipData?.scout
+    ? membershipStatus
+      ? "Scout"
+      : "Pending Verification"
+    : "Visitor";
 
   const fullName = [
     profile.firstName,
@@ -70,14 +78,16 @@ export default function ProfileClient({
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="mx-auto flex min-h-screen max-w-md flex-col bg-white">
+    <main className="min-h-screen bg-gradient-to-b from-white via-[#f7fdf8] to-[#e7f6ea] text-slate-950">
+      <div className="mx-auto flex min-h-screen max-w-md flex-col">
 
         <ProfileHeader
           onLogout={handleLogout}
         />
 
-        <div className="flex-1 overflow-y-auto pb-24">
+        <div className="flex-1 pb-28">
+          
+          <div className="space-y-5 px-1 py-5">
 
           <ProfileAvatar
             avatarUrl={
@@ -86,7 +96,7 @@ export default function ProfileClient({
           />
 
           <UserInfoCard
-            status="Visitor"
+            status={status}
             name={fullName}
           />
 
@@ -142,7 +152,7 @@ export default function ProfileClient({
             }}
           />
         )}
-
+        </div>
       </div>
     </main>
   );

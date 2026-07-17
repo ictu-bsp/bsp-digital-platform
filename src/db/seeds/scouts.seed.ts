@@ -28,7 +28,7 @@ export async function seedScouts(
 
     councilId: council.id,
 
-    membershipNumber: "BSP-2026-000001",
+    membershipNumber: "00-00-0001",
 
     rank: "KID",
 

@@ -16,6 +16,9 @@ export interface Activity {
   startDate: string;
   endDate: string;
 
+  // Registration
+  registrationOpen: boolean;
+
   // Location
   location: string;
 
@@ -37,6 +40,7 @@ export interface FeaturedBanner {
   title: string;
   imageUrl?: string | null;
   linkUrl?: string;
+  backgroundColor?: string;
 }
 
 export interface HeaderProps {

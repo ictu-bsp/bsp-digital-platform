@@ -25,18 +25,43 @@ export default async function ActivitiesPage() {
 
   const dbActivities = await getPublishedActivities();
 
+  const now = new Date();
+
   const scout = await getScoutByUserId(user.id);
 
   const registeredActivities = scout ? await getRegisteredActivities(scout.id): [];
 
+  const bannerColors = [
+  "#daf5e7",
+  "#e7f2df",
+  "#d7f0fc",
+  "#f1f8e7",
+  "#e9f6ea",
+];
+
   const banners: FeaturedBanner[] = dbActivities
-  .slice(0, 3)
-  .map((activity) => ({
-    id: activity.id,
-    imageUrl: activity.imageUrl ?? "/placeholder-banner-1.svg",
-    linkUrl: `/scout/activities/${activity.id}`,
-    title: activity.title,
-  }));
+    .filter(
+      (activity) =>
+        !activity.registrationDeadline ||
+        activity.registrationDeadline > now
+    )
+    .slice(0, 3)
+    .map((activity, index) => ({
+      id: activity.id,
+
+      title: activity.title,
+
+      linkUrl: `/scout/activities/${activity.id}`,
+
+      backgroundColor:
+        bannerColors[index % bannerColors.length],
+
+      imageUrl:
+        activity.imageUrl &&
+        activity.imageUrl.trim() !== ""
+          ? activity.imageUrl
+          : null,
+    }));
 
   const formatDateTime = (date: Date | null) => {
     if (!date) return "";
@@ -47,28 +72,39 @@ export default async function ActivitiesPage() {
     });
   };
 
-  const activities: Activity[] = dbActivities.map((activity) => ({
+  const activities: Activity[] = dbActivities
+  .map((activity) => ({
     id: activity.id,
+
     title: activity.title,
+
     description: activity.description,
 
     startDate: formatDateTime(activity.startDate),
 
     endDate: formatDateTime(activity.endDate),
 
+    registrationOpen:
+      !activity.registrationDeadline ||
+      activity.registrationDeadline > now,
+
     location: activity.location,
 
     category: activity.category,
+
     councilId: activity.councilId,
 
     imageUrl: activity.imageUrl,
 
     createdAt: activity.createdAt.toISOString(),
+
     updatedAt: activity.updatedAt.toISOString(),
-  }));
+  }))
+  .sort((a, b) => Number(b.registrationOpen) - Number(a.registrationOpen));
 
   const myActivities: Activity[] =
-    registeredActivities.map((activity) => ({
+  registeredActivities
+    .map((activity) => ({
       id: activity.id,
 
       title: activity.title,
@@ -78,6 +114,10 @@ export default async function ActivitiesPage() {
       startDate: formatDateTime(activity.startDate),
 
       endDate: formatDateTime(activity.endDate),
+
+      registrationOpen:
+        !activity.registrationDeadline ||
+        activity.registrationDeadline > now,
 
       location: activity.location,
 
@@ -90,7 +130,8 @@ export default async function ActivitiesPage() {
       createdAt: activity.createdAt.toISOString(),
 
       updatedAt: activity.updatedAt.toISOString(),
-    }));
+    }))
+    .sort((a, b) => Number(b.registrationOpen) - Number(a.registrationOpen));
 
   return (
     <ScoutingActivitiesScreen
