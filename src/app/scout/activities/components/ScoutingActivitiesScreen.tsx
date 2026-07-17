@@ -1,4 +1,4 @@
-//src/app/scout/activities/components/ScoutingActivitiesScreen.tsx
+// src/app/scout/activities/components/ScoutingActivitiesScreen.tsx
 
 "use client";
 
@@ -6,7 +6,7 @@ import { useState } from "react";
 
 import Header from "../../components/Header";
 import BottomNav from "../../components/BottomNav";
-import FeaturedCarousel from "../../components/FeaturedCarousel";
+import FeaturedCarousel from "../components/FeaturedCarousel";
 import FilterTabs from "../components/FilterTabs";
 import ActivityList from "../components/ActivityList";
 
@@ -40,27 +40,17 @@ export default function ScoutingActivitiesScreen({
     <main className="min-h-screen bg-gradient-to-b from-white via-[#f7fdf8] to-[#e7f6ea] text-slate-950">
       <div className="mx-auto flex min-h-screen max-w-md flex-col">
 
-        <div className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
-          <Header
-            userName={userName}
-            avatarUrl={avatarUrl}
-          />
-        </div>
+        <Header
+          userName={userName}
+          avatarUrl={avatarUrl}
+        />
 
-        <div className="flex-1 overflow-y-auto pb-28">
-          <div className="space-y-5 px-4 py-5">
-
-            <div className="space-y-1">
-              <h1 className="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-700">
-                Scouting Activities
-              </h1>
-            </div>
-
+        <div className="flex-1 pb-28">
+          <div className="space-y-5 px-5 py-5">
             <FeaturedCarousel banners={banners} />
 
             {/* All Activities / My Activities */}
             <div className="flex overflow-hidden rounded-xl border border-emerald-700">
-
               <button
                 onClick={() => setShowMine(false)}
                 className={`flex-1 py-2 text-sm font-semibold transition ${
@@ -82,7 +72,6 @@ export default function ScoutingActivitiesScreen({
               >
                 My Activities
               </button>
-
             </div>
 
             <FilterTabs
@@ -93,19 +82,22 @@ export default function ScoutingActivitiesScreen({
             <ActivityList
               activities={
                 showMine
-                ? myActivities
-                : activities
+                  ? myActivities
+                  : activities
               }
               activeFilter={activeFilter}
               emptyMessage={
                 showMine
-                ? "You haven't joined any activities yet."
-                : "No activities match this filter right now."
+                  ? "You haven't joined any activities yet."
+                  : "No activities match this filter right now."
               }
             />
+
           </div>
         </div>
+
         <BottomNav />
+
       </div>
     </main>
   );
