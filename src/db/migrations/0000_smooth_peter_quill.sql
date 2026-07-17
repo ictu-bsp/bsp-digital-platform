@@ -1,12 +1,24 @@
+CREATE TYPE "public"."announcement_visibility" AS ENUM('PUBLIC', 'SCOUTS', 'COUNCIL');--> statement-breakpoint
+CREATE TYPE "public"."activity_category" AS ENUM('CAMPING', 'TRAINING', 'COMMUNITY_SERVICE', 'SEMINAR', 'COMPETITION', 'CEREMONY', 'MEETING', 'OTHER');--> statement-breakpoint
+CREATE TYPE "public"."application_status" AS ENUM('PENDING', 'APPROVED', 'REJECTED', 'CANCELLED');--> statement-breakpoint
 CREATE TYPE "public"."payment_status" AS ENUM('awaiting_payment', 'paid', 'failed');--> statement-breakpoint
 CREATE TYPE "public"."registration_status" AS ENUM('pending', 'active', 'expired', 'cancelled');--> statement-breakpoint
+CREATE TYPE "public"."scout_rank" AS ENUM('KID', 'KAB', 'BOY', 'SENIOR', 'ROVER');--> statement-breakpoint
+CREATE TYPE "public"."scout_status" AS ENUM('PENDING', 'ACTIVE', 'SUSPENDED', 'EXPIRED');--> statement-breakpoint
 CREATE TYPE "public"."verification_status" AS ENUM('unverified', 'pending', 'active');--> statement-breakpoint
 CREATE TABLE "activities" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"title" text NOT NULL,
-	"description" text,
-	"activity_date" date NOT NULL,
-	"location" text,
+	"description" text NOT NULL,
+	"image_url" text,
+	"start_date" timestamp NOT NULL,
+	"end_date" timestamp,
+	"registration_deadline" timestamp,
+	"location" text NOT NULL,
+	"category" "activity_category" NOT NULL,
+	"max_participants" integer,
+	"is_published" boolean DEFAULT true NOT NULL,
+	"created_by" uuid,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
@@ -27,6 +39,19 @@ CREATE TABLE "advancements" (
 	"rank" text NOT NULL,
 	"status" text DEFAULT 'in_progress' NOT NULL,
 	"remarks" text,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "announcements" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"title" varchar(150) NOT NULL,
+	"content" text NOT NULL,
+	"image_url" text,
+	"visibility" "announcement_visibility" DEFAULT 'PUBLIC' NOT NULL,
+	"council_id" uuid,
+	"author_id" uuid NOT NULL,
+	"is_pinned" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
@@ -86,12 +111,19 @@ CREATE TABLE "roles" (
 --> statement-breakpoint
 CREATE TABLE "scouts" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"council_id" uuid NOT NULL,
 	"user_id" uuid NOT NULL,
-	"scout_id_number" text,
+	"council_id" uuid NOT NULL,
+	"membership_number" text,
+	"rank" "scout_rank" DEFAULT 'KID' NOT NULL,
+	"status" "scout_status" DEFAULT 'PENDING' NOT NULL,
 	"verification_status" "verification_status" DEFAULT 'unverified' NOT NULL,
+	"approved_by" uuid,
+	"approved_at" timestamp,
+	"joined_at" timestamp,
+	"is_active" boolean DEFAULT true NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "scouts_user_id_unique" UNIQUE("user_id")
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
@@ -104,6 +136,9 @@ CREATE TABLE "users" (
 	"last_name" text NOT NULL,
 	"suffix" text,
 	"birthdate" date NOT NULL,
+	"gender" text NOT NULL,
+	"role" text DEFAULT 'VISITOR' NOT NULL,
+	"avatar_url" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "users_email_unique" UNIQUE("email")
@@ -127,17 +162,43 @@ CREATE TABLE "pending_user_registrations" (
 	"gender" text NOT NULL,
 	"verification_code" text NOT NULL,
 	"verification_expires" timestamp NOT NULL,
-	"verified" boolean DEFAULT false NOT NULL,
+	"email_verified_at" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "pending_user_registrations_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
+CREATE TABLE "scout_applications" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_id" uuid NOT NULL,
+	"preferred_council_id" uuid NOT NULL,
+	"scouting_position" text NOT NULL,
+	"advancement_rank" text NOT NULL,
+	"tenure" integer NOT NULL,
+	"region" text NOT NULL,
+	"community_based" boolean DEFAULT false NOT NULL,
+	"sponsoring_institution" text,
+	"requested_registration_years" integer NOT NULL,
+	"remarks" text,
+	"status" "application_status" DEFAULT 'PENDING' NOT NULL,
+	"reviewed_by" uuid,
+	"reviewed_at" timestamp,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "activities" ADD CONSTRAINT "activities_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "administrators" ADD CONSTRAINT "administrators_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "administrators" ADD CONSTRAINT "administrators_role_id_roles_id_fk" FOREIGN KEY ("role_id") REFERENCES "public"."roles"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "advancements" ADD CONSTRAINT "advancements_scout_id_scouts_id_fk" FOREIGN KEY ("scout_id") REFERENCES "public"."scouts"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "announcements" ADD CONSTRAINT "announcements_council_id_councils_id_fk" FOREIGN KEY ("council_id") REFERENCES "public"."councils"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "announcements" ADD CONSTRAINT "announcements_author_id_users_id_fk" FOREIGN KEY ("author_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "email_verifications" ADD CONSTRAINT "email_verifications_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "payments" ADD CONSTRAINT "payments_registration_id_scout_registrations_id_fk" FOREIGN KEY ("registration_id") REFERENCES "public"."scout_registrations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "scout_registrations" ADD CONSTRAINT "scout_registrations_scout_id_scouts_id_fk" FOREIGN KEY ("scout_id") REFERENCES "public"."scouts"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "scouts" ADD CONSTRAINT "scouts_council_id_councils_id_fk" FOREIGN KEY ("council_id") REFERENCES "public"."councils"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "scouts" ADD CONSTRAINT "scouts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "scouts" ADD CONSTRAINT "scouts_council_id_councils_id_fk" FOREIGN KEY ("council_id") REFERENCES "public"."councils"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "scouts" ADD CONSTRAINT "scouts_approved_by_users_id_fk" FOREIGN KEY ("approved_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "scout_applications" ADD CONSTRAINT "scout_applications_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "scout_applications" ADD CONSTRAINT "scout_applications_preferred_council_id_councils_id_fk" FOREIGN KEY ("preferred_council_id") REFERENCES "public"."councils"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "scout_applications" ADD CONSTRAINT "scout_applications_reviewed_by_users_id_fk" FOREIGN KEY ("reviewed_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;

@@ -1,17 +1,9 @@
 // src/db/schema/activities.ts
 
-import {
-  boolean,
-  integer,
-  pgTable,
-  text,
-  timestamp,
-  uuid,
-} from "drizzle-orm/pg-core";
-
-import { activityCategoryEnum } from "./enums";
-
 import { users } from "./users";
+import { councils } from "./councils";
+import { activityCategoryEnum } from "./enums";
+import { boolean, integer, pgTable, text, timestamp, uuid, } from "drizzle-orm/pg-core";
 
 export const activities = pgTable("activities", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -34,7 +26,11 @@ export const activities = pgTable("activities", {
   location: text("location").notNull(),
 
   // Classification
+
   category: activityCategoryEnum("category").notNull(),
+
+  councilId: uuid("council_id")
+    .references(() => councils.id),
 
   // Capacity
   maxParticipants: integer("max_participants"),

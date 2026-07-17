@@ -53,12 +53,7 @@ export const applicationStatusEnum = pgEnum(
 );
 
 export const activityCategoryEnum = pgEnum("activity_category", [
-  "CAMPING",
-  "TRAINING",
-  "COMMUNITY_SERVICE",
-  "SEMINAR",
-  "COMPETITION",
-  "CEREMONY",
-  "MEETING",
-  "OTHER",
+  "COUNCIL",
+  "REGIONAL",
+  "NATIONAL",
 ]);

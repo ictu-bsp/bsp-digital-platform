@@ -5,7 +5,7 @@
 // server component in page.tsx — no local mock data.
 
 import PageLayout from "../../../components/PageLayout";
-import React, { useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 
 type VerifiedMemberData = {
@@ -46,7 +46,7 @@ export default function VerifiedMemberCard({
   };
 
   return (
-    <PageLayout userName={userName} avatarUrl={avatarUrl}>
+    <PageLayout userName={userName} avatarUrl={undefined}>
       <div className="mx-auto w-full max-w-md flex-1 p-5 space-y-6">
         <div className="space-y-2">
           <div
@@ -113,10 +113,20 @@ export default function VerifiedMemberCard({
                   </div>
 
                   <div className="flex flex-col items-center justify-end">
-                    <div className="relative h-20 w-20 border border-gray-400 bg-gray-200 overflow-hidden mb-2.5 shadow-sm">
-                      <div className="flex h-full w-full flex-col items-center justify-center bg-gray-300 text-gray-500 text-[8px] text-center p-1">
-                        User Photo
-                      </div>
+                    <div className="relative h-20 w-20 overflow-hidden border border-gray-400 bg-gray-200 shadow-sm mb-2.5">
+                      {avatarUrl ? (
+                        <Image
+                          src={avatarUrl}
+                          alt={`${userData.firstName} ${userData.lastName}`}
+                          fill
+                          className="object-cover"
+                          sizes="80px"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-gray-300 text-[8px] text-gray-500 text-center p-1">
+                          No Photo
+                        </div>
+                      )}
                     </div>
                     <div className="w-20 border-t border-blue-900 pt-1 text-center">
                       <span className="block text-[5px] font-bold text-blue-900/70 uppercase tracking-tight leading-none">
