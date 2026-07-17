@@ -8,8 +8,24 @@ import Image from "next/image";
 import { CheckCircleIcon, ChevronDownIcon, LockClosedIcon } from "@heroicons/react/24/solid";
 import { submitApplicationAction } from "@/app/actions/application";
 import { getCouncilsAction } from "@/app/actions/councils";
+import { useWizard } from "../WizardContext";
 
 const FEE_PER_YEAR = 100;
+
+// single export only
+// Reads a previously-saved value back out of localStorage so that
+// navigating back into this step mid-flow doesn't wipe what the user
+// already selected. Guarded for SSR since localStorage doesn't exist
+// server-side.
+const readSaved = (key: string) => {
+  if (typeof window === "undefined") return "";
+  return localStorage.getItem(key) ?? "";
+};
+
+const readSavedBool = (key: string) => {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(key) === "true";
+};
 
 // Border/background/text styling that reacts to whether a field is filled.
 const fieldShellClass = (filled: boolean, locked?: boolean) =>
@@ -23,17 +39,35 @@ const fieldShellClass = (filled: boolean, locked?: boolean) =>
 
 export default function RegisterPage() {
   const router = useRouter();
+  const {
+    bloodType,
+    address,
+    telephone,
+    emergencyContactName,
+    emergencyContactRelationship,
+    emergencyContactNumber,
+  } = useWizard();
 
-  const [scoutingPosition, setScoutingPosition] = useState("");
-  const [advancementRank, setAdvancementRank] = useState("");
-  const [tenure, setTenure] = useState("");
-  const [region, setRegion] = useState("");
-  const [councilId, setCouncilId] = useState("");
+  const [scoutingPosition, setScoutingPosition] = useState(() =>
+    readSaved("registerScoutingPosition")
+  );
+  const [advancementRank, setAdvancementRank] = useState(() =>
+    readSaved("registerAdvancementRank")
+  );
+  const [tenure, setTenure] = useState(() => readSaved("registerTenure"));
+  const [region, setRegion] = useState(() => readSaved("registerRegion"));
+  const [councilId, setCouncilId] = useState(() => readSaved("registerCouncilId"));
 const [councils, setCouncils] = useState<{ id: string; name: string }[]>([]);
 const [councilsLoading, setCouncilsLoading] = useState(true);
-  const [isCommunityBased, setIsCommunityBased] = useState(false);
-  const [sponsoringInstitution, setSponsoringInstitution] = useState("");
-  const [membershipValidity, setMembershipValidity] = useState("");
+  const [isCommunityBased, setIsCommunityBased] = useState(() =>
+    readSavedBool("registerIsCommunityBased")
+  );
+  const [sponsoringInstitution, setSponsoringInstitution] = useState(() =>
+    readSaved("registerSponsoringInstitution")
+  );
+  const [membershipValidity, setMembershipValidity] = useState(() =>
+    readSaved("registerMembershipValidity")
+  );
 
   const amount = FEE_PER_YEAR * (Number(membershipValidity) || 0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -46,6 +80,28 @@ const [councilsLoading, setCouncilsLoading] = useState(true);
       setSponsoringInstitution("");
     }
   }, [isCommunityBased]);
+
+  // Persist every field as the user fills them in, so navigating back
+  // into this step from method/payment doesn't lose what was entered.
+  useEffect(() => {
+    localStorage.setItem("registerScoutingPosition", scoutingPosition);
+    localStorage.setItem("registerAdvancementRank", advancementRank);
+    localStorage.setItem("registerTenure", tenure);
+    localStorage.setItem("registerRegion", region);
+    localStorage.setItem("registerCouncilId", councilId);
+    localStorage.setItem("registerIsCommunityBased", String(isCommunityBased));
+    localStorage.setItem("registerSponsoringInstitution", sponsoringInstitution);
+    localStorage.setItem("registerMembershipValidity", membershipValidity);
+  }, [
+    scoutingPosition,
+    advancementRank,
+    tenure,
+    region,
+    councilId,
+    isCommunityBased,
+    sponsoringInstitution,
+    membershipValidity,
+  ]);
 
   useEffect(() => {
   const loadCouncils = async () => {
@@ -89,15 +145,12 @@ const [councilsLoading, setCouncilsLoading] = useState(true);
     requestedRegistrationYears:
         Number(membershipValidity),
 
-    bloodType: localStorage.getItem("personalBloodType") ?? "",
-    address: localStorage.getItem("personalAddress") ?? "",
-    telephone: localStorage.getItem("personalTelephone") ?? "",
-    emergencyContactName:
-        localStorage.getItem("personalEmergencyContactName") ?? "",
-    emergencyContactRelationship:
-        localStorage.getItem("personalEmergencyContactRelationship") ?? "",
-    emergencyContactNumber:
-        localStorage.getItem("personalEmergencyContactNumber") ?? "",
+    bloodType,
+    address,
+    telephone,
+    emergencyContactName,
+    emergencyContactRelationship,
+    emergencyContactNumber,
   });
 
     if (!result.success || !result.data) {

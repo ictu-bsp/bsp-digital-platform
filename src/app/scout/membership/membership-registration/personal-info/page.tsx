@@ -9,10 +9,10 @@
 // submitApplicationAction call (serialized into scoutApplications.remarks
 // as a temporary workaround until Reuben adds real columns).
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
+import { useWizard } from "../WizardContext";
 
 const fieldShellClass = (filled: boolean) =>
   `w-full rounded-lg py-3 text-lg border transition-colors ${
@@ -21,32 +21,35 @@ const fieldShellClass = (filled: boolean) =>
       : "border-zinc-300 bg-white text-zinc-400"
   }`;
 
+// Strips anything that isn't a digit, then caps length at 11
+// (PH mobile format: 09XXXXXXXXX). Used on phone-type fields only.
+const digitsOnly = (value: string) => value.replace(/\D/g, "").slice(0, 11);
+
+
+
 export default function PersonalInfoPage() {
   const router = useRouter();
 
-  const [bloodType, setBloodType] = useState("");
-  const [address, setAddress] = useState("");
-  const [telephone, setTelephone] = useState("");
-  const [emergencyContactName, setEmergencyContactName] = useState("");
-  const [emergencyContactRelationship, setEmergencyContactRelationship] = useState("");
-  const [emergencyContactNumber, setEmergencyContactNumber] = useState("");
+  const {
+    bloodType,
+    setBloodType,
+    address,
+    setAddress,
+    telephone,
+    setTelephone,
+    emergencyContactName,
+    setEmergencyContactName,
+    emergencyContactRelationship,
+    setEmergencyContactRelationship,
+    emergencyContactNumber,
+    setEmergencyContactNumber,
+  } = useWizard();
 
   const onNext = (event: React.FormEvent) => {
     event.preventDefault();
-
-    localStorage.setItem("personalBloodType", bloodType);
-    localStorage.setItem("personalAddress", address);
-    localStorage.setItem("personalTelephone", telephone);
-    localStorage.setItem("personalEmergencyContactName", emergencyContactName);
-    localStorage.setItem(
-      "personalEmergencyContactRelationship",
-      emergencyContactRelationship
-    );
-    localStorage.setItem(
-      "personalEmergencyContactNumber",
-      emergencyContactNumber
-    );
-
+    // Fields already live in WizardContext via the setters above —
+    // nothing to persist here. register/page.tsx reads them straight
+    // from the same context at final submit.
     router.push("/scout/membership/membership-registration/register");
   };
 
@@ -136,16 +139,23 @@ export default function PersonalInfoPage() {
         {/* Telephone Number */}
         <div className="relative">
           <input
-            placeholder="Telephone Number"
+            placeholder="Telephone Number (e.g. 09171234567)"
+            inputMode="numeric"
+            maxLength={11}
             className={`${fieldShellClass(telephone !== "")} pl-4 pr-10`}
             value={telephone}
-            onChange={(e) => setTelephone(e.target.value)}
+            onChange={(e) => setTelephone(digitsOnly(e.target.value))}
             required
           />
           {telephone !== "" && (
             <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
           )}
         </div>
+        {telephone !== "" && telephone.length < 11 && (
+          <p className="text-xs text-amber-600 -mt-3">
+            Enter a full 11-digit number (e.g. 09171234567)
+          </p>
+        )}
 
         <hr className="my-2" />
         <label className="block text-lg font-medium -mb-2">
@@ -184,10 +194,12 @@ export default function PersonalInfoPage() {
           {/* Emergency Contact Number */}
           <div className="relative">
             <input
-              placeholder="Contact Number"
+              placeholder="Contact Number (e.g. 09171234567)"
+              inputMode="numeric"
+              maxLength={11}
               className={`${fieldShellClass(emergencyContactNumber !== "")} pl-4 pr-10`}
               value={emergencyContactNumber}
-              onChange={(e) => setEmergencyContactNumber(e.target.value)}
+              onChange={(e) => setEmergencyContactNumber(digitsOnly(e.target.value))}
               required
             />
             {emergencyContactNumber !== "" && (

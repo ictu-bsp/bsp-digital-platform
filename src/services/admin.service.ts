@@ -32,6 +32,9 @@ export type PendingRegistrationRecord = {
   birthdate: Date;
   gender: string;
 
+  address: string | null;
+  telephoneNumber: string | null;
+
   council: string;
 
   registrationYears: number;
@@ -302,6 +305,7 @@ export async function getPendingRegistrations(): Promise<PendingRegistrationReco
       id: registrations.id,
       scoutId: registrations.scoutId,
       scoutIdNumber: scouts.membershipNumber,
+      userId: scouts.userId,
 
       firstName: users.firstName,
       lastName: users.lastName,
@@ -332,6 +336,36 @@ export async function getPendingRegistrations(): Promise<PendingRegistrationReco
     .where(eq(registrations.status, "active"));
 
   const activeScoutIds = new Set(activeRegs.map((r) => r.scoutId));
+
+  // Fetch scoutApplications separately (not via leftJoin) to avoid
+  // duplicate registration rows — same reasoning as the payments fix
+  // below. A user can have more than one application (e.g. renewals),
+  // so pick the most recent one per user.
+  const pendingUserIds = pendingRecords.map((r) => r.userId);
+
+  const relatedApplications = pendingUserIds.length
+    ? await db
+        .select({
+          userId: scoutApplications.userId,
+          address: scoutApplications.address,
+          telephoneNumber: scoutApplications.telephoneNumber,
+          createdAt: scoutApplications.createdAt,
+        })
+        .from(scoutApplications)
+        .where(inArray(scoutApplications.userId, pendingUserIds))
+    : [];
+
+  const latestApplicationByUserId = new Map<
+    string,
+    { address: string | null; telephoneNumber: string | null; createdAt: Date }
+  >();
+
+  for (const application of relatedApplications) {
+    const current = latestApplicationByUserId.get(application.userId);
+    if (!current || application.createdAt > current.createdAt) {
+      latestApplicationByUserId.set(application.userId, application);
+    }
+  }
 
   // Fetch payments separately (not via leftJoin) to avoid duplicate
   // registration rows when a registration has more than one payment
@@ -374,46 +408,61 @@ export async function getPendingRegistrations(): Promise<PendingRegistrationReco
     }
   }
 
-  return pendingRecords.map((record) => {
-    let extraDetails: PendingRegistrationRecord["extraDetails"] = {};
+  return pendingRecords
+    .filter((record) => {
+      // Only show registrations that have actually been paid for.
+      // A "pending" registration row is created as soon as the user
+      // finishes the Register step, before they've picked a payment
+      // method or paid anything — so without this filter, admins would
+      // see every abandoned/mid-payment attempt as if it were a
+      // completed application awaiting review.
+      const bestPayment = bestPaymentByRegId.get(record.id);
+      return bestPayment?.paymentStatus === "paid";
+    })
+    .map((record) => {
+      let extraDetails: PendingRegistrationRecord["extraDetails"] = {};
 
-    if (record.remarks) {
-      try {
-        extraDetails = JSON.parse(record.remarks);
-      } catch {
-        extraDetails = {};
+      if (record.remarks) {
+        try {
+          extraDetails = JSON.parse(record.remarks);
+        } catch {
+          extraDetails = {};
+        }
       }
-    }
 
-    const bestPayment = bestPaymentByRegId.get(record.id);
+      const bestPayment = bestPaymentByRegId.get(record.id);
 
-    return {
-      id: record.id,
-      scoutId: record.scoutId,
-      scoutIdNumber: record.scoutIdNumber,
+      const application = latestApplicationByUserId.get(record.userId);
 
-      fullName: `${record.lastName}, ${record.firstName}`,
-      email: record.email,
-      birthdate: record.birthdate,
-      gender: record.gender,
+      return {
+        id: record.id,
+        scoutId: record.scoutId,
+        scoutIdNumber: record.scoutIdNumber,
 
-      council: record.council,
+        fullName: `${record.lastName}, ${record.firstName}`,
+        email: record.email,
+        birthdate: record.birthdate,
+        gender: record.gender,
 
-      registrationYears: record.registrationYears,
-      startDate: record.startDate,
-      endDate: record.endDate,
-      status: record.status,
+        address: application?.address ?? null,
+        telephoneNumber: application?.telephoneNumber ?? null,
 
-      isExistingScout: activeScoutIds.has(record.scoutId),
+        council: record.council,
+        registrationYears: record.registrationYears,
+        startDate: record.startDate,
+        endDate: record.endDate,
+        status: record.status,
 
-      paymentStatus: bestPayment?.paymentStatus ?? null,
-      paymentIntentId: bestPayment?.paymentIntentId ?? null,
+        isExistingScout: activeScoutIds.has(record.scoutId),
 
-      extraDetails,
+        paymentStatus: bestPayment?.paymentStatus ?? null,
+        paymentIntentId: bestPayment?.paymentIntentId ?? null,
 
-      createdAt: record.createdAt,
-    };
-  });
+        extraDetails,
+
+        createdAt: record.createdAt,
+      };
+    });
 }
 
 export async function approveRegistration(

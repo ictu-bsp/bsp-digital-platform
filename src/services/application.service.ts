@@ -7,7 +7,7 @@ import { scouts } from "@/db/schema/scouts";
 import { registrations } from "@/db/schema/scout-registrations";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { councils } from "@/db/schema/councils";
-
+//
 // ─────────────────────────────────────────────────────────────
 // PLACEHOLDER — BSP's real Membership ID sequencing scheme
 // (Proposal 1: Region/Local Council–Based Series, e.g. "01-01-0001")
@@ -60,19 +60,7 @@ export async function submitApplication(data: {
     throw new Error("Unauthorized");
   }
 
-  // Known schema gap workaround (Option A): scoutApplications has no
-  // columns for personal/emergency-contact info yet, so it's
-  // JSON-serialized into remarks until Reuben adds real columns.
-  const personalInfo = {
-    bloodType: data.bloodType,
-    address: data.address,
-    telephone: data.telephone,
-    emergencyContactName: data.emergencyContactName,
-    emergencyContactRelationship: data.emergencyContactRelationship,
-    emergencyContactNumber: data.emergencyContactNumber,
-  };
-
-  const [application] = await db
+ const [application] = await db
     .insert(scoutApplications)
     .values({
       userId: user.id,
@@ -88,7 +76,14 @@ export async function submitApplication(data: {
       requestedRegistrationYears:
         data.requestedRegistrationYears,
 
-      remarks: JSON.stringify(personalInfo),
+      // Personal & emergency-contact info now has real columns
+      // (was previously JSON-serialized into remarks).
+      bloodType: data.bloodType,
+      address: data.address,
+      telephoneNumber: data.telephone,
+      emergencyContactName: data.emergencyContactName,
+      emergencyContactRelationship: data.emergencyContactRelationship,
+      emergencyContactNumber: data.emergencyContactNumber,
 
       status: "PENDING",
     })
@@ -296,9 +291,11 @@ export async function getMembershipCardData(userId: string) {
     .where(eq(councils.id, scout.councilId))
     .limit(1);
 
-  // Personal-info JSON may live on scoutApplications.remarks (new flow) or
-  // registrations.remarks (legacy flow only has scoutingPosition/rank/etc,
-  // no bloodType/emergency contact — those fields just won't be present).
+  // Personal-info now lives on real scoutApplications columns. Older
+  // approved applications created before this migration only have the
+  // data as JSON inside remarks (application's or, for legacy
+  // pre-application registrations, registration's) — fall back to
+  // parsing that JSON only when the real columns are empty.
   let personalInfo: {
     bloodType?: string;
     address?: string;
@@ -309,13 +306,31 @@ export async function getMembershipCardData(userId: string) {
     scoutingPosition?: string;
   } = {};
 
-  const remarksSource = application?.remarks ?? registration?.remarks;
+  const hasRealColumnData =
+    application?.bloodType ||
+    application?.address ||
+    application?.telephoneNumber ||
+    application?.emergencyContactName;
 
-  if (remarksSource) {
-    try {
-      personalInfo = JSON.parse(remarksSource);
-    } catch {
-      personalInfo = {};
+  if (hasRealColumnData) {
+    personalInfo = {
+      bloodType: application?.bloodType ?? undefined,
+      address: application?.address ?? undefined,
+      telephone: application?.telephoneNumber ?? undefined,
+      emergencyContactName: application?.emergencyContactName ?? undefined,
+      emergencyContactRelationship:
+        application?.emergencyContactRelationship ?? undefined,
+      emergencyContactNumber:
+        application?.emergencyContactNumber ?? undefined,
+    };
+  } else {
+    const remarksSource = application?.remarks ?? registration?.remarks;
+    if (remarksSource) {
+      try {
+        personalInfo = JSON.parse(remarksSource);
+      } catch {
+        personalInfo = {};
+      }
     }
   }
 

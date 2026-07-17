@@ -5,6 +5,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { setPaymentProviderIdAction } from "@/app/actions/payment";
+import { verifyScoutPayment } from "@/app/actions/scouts";
 
 export type CardBrand = "Mastercard" | "Visa";
 
@@ -144,11 +145,23 @@ export default function Card({
           setPaymentStatus(
             JSON.stringify(paymentIntentData.attributes.last_payment_error)
           );
+
+          const verifyResult = await verifyScoutPayment(paymentRecordId, "failed");
+          if (!verifyResult.success) {
+            console.error("Failed to mark payment as failed:", verifyResult.error);
+          }
+
           localStorage.setItem("paymentTransactionId", paymentIntentId);
           localStorage.setItem("paymentMethodLabel", brand);
           router.push("/scout/membership/membership-registration/success?status=failed");
         } else if (paymentIntentData.attributes.status === "succeeded") {
           setPaymentStatus("Payment Success");
+
+          const verifyResult = await verifyScoutPayment(paymentRecordId, "paid");
+          if (!verifyResult.success) {
+            console.error("Failed to mark payment as paid:", verifyResult.error);
+          }
+
           localStorage.setItem("paymentTransactionId", paymentIntentId);
           localStorage.setItem("paymentMethodLabel", brand);
           router.push("/scout/membership/membership-registration/success?status=success");
@@ -194,6 +207,13 @@ export default function Card({
           listenToPayment(paymentIntent.attributes.client_key);
         } else if (status === "succeeded") {
           setPaymentStatus("Payment Success");
+
+          verifyScoutPayment(paymentRecordId, "paid").then((verifyResult) => {
+            if (!verifyResult.success) {
+              console.error("Failed to mark payment as paid:", verifyResult.error);
+            }
+          });
+
           localStorage.setItem("paymentTransactionId", intent.id);
           localStorage.setItem("paymentMethodLabel", brand);
           router.push("/scout/membership/membership-registration/success?status=success");

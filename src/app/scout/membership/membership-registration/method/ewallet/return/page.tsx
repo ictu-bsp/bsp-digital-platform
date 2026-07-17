@@ -1,7 +1,7 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { verifyScoutPayment } from "@/app/actions/scouts";
 
 export default function EWalletReturnPage() {
   const router = useRouter();
@@ -11,12 +11,11 @@ export default function EWalletReturnPage() {
   useEffect(() => {
     const checkStatus = async () => {
       const fullClient = localStorage.getItem("paymentIntentClientKey");
-
+      const paymentRecordId = localStorage.getItem("paymentRecordId");
       if (!fullClient) {
         router.replace("/scout/membership/membership-registration/method");
         return;
       }
-
       const paymentIntentId = fullClient.split("_client")[0];
 
       for (let i = 5; i > 0; i--) {
@@ -47,29 +46,49 @@ export default function EWalletReturnPage() {
         const status = paymentIntentData.attributes.status;
 
         if (status === "succeeded") {
+          if (paymentRecordId) {
+            const verifyResult = await verifyScoutPayment(paymentRecordId, "paid");
+            if (!verifyResult.success) {
+              console.error("Failed to mark payment as paid:", verifyResult.error);
+            }
+          } else {
+            console.error("No paymentRecordId found in localStorage â€” cannot mark payment as paid.");
+          }
           localStorage.removeItem("paymentIntentClientKey");
+          localStorage.removeItem("paymentRecordId");
           localStorage.setItem("paymentTransactionId", paymentIntentId);
           router.replace("/scout/membership/membership-registration/success?status=success");
           return;
         }
-
         if (
           status === "awaiting_payment_method" &&
           paymentIntentData.attributes.last_payment_error
         ) {
+          if (paymentRecordId) {
+            const verifyResult = await verifyScoutPayment(paymentRecordId, "failed");
+            if (!verifyResult.success) {
+              console.error("Failed to mark payment as failed:", verifyResult.error);
+            }
+          }
           localStorage.removeItem("paymentIntentClientKey");
+          localStorage.removeItem("paymentRecordId");
           localStorage.setItem("paymentTransactionId", paymentIntentId);
           setRawResponse(JSON.stringify(paymentIntentData, null, 2));
           router.replace("/scout/membership/membership-registration/success?status=failed");
           return;
         }
-
         if (i === 1) {
           setRawResponse(JSON.stringify(paymentIntentData, null, 2));
         }
       }
-
+      if (paymentRecordId) {
+        const verifyResult = await verifyScoutPayment(paymentRecordId, "failed");
+        if (!verifyResult.success) {
+          console.error("Failed to mark payment as failed:", verifyResult.error);
+        }
+      }
       localStorage.removeItem("paymentIntentClientKey");
+      localStorage.removeItem("paymentRecordId");
       localStorage.setItem("paymentTransactionId", paymentIntentId);
       router.replace("/scout/membership/membership-registration/success?status=failed");
     };

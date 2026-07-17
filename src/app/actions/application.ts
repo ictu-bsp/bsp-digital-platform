@@ -15,9 +15,9 @@ export async function submitApplicationAction(data: {
   communityBased: boolean;
   sponsoringInstitution: string | null;
   requestedRegistrationYears: number;
-  // Personal info fields — no dedicated columns yet, serialized into
-  // scoutApplications.remarks by submitApplication() as a temporary
-  // workaround. Flag to Reuben for real columns later.
+  // Personal info fields â€” stored in scoutApplications' dedicated
+  // columns (bloodType, address, telephoneNumber, etc.) by
+  // submitApplication().
   bloodType: string;
   address: string;
   telephone: string;
