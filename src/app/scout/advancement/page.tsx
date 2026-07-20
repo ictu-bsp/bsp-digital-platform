@@ -1,6 +1,7 @@
 import Header from '../components/Header';
 import BottomNav from '../components/BottomNav';
 import RankCarousel from './components/RankCarousel';
+import ImageUploadButton from './components/ImageUploadButton';
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/current-user";
 
@@ -37,6 +38,7 @@ export default async function AdvancementPage() {
 
           <div className="space-y-5 px-4 py-4 sm:px-5">
             <RankCarousel ranks={ranks} activeRankId="explorer" />
+            <ImageUploadButton />
           </div>
         </div>
 
