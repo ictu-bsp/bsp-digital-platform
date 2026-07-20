@@ -65,8 +65,24 @@ export default function LoginPage() {
   }, [state, router]);
 
   return (
+<<<<<<< HEAD
     <>
       <main className="flex min-h-screen flex-col bg-[#f4f6f3] md:flex-row md:items-stretch">
+=======
+    <main className="flex min-h-screen flex-col bg-[#f4f6f3] md:fixed md:inset-0 md:flex-row md:items-stretch">
+      <section className="w-full md:w-[46%] md:min-h-screen">
+        <div className="relative h-[300px] w-full sm:h-[400px] md:h-full">
+          <Image
+            src="/bsp-login-bg.svg"
+            alt="bsp-landingpage-backdrop"
+            fill
+            priority
+            sizes="(max-width:768px) 100vw, 50vw"
+            className="object-cover object-center"
+          />
+        </div>
+      </section>
+>>>>>>> 0395f5f999957f4eee1933c5e50667d03e79c53d
 
         <section className="w-full md:w-[46%] md:min-h-screen">
           <div className="relative h-[300px] w-full sm:h-[400px] md:h-full">
