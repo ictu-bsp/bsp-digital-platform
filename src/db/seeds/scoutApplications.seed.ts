@@ -1,14 +1,15 @@
 // src/db/seeds/scoutApplications.seed.ts
 
-import { scoutApplications } from "@/db/schema/scoutApplications";
-import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { eq } from "drizzle-orm";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+
 import * as schema from "../schema";
+import { scoutApplications } from "@/db/schema/scoutApplications";
 
 export async function seedScoutApplications(
   db: NodePgDatabase<typeof schema>
 ) {
-  // Marc James
+  // Scout User
   const marc = await db.query.users.findFirst({
     where: eq(
       schema.users.email,
@@ -16,10 +17,10 @@ export async function seedScoutApplications(
     ),
   });
 
-  // BSP Council
+  // Preferred Council
   const council = await db.query.councils.findFirst();
 
-  // Super Admin (reviewer)
+  // Reviewer
   const superAdmin = await db.query.users.findFirst({
     where: eq(
       schema.users.role,
@@ -52,12 +53,20 @@ export async function seedScoutApplications(
     // Location
     region: "National Capital Region",
 
-    // Institution
+    // Membership
     communityBased: false,
     sponsoringInstitution: "Adventist School",
-
-    // Registration
     requestedRegistrationYears: 1,
+
+    // Personal Information
+    bloodType: "O+",
+    address: "123 Scout Street, Quezon City, Metro Manila",
+    telephoneNumber: "09171234567",
+
+    // Emergency Contact
+    emergencyContactName: "Maria James",
+    emergencyContactRelationship: "Mother",
+    emergencyContactNumber: "09179876543",
 
     // Review
     remarks: "Automatically approved by seed.",
@@ -65,8 +74,8 @@ export async function seedScoutApplications(
     reviewedBy: superAdmin.id,
     reviewedAt: new Date(),
 
-    // id, createdAt and updatedAt are omitted
-    // because the schema already supplies defaults.
+    // createdAt / updatedAt / id
+    // supplied automatically by the schema
   });
 
   console.log("✅ Scout Application seeded");
