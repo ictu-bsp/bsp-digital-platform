@@ -1,32 +1,43 @@
-const items = [
-  { id: 1, title: "First Aid", completed: true },
-  { id: 2, title: "Cooking", completed: true },
-  { id: 3, title: "Camping", completed: false },
-  { id: 4, title: "Hiking", completed: false },
-];
+type RankDetails = {
+  title: string;
+  unlocked: boolean;
+  meritBadges: Array<{ title: string; completed: boolean; note: string }>;
+  requirements: Array<{ title: string; completed: boolean }>;
+};
 
-export default function MeritBadgeList() {
+type MeritBadgeListProps = {
+  rank?: Partial<RankDetails> | null;
+};
+
+export default function MeritBadgeList({ rank }: MeritBadgeListProps) {
+  const safeRank: RankDetails = {
+    title: "Select a rank",
+    unlocked: false,
+    meritBadges: [],
+    requirements: [],
+    ...rank,
+  };
+
   return (
-    <section className="px-1 pb-4">
+    <section className="rounded-[1.5rem] border border-emerald-100 bg-white/80 p-4 shadow-sm">
       <div className="mb-4 text-center">
-        <h3 className="text-xl font-semibold text-emerald-900">
-          Required Merit Badges
-        </h3>
+        <h3 className="text-lg font-semibold text-emerald-900">Required achievements</h3>
+        <p className="mt-1 text-sm text-slate-600">
+          {safeRank.title} is the current rank. Unlock the next stage by completing the requirements below.
+        </p>
       </div>
 
       <div className="space-y-3">
-        {items.map((item, index) => {
+        {safeRank.meritBadges.map((item, index) => {
           const isCompleted = item.completed;
-          const isLast = index === items.length - 1;
+          const isLast = index === safeRank.meritBadges.length - 1;
 
           return (
-            <div key={item.id} className="flex items-start gap-3">
+            <div key={item.title} className="flex items-start gap-3">
               <div className="flex flex-col items-center">
                 <div
                   className={`flex h-6 w-6 items-center justify-center rounded-full border-2 ${
-                    isCompleted
-                      ? "border-emerald-800 bg-emerald-800"
-                      : "border-gray-400 bg-white"
+                    isCompleted ? "border-emerald-800 bg-emerald-800" : "border-gray-400 bg-white"
                   }`}
                 >
                   {isCompleted ? (
@@ -35,24 +46,37 @@ export default function MeritBadgeList() {
                     </svg>
                   ) : null}
                 </div>
-                {!isLast ? (
-                  <div
-                    className={`mt-1 h-12 w-[2px] ${
-                      isCompleted ? "bg-emerald-700" : "border-l border-dashed border-gray-400"
-                    }`}
-                  />
-                ) : null}
+                {!isLast ? <div className={`mt-1 h-12 w-[2px] ${isCompleted ? "bg-emerald-700" : "border-l border-dashed border-gray-400"}`} /> : null}
               </div>
 
-              <div className="min-h-[96px] flex-1 rounded-2xl bg-gray-200 px-4 py-3 shadow-sm">
+              <div className="min-h-[96px] flex-1 rounded-2xl bg-gray-100 px-4 py-3 shadow-sm">
                 <p className="text-sm font-semibold text-emerald-950">{item.title}</p>
-                <p className="mt-1 text-sm text-gray-600">
-                  {isCompleted ? "Completed and ready for review" : "Pending requirement"}
-                </p>
+                <p className="mt-1 text-sm text-gray-600">{item.note}</p>
               </div>
             </div>
           );
         })}
+      </div>
+
+      <div className="mt-4 rounded-2xl bg-emerald-50 p-3">
+        <div className="flex items-center justify-between gap-2">
+          <h4 className="text-sm font-semibold text-emerald-900">Current and next requirements</h4>
+          <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] ${safeRank.unlocked ? "bg-emerald-100 text-emerald-700" : "bg-gray-200 text-gray-600"}`}>
+            {safeRank.unlocked ? "Ready to review" : "Locked"}
+          </span>
+        </div>
+
+        <ul className="mt-3 space-y-2">
+          {safeRank.requirements.map((step) => (
+            <li key={step.title} className="flex items-start gap-2 rounded-xl bg-white/70 px-3 py-2">
+              <span className={`mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full ${step.completed ? "bg-emerald-700" : "bg-slate-300"}`} />
+              <div>
+                <p className="text-sm font-medium text-slate-800">{step.title}</p>
+                <p className="text-xs text-slate-500">{step.completed ? "Finished" : "Needed to unlock the next rank"}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   );
