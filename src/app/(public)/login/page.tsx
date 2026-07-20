@@ -1,14 +1,26 @@
+//src/app/(public)/login/page.tsx
+
 "use client";
 
-import { useActionState, useEffect, useState,} from "react";
+import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { EyeIcon, EyeSlashIcon, EnvelopeIcon, LockClosedIcon,} from "@heroicons/react/24/outline";
+import {
+  EyeIcon,
+  EyeSlashIcon,
+  EnvelopeIcon,
+  LockClosedIcon,
+} from "@heroicons/react/24/outline";
 
-import {loginAction,type ActionResult,} from "@/app/actions/auth";
+import {
+  loginAction,
+  type ActionResult,
+} from "@/app/actions/auth";
 
-const initialState: ActionResult = {
+const initialState: ActionResult & {
+  redirectTo?: string;
+} = {
   success: false,
 };
 
@@ -23,13 +35,13 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    if (state.success) {
-      router.push("/scout");
-    }
-  }, [state.success, router]);
+    if (!state.success) return;
+
+    router.push(state.redirectTo ?? "/scout");
+  }, [state, router]);
 
   return (
-    <main className="flex min-h-screen flex-col bg-#f4f6f3 md:flex-row md:items-stretch">
+    <main className="flex min-h-screen flex-col bg-[#f4f6f3] md:flex-row md:items-stretch">
       <section className="w-full md:w-[46%] md:min-h-screen">
         <div className="relative h-[300px] w-full sm:h-[400px] md:h-full">
           <Image
@@ -37,26 +49,26 @@ export default function LoginPage() {
             alt="bsp-landingpage-backdrop"
             fill
             priority
-            sizes="(max-width: 768px) 100vw, 50vw"
+            sizes="(max-width:768px) 100vw, 50vw"
             className="object-cover object-center"
           />
         </div>
       </section>
 
-      <section className="flex w-full md:flex-1 items-center justify-center px-6 py-8 sm:px-8 md:px-10 lg:px-16">
-        <div className="absolute inset-0 z-0 pointer-events-none select-none">
-        <Image
-          src="/bsp-login-bg.svg"
-          alt="Form Background Backdrop"
-          fill
-          priority
-          className="object-cover object-center blur-md opacity-20 scale-105"
-        />
-        
+      <section className="relative flex w-full items-center justify-center px-6 py-8 sm:px-8 md:flex-1 md:px-10 lg:px-16">
+        <div className="pointer-events-none absolute inset-0 select-none">
+          <Image
+            src="/bsp-login-bg.svg"
+            alt="Form Background Backdrop"
+            fill
+            priority
+            className="scale-105 object-cover object-center opacity-20 blur-md"
+          />
         </div>
+
         <form
           action={formAction}
-          className="relative z-10 w-full max-w-md rounded-2xl bg-[#ffffff] p-8 shadow-2xl border border-gray-100"
+          className="relative z-10 w-full max-w-md rounded-2xl border border-gray-100 bg-white p-8 shadow-2xl"
         >
           <Image
             src="/escout-logo.svg"
@@ -84,12 +96,13 @@ export default function LoginPage() {
 
           <div className="relative mb-4">
             <EnvelopeIcon className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-green-900" />
+
             <input
               name="email"
               type="email"
-              placeholder="Email Address"
               required
               autoComplete="email"
+              placeholder="Email Address"
               className="w-full rounded border border-gray-300 bg-white py-3 pl-10 pr-3 transition focus:border-green-700 focus:outline-none"
             />
           </div>
@@ -102,20 +115,19 @@ export default function LoginPage() {
 
           <div className="relative mb-6">
             <LockClosedIcon className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-green-900" />
+
             <input
               name="password"
               type={showPassword ? "text" : "password"}
-              placeholder="Password"
               required
               autoComplete="current-password"
+              placeholder="Password"
               className="w-full rounded border border-gray-300 bg-white py-3 pl-10 pr-12 transition focus:border-green-700 focus:outline-none"
             />
 
             <button
               type="button"
-              onClick={() =>
-                setShowPassword(!showPassword)
-              }
+              onClick={() => setShowPassword((prev) => !prev)}
               className="absolute inset-y-0 right-3 flex items-center"
             >
               {showPassword ? (
@@ -140,7 +152,9 @@ export default function LoginPage() {
             {pending ? "Logging In..." : "Log In"}
           </button>
 
-          <p className="my-4 text-center text-sm text-gray-500">or</p>
+          <p className="my-4 text-center text-sm text-gray-500">
+            or
+          </p>
 
           <p className="text-center text-sm text-gray-500">
             Don't have an{" "}
@@ -157,7 +171,7 @@ export default function LoginPage() {
           <Link href="/signup">
             <button
               type="button"
-              className="mt-3 w-full rounded border border-gray-300 p-3 font-semibold text-green-900 hover:bg-gray-100"
+              className="mt-3 w-full rounded border border-gray-300 p-3 font-semibold text-green-900 transition hover:bg-gray-100"
             >
               Sign Up
             </button>
