@@ -1,7 +1,7 @@
 import Header from '../components/Header';
 import BottomNav from '../components/BottomNav';
-import RankSelector from './components/RankSelector';
-import MeritBadgeList from './components/MeritBadgeList';
+import RankCarousel from './components/RankCarousel';
+import ImageUploadButton from './components/ImageUploadButton';
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/current-user";
 
@@ -21,6 +21,15 @@ export default async function AdvancementPage() {
     redirect("/scout/membership");
   }
 
+  const ranks = [
+    { id: "senior", name: "Senior Scout", imageSrc: "/seniorscout.svg", badgeType: "Advancement", unlocked: true },
+    { id: "explorer", name: "Explorer", imageSrc: "/Explorer.svg", badgeType: "Advancement", unlocked: true },
+    { id: "pathfinder", name: "Pathfinder", imageSrc: "/Pathfinder.svg", badgeType: "Advancement", unlocked: false },
+    { id: "outdoorsman", name: "Outdoorsman", imageSrc: "/Outdoorsman.svg", badgeType: "Advancement", unlocked: false },
+    { id: "venturer", name: "Venturer", imageSrc: "/Venturer.svg", badgeType: "Advancement", unlocked: false },
+    { id: "eagle", name: "Eagle Scout", imageSrc: "/EagleScout.svg", badgeType: "Advancement", unlocked: false },
+  ];
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-white via-[#f7fdf8] to-[#e7f6ea] text-slate-950">
       <div className="mx-auto flex min-h-screen max-w-md flex-col">
@@ -28,8 +37,8 @@ export default async function AdvancementPage() {
           <Header userName={user.firstName} avatarUrl={user.avatarUrl ?? undefined} />
 
           <div className="space-y-5 px-4 py-4 sm:px-5">
-            <RankSelector />
-            <MeritBadgeList />
+            <RankCarousel ranks={ranks} activeRankId="explorer" />
+            <ImageUploadButton />
           </div>
         </div>
 

@@ -1,3 +1,5 @@
+//src/app/actions/auth.ts
+
 "use server";
 
 import { redirect } from "next/navigation";
@@ -202,7 +204,11 @@ export async function verifyCurrentPasswordAction(
 export async function loginAction(
   prevState: ActionResult,
   formData: FormData
-): Promise<ActionResult> {
+): Promise<
+  ActionResult & {
+    redirectTo?: string;
+  }
+> {
   const parsed = loginSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
@@ -222,9 +228,19 @@ export async function loginAction(
       parsed.data.password
     );
 
+    let redirectTo = "/scout";
+
+    if (
+      user.role === "COUNCIL_ADMIN" ||
+      user.role === "SUPER_ADMIN"
+    ) {
+      redirectTo = "/admin";
+    }
+
     return {
       success: true,
       message: `Welcome back, ${user.firstName}!`,
+      redirectTo,
     };
   } catch (error) {
     console.error(error);
