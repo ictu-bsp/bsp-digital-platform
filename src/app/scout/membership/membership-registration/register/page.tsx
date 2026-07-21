@@ -11,83 +11,31 @@ import { getCouncilsAction, getRegionsAction } from "@/app/actions/councils";
 import SearchableSelect from "../components/SearchableSelect";
 import { useWizard } from "../WizardContext";
 
-const FEE_PER_YEAR = 100;
-
-// single export only
-// Reads a previously-saved value back out of localStorage so that
-// navigating back into this step mid-flow doesn't wipe what the user
-// already selected. Guarded for SSR since localStorage doesn't exist
-// server-side.
-const readSaved = (key: string) => {
-  if (typeof window === "undefined") return "";
-  return localStorage.getItem(key) ?? "";
-};
-
-const readSavedBool = (key: string) => {
-  if (typeof window === "undefined") return false;
-  return localStorage.getItem(key) === "true";
-};
-
-// Border/background/text styling that reacts to whether a field is filled.
-const fieldShellClass = (filled: boolean, locked?: boolean) =>
-  `w-full rounded-lg py-3 text-lg border transition-colors ${
-    locked
-      ? "border-zinc-200 bg-zinc-100 text-zinc-400 cursor-not-allowed"
-      : filled
-      ? "border-green-600 bg-green-50 text-zinc-900"
-      : "border-zinc-300 bg-white text-zinc-400"
-  }`;
+const FEE_PER_YEAR = 50;
+const readSaved = (key: string) => {if (typeof window === "undefined") return "";return localStorage.getItem(key) ?? "";};
+const readSavedBool = (key: string) => {if (typeof window === "undefined") return false;return localStorage.getItem(key) === "true";};
+const fieldShellClass = (filled: boolean, locked?: boolean) =>`w-full rounded-lg py-3 text-lg border transition-colors ${locked? "border-zinc-200 bg-zinc-100 text-zinc-400 cursor-not-allowed": filled? "border-green-600 bg-green-50 text-zinc-900": "border-zinc-300 bg-white text-zinc-400"}`;
 
 export default function RegisterPage() {
   const router = useRouter();
-  const {
-    bloodType,
-    address,
-    telephone,
-    emergencyContactName,
-    emergencyContactRelationship,
-    emergencyContactNumber,
-  } = useWizard();
-
-  const [scoutingPosition, setScoutingPosition] = useState(() =>
-    readSaved("registerScoutingPosition")
-  );
-  const [advancementRank, setAdvancementRank] = useState(() =>
-    readSaved("registerAdvancementRank")
-  );
+  const {bloodType,address,telephone,emergencyContactName,emergencyContactRelationship,emergencyContactNumber,} = useWizard();
+  const [scoutingPosition, setScoutingPosition] = useState(() =>readSaved("registerScoutingPosition"));
+  const [advancementRank, setAdvancementRank] = useState(() =>readSaved("registerAdvancementRank"));
   const [tenure, setTenure] = useState(() => readSaved("registerTenure"));
   const [regionId, setRegionId] = useState(() => readSaved("registerRegionId"));
   const [councilId, setCouncilId] = useState(() => readSaved("registerCouncilId"));
   const [regions, setRegions] = useState<{ id: string; name: string }[]>([]);
   const [regionsLoading, setRegionsLoading] = useState(true);
-  const [councils, setCouncils] = useState<
-    { id: string; name: string; regionId: string | null }[]
-  >([]);
+  const [councils, setCouncils] = useState<{ id: string; name: string; regionId: string | null }[]>([]);
   const [councilsLoading, setCouncilsLoading] = useState(true);
-  const [isCommunityBased, setIsCommunityBased] = useState(() =>
-    readSavedBool("registerIsCommunityBased")
-  );
-  const [sponsoringInstitution, setSponsoringInstitution] = useState(() =>
-    readSaved("registerSponsoringInstitution")
-  );
-  const [membershipValidity, setMembershipValidity] = useState(() =>
-    readSaved("registerMembershipValidity")
-  );
-
+  const [isCommunityBased, setIsCommunityBased] = useState(() =>readSavedBool("registerIsCommunityBased"));
+  const [sponsoringInstitution, setSponsoringInstitution] = useState(() =>readSaved("registerSponsoringInstitution"));
+  const [membershipValidity, setMembershipValidity] = useState(() =>readSaved("registerMembershipValidity"));
   const amount = FEE_PER_YEAR * (Number(membershipValidity) || 0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
-  // When community-based is checked, Sponsoring Institution is locked out —
-  // clear whatever was selected so a stale value doesn't get submitted.
-  useEffect(() => {
-    if (isCommunityBased) {
-      setSponsoringInstitution("");
-    }
-  }, [isCommunityBased]);
-
-  // Persist every field as the user fills them in, so navigating back
-  // into this step from method/payment doesn't lose what was entered.
+  useEffect(() => {if (isCommunityBased) {setSponsoringInstitution("");}}, [isCommunityBased]);
   useEffect(() => {
     localStorage.setItem("registerScoutingPosition", scoutingPosition);
     localStorage.setItem("registerAdvancementRank", advancementRank);
@@ -97,58 +45,21 @@ export default function RegisterPage() {
     localStorage.setItem("registerIsCommunityBased", String(isCommunityBased));
     localStorage.setItem("registerSponsoringInstitution", sponsoringInstitution);
     localStorage.setItem("registerMembershipValidity", membershipValidity);
-  }, [
-    scoutingPosition,
-    advancementRank,
-    tenure,
-    regionId,
-    councilId,
-    isCommunityBased,
-    sponsoringInstitution,
-    membershipValidity,
-  ]);
+  }, [scoutingPosition, advancementRank, tenure, regionId, councilId,
+    isCommunityBased, sponsoringInstitution, membershipValidity,]);
 
-  useEffect(() => {
-    const loadCouncils = async () => {
-      const result = await getCouncilsAction();
-      if (result.success && result.data) {
-        setCouncils(result.data);
-      }
-      setCouncilsLoading(false);
-    };
+  useEffect(() => {const loadCouncils = async () => {const result = await getCouncilsAction();
+    if (result.success && result.data) {setCouncils(result.data);}setCouncilsLoading(false);};
+    loadCouncils();}, []);
+  useEffect(() => {const loadRegions = async () => {const result = await getRegionsAction();
+    if (result.success && result.data) {setRegions(result.data);}setRegionsLoading(false); };
+    loadRegions();}, []);
 
-    loadCouncils();
-  }, []);
-
-  useEffect(() => {
-    const loadRegions = async () => {
-      const result = await getRegionsAction();
-      if (result.success && result.data) {
-        setRegions(result.data);
-      }
-      setRegionsLoading(false);
-    };
-
-    loadRegions();
-  }, []);
-
-  // Region name resolved from the selected region's id — this is what
-  // actually gets sent to submitApplicationAction, same as before.
   const regionName = regions.find((r) => r.id === regionId)?.name ?? "";
-
-  // Council options are filtered down to the selected region once one is
-  // picked; with no region selected yet, every council is browsable.
-  const councilOptions = regionId
-    ? councils
-        .filter((c) => c.regionId === regionId)
-        .map((c) => ({ id: c.id, label: c.name }))
-    : councils.map((c) => ({ id: c.id, label: c.name }));
-
+  const councilOptions = regionId? councils.filter((c) => c.regionId === regionId)
+  .map((c) => ({ id: c.id, label: c.name }))
+  : councils.map((c) => ({ id: c.id, label: c.name }));
   const regionOptions = regions.map((r) => ({ id: r.id, label: r.name }));
-
-  // Picking a Region filters the Council list above; if the currently
-  // selected Council no longer belongs to the newly picked Region, clear it
-  // out so the two fields never end up contradicting each other.
   const handleRegionChange = (newRegionId: string) => {
     setRegionId(newRegionId);
     const currentCouncil = councils.find((c) => c.id === councilId);
@@ -156,8 +67,6 @@ export default function RegisterPage() {
       setCouncilId("");
     }
   };
-
-  // Picking a Council auto-fills its Region (mutual cascade, other direction).
   const handleCouncilChange = (newCouncilId: string) => {
     setCouncilId(newCouncilId);
     const council = councils.find((c) => c.id === newCouncilId);
@@ -165,7 +74,6 @@ export default function RegisterPage() {
       setRegionId(council.regionId);
     }
   };
-
   const onNext = async (event: React.FormEvent) => {
     event.preventDefault();
     setSubmitError("");
@@ -178,25 +86,17 @@ export default function RegisterPage() {
 
     const result = await submitApplicationAction({
     councilId,
-
     scoutingPosition,
-
     advancementRank,
-
     tenure: Number(tenure),
-
     region: regionName,
-
     communityBased: isCommunityBased,
-
     sponsoringInstitution:
         isCommunityBased
             ? null
             : sponsoringInstitution,
-
     requestedRegistrationYears:
         Number(membershipValidity),
-
     bloodType,
     address,
     telephone,

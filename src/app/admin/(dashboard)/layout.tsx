@@ -141,7 +141,7 @@ export default async function AdminLayout({
   }
 
   if (!session.adminUser) {
-    redirect("/admin/login");
+    redirect("/admin/(login)");
   }
 
   const officerRole = session.adminUser.role;
