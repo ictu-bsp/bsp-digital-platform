@@ -15,14 +15,9 @@ export const ActivitySchema = z.object({
   location: z.string().min(2),
 
   category: z.enum([
-    "CAMPING",
-    "TRAINING",
-    "COMMUNITY_SERVICE",
-    "SEMINAR",
-    "COMPETITION",
-    "CEREMONY",
-    "MEETING",
-    "OTHER",
+    "COUNCIL",
+    "REGIONAL",
+    "NATIONAL",
   ]),
 
   maxParticipants: z.number().optional(),
