@@ -40,6 +40,12 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
 
+  // The login page shouldn't show the sidebar/top bar — nobody is
+  // "logged in" yet when they're looking at it. Render it standalone.
+  if (pathname === "/admin/login") {
+    return <>{children}</>;
+  }
+
   return (
     <div className="min-h-screen bg-zinc-100 p-4">
       {/* Top bar */}

@@ -11,6 +11,7 @@ import { seedUsers } from "./seeds/users.seed";
 import { seedActivities } from "./seeds/activities.seed";
 import { seedScouts } from "./seeds/scouts.seed";
 import { seedScoutApplications } from "./seeds/scoutApplications.seed";
+import { seedRegions } from "./seeds/regions.seed";
 
 dotenv.config({ path: ".env.local" });
 
@@ -30,11 +31,13 @@ async function main() {
       activities,
       users,
       councils,
+      regions,
       sessions,
       scout_applications
     RESTART IDENTITY CASCADE;
   `);
 
+  await seedRegions(db);
   await seedCouncils(db);
   await seedUsers(db);
   await seedScouts(db);

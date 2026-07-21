@@ -15,3 +15,4 @@ export * from "./pending-user-registrations";
 export * from "./announcements";
 export * from "./scoutApplications";
 export * from "./activity-registrations";
+export * from "./regions";

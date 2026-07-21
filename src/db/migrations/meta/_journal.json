@@ -43,6 +43,13 @@
       "when": 1784271496545,
       "tag": "0005_supreme_logan",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784526426491,
+      "tag": "0006_majestic_bug",
+      "breakpoints": true
     }
   ]
 }

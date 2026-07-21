@@ -5,6 +5,7 @@ import {
   text,
   uuid,
 } from "drizzle-orm/pg-core";
+import { regions } from "./regions";
 
 export const councils = pgTable("councils", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -12,4 +13,7 @@ export const councils = pgTable("councils", {
   name: text("name")
     .unique()
     .notNull(),
+
+  regionId: uuid("region_id")
+    .references(() => regions.id),
 });
