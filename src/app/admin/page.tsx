@@ -3,6 +3,7 @@
 // Bottom two boxes are placeholders — not yet scoped.
 
 import { fetchDashboardStats } from "@/app/actions/admin";
+import MonthRangePicker from "./components/MonthRangePicker";
 
 export default async function AdminDashboardPage() {
   const result = await fetchDashboardStats();
@@ -12,11 +13,7 @@ export default async function AdminDashboardPage() {
     <div className="flex flex-col gap-4">
       {/* Date range control */}
       <div className="flex justify-end">
-        <div className="bg-white rounded-full px-4 py-2 shadow-sm text-sm text-zinc-700 flex items-center gap-2 cursor-pointer">
-          <span>📅</span>
-          June – July 2026
-          <span className="text-zinc-400">▾</span>
-        </div>
+        <MonthRangePicker />
       </div>
 
       {/* Top stat boxes */}

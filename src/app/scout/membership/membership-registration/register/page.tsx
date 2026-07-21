@@ -7,7 +7,8 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { CheckCircleIcon, ChevronDownIcon, LockClosedIcon } from "@heroicons/react/24/solid";
 import { submitApplicationAction } from "@/app/actions/application";
-import { getCouncilsAction } from "@/app/actions/councils";
+import { getCouncilsAction, getRegionsAction } from "@/app/actions/councils";
+import SearchableSelect from "../components/SearchableSelect";
 import { useWizard } from "../WizardContext";
 
 const FEE_PER_YEAR = 100;
@@ -55,10 +56,14 @@ export default function RegisterPage() {
     readSaved("registerAdvancementRank")
   );
   const [tenure, setTenure] = useState(() => readSaved("registerTenure"));
-  const [region, setRegion] = useState(() => readSaved("registerRegion"));
+  const [regionId, setRegionId] = useState(() => readSaved("registerRegionId"));
   const [councilId, setCouncilId] = useState(() => readSaved("registerCouncilId"));
-const [councils, setCouncils] = useState<{ id: string; name: string }[]>([]);
-const [councilsLoading, setCouncilsLoading] = useState(true);
+  const [regions, setRegions] = useState<{ id: string; name: string }[]>([]);
+  const [regionsLoading, setRegionsLoading] = useState(true);
+  const [councils, setCouncils] = useState<
+    { id: string; name: string; regionId: string | null }[]
+  >([]);
+  const [councilsLoading, setCouncilsLoading] = useState(true);
   const [isCommunityBased, setIsCommunityBased] = useState(() =>
     readSavedBool("registerIsCommunityBased")
   );
@@ -87,7 +92,7 @@ const [councilsLoading, setCouncilsLoading] = useState(true);
     localStorage.setItem("registerScoutingPosition", scoutingPosition);
     localStorage.setItem("registerAdvancementRank", advancementRank);
     localStorage.setItem("registerTenure", tenure);
-    localStorage.setItem("registerRegion", region);
+    localStorage.setItem("registerRegionId", regionId);
     localStorage.setItem("registerCouncilId", councilId);
     localStorage.setItem("registerIsCommunityBased", String(isCommunityBased));
     localStorage.setItem("registerSponsoringInstitution", sponsoringInstitution);
@@ -96,7 +101,7 @@ const [councilsLoading, setCouncilsLoading] = useState(true);
     scoutingPosition,
     advancementRank,
     tenure,
-    region,
+    regionId,
     councilId,
     isCommunityBased,
     sponsoringInstitution,
@@ -104,15 +109,62 @@ const [councilsLoading, setCouncilsLoading] = useState(true);
   ]);
 
   useEffect(() => {
-  const loadCouncils = async () => {
-    const result = await getCouncilsAction();
-    if (result.success && result.data) {
-      setCouncils(result.data);
+    const loadCouncils = async () => {
+      const result = await getCouncilsAction();
+      if (result.success && result.data) {
+        setCouncils(result.data);
+      }
+      setCouncilsLoading(false);
+    };
+
+    loadCouncils();
+  }, []);
+
+  useEffect(() => {
+    const loadRegions = async () => {
+      const result = await getRegionsAction();
+      if (result.success && result.data) {
+        setRegions(result.data);
+      }
+      setRegionsLoading(false);
+    };
+
+    loadRegions();
+  }, []);
+
+  // Region name resolved from the selected region's id — this is what
+  // actually gets sent to submitApplicationAction, same as before.
+  const regionName = regions.find((r) => r.id === regionId)?.name ?? "";
+
+  // Council options are filtered down to the selected region once one is
+  // picked; with no region selected yet, every council is browsable.
+  const councilOptions = regionId
+    ? councils
+        .filter((c) => c.regionId === regionId)
+        .map((c) => ({ id: c.id, label: c.name }))
+    : councils.map((c) => ({ id: c.id, label: c.name }));
+
+  const regionOptions = regions.map((r) => ({ id: r.id, label: r.name }));
+
+  // Picking a Region filters the Council list above; if the currently
+  // selected Council no longer belongs to the newly picked Region, clear it
+  // out so the two fields never end up contradicting each other.
+  const handleRegionChange = (newRegionId: string) => {
+    setRegionId(newRegionId);
+    const currentCouncil = councils.find((c) => c.id === councilId);
+    if (currentCouncil && currentCouncil.regionId !== newRegionId) {
+      setCouncilId("");
     }
-    setCouncilsLoading(false);
   };
-  loadCouncils();
-}, []);
+
+  // Picking a Council auto-fills its Region (mutual cascade, other direction).
+  const handleCouncilChange = (newCouncilId: string) => {
+    setCouncilId(newCouncilId);
+    const council = councils.find((c) => c.id === newCouncilId);
+    if (council?.regionId) {
+      setRegionId(council.regionId);
+    }
+  };
 
   const onNext = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -133,7 +185,7 @@ const [councilsLoading, setCouncilsLoading] = useState(true);
 
     tenure: Number(tenure),
 
-    region,
+    region: regionName,
 
     communityBased: isCommunityBased,
 
@@ -284,50 +336,23 @@ localStorage.setItem("paymentCouncilId", councilId);
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          {/* Region */}
-          <div className="relative">
-            <select
-              value={region}
-              onChange={(e) => setRegion(e.target.value)}
-              className={`${fieldShellClass(region !== "")} appearance-none pl-4 pr-16`}
-              required
-            >
-              <option value="" disabled className="text-zinc-400">
-                Region
-              </option>
-              <option value="ncr" className="text-zinc-900">NCR</option>
-              <option value="region_1" className="text-zinc-900">Region I</option>
-              <option value="region_2" className="text-zinc-900">Region II</option>
-            </select>
-            {region !== "" && (
-              <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-9 top-1/2 -translate-y-1/2 pointer-events-none" />
-            )}
-            <ChevronDownIcon className="w-5 h-5 text-zinc-500 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
+          {/* Council — searchable, filtered by selected Region if one is set */}
+          <SearchableSelect
+            options={councilOptions}
+            value={councilId}
+            onChange={handleCouncilChange}
+            placeholder="Council"
+            loading={councilsLoading}
+          />
 
-          {/* Council — real dropdown sourced from the councils table */}
-<div className="relative">
-  <select
-    value={councilId}
-    onChange={(e) => setCouncilId(e.target.value)}
-    disabled={councilsLoading}
-    className={`${fieldShellClass(councilId !== "", councilsLoading)} appearance-none pl-4 pr-16`}
-    required
-  >
-    <option value="" disabled className="text-zinc-400">
-      {councilsLoading ? "Loading councils..." : "Council"}
-    </option>
-    {councils.map((c) => (
-      <option key={c.id} value={c.id} className="text-zinc-900">
-        {c.name}
-      </option>
-    ))}
-  </select>
-  {!councilsLoading && councilId !== "" && (
-    <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-9 top-1/2 -translate-y-1/2 pointer-events-none" />
-  )}
-  <ChevronDownIcon className="w-5 h-5 text-zinc-500 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
-</div>
+          {/* Region — searchable, filters the Council list when set */}
+          <SearchableSelect
+            options={regionOptions}
+            value={regionId}
+            onChange={handleRegionChange}
+            placeholder="Region"
+            loading={regionsLoading}
+          />
         </div>
 
         <label className="flex items-center gap-2 text-base text-zinc-700 -mt-2">
