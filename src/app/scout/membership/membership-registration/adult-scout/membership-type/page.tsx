@@ -73,7 +73,7 @@ export default function AdultScoutMembershipTypePage() {
     if (membershipType === "" || membershipCategory === "" || selectedFee === "") return;
 
     localStorage.setItem("membershipFlow", "adult_scout");
-    router.push("/scout/membership/membership-registration/personal-info");
+    router.push("/scout/membership/membership-registration/adult-scout/personal-info");
   };
 
   return (
