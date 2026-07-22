@@ -4,7 +4,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+
 import BottomNav from "../components/BottomNav";
+
 import UserInfoCard from "./components/UserInfoCard";
 import ProfileHeader from "./components/ProfileHeader";
 import ProfileAvatar from "./components/ProfileAvatar";
@@ -13,6 +15,8 @@ import EditProfileModal from "./components/EditProfileModal";
 import EditProfileButton from "./components/EditProfileButton";
 import VerifyPasswordModal from "./components/VerifyPasswordModal";
 import AccountInformationCard from "./components/AccountInformationCard";
+
+import SuccessOverlay from "@/components-general/ui/SuccessOverlay";
 
 type MembershipData = Awaited<
   ReturnType<
@@ -47,11 +51,15 @@ export default function ProfileClient({
   const [showEditProfileModal, setShowEditProfileModal] =
     useState(false);
 
+  const [showSuccess, setShowSuccess] =
+    useState(false);
+
   const [profile, setProfile] =
     useState(user);
 
   const membershipStatus =
-    membershipData?.scout?.verificationStatus === "active";
+    membershipData?.scout?.verificationStatus ===
+    "active";
 
   const status = membershipData?.scout
     ? membershipStatus
@@ -73,77 +81,95 @@ export default function ProfileClient({
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-white via-[#f7fdf8] to-[#e7f6ea] text-slate-950">
-      <div className="mx-auto flex min-h-screen max-w-md flex-col">
+    <>
+      <main className="min-h-screen bg-gradient-to-b from-white via-[#f7fdf8] to-[#e7f6ea] text-slate-950">
+        <div className="mx-auto flex min-h-screen max-w-md flex-col">
 
-        <ProfileHeader
-          onLogout={handleLogout}
-        />
+          <ProfileHeader
+            onLogout={handleLogout}
+          />
 
-        <div className="flex-1 pb-28">
-          <div className="space-y-5 px-1 py-5">
+          <div className="flex-1 pb-28">
+            <div className="space-y-5 px-1 py-5">
 
-            <ProfileAvatar
-              avatarUrl={profile.avatarUrl ?? null}
-            />
+              <ProfileAvatar
+                avatarUrl={
+                  profile.avatarUrl ?? null
+                }
+              />
 
-            <UserInfoCard
-              status={status}
-              name={fullName}
-            />
+              <UserInfoCard
+                status={status}
+                name={fullName}
+              />
 
-            <AccountInformationCard
-              email={profile.email}
-              birthdate={profile.birthdate}
-              gender={profile.gender}
-            />
+              <AccountInformationCard
+                email={profile.email}
+                birthdate={profile.birthdate}
+                gender={profile.gender}
+              />
 
-            <MembershipCta
-              membershipStatus={membershipStatus}
-              membershipData={membershipData}
-            />
+              <MembershipCta
+                membershipStatus={
+                  membershipStatus
+                }
+                membershipData={
+                  membershipData
+                }
+              />
 
-            <EditProfileButton
-              onClick={() =>
-                setShowPasswordModal(true)
-              }
-            />
+              <EditProfileButton
+                onClick={() =>
+                  setShowPasswordModal(true)
+                }
+              />
 
+            </div>
           </div>
+
+          <BottomNav />
+
+          {showPasswordModal && (
+            <VerifyPasswordModal
+              onClose={() =>
+                setShowPasswordModal(false)
+              }
+              onSuccess={() => {
+                setShowPasswordModal(false);
+                setShowEditProfileModal(true);
+              }}
+            />
+          )}
+
+          {showEditProfileModal && (
+            <EditProfileModal
+              user={profile}
+              onClose={() =>
+                setShowEditProfileModal(false)
+              }
+              onSave={(
+                updatedProfile
+              ) => {
+                setProfile({
+                  ...profile,
+                  ...updatedProfile,
+                });
+
+                setShowEditProfileModal(false);
+
+                setShowSuccess(true);
+              }}
+            />
+          )}
+
         </div>
+      </main>
 
-        <BottomNav />
-
-        {showPasswordModal && (
-          <VerifyPasswordModal
-            onClose={() =>
-              setShowPasswordModal(false)
-            }
-            onSuccess={() => {
-              setShowPasswordModal(false);
-              setShowEditProfileModal(true);
-            }}
-          />
-        )}
-
-        {showEditProfileModal && (
-          <EditProfileModal
-            user={profile}
-            onClose={() =>
-              setShowEditProfileModal(false)
-            }
-            onSave={(updatedProfile) => {
-              setProfile({
-                ...profile,
-                ...updatedProfile,
-              });
-
-              setShowEditProfileModal(false);
-            }}
-          />
-        )}
-
-      </div>
-    </main>
+      <SuccessOverlay
+        open={showSuccess}
+        title="Profile Updated"
+        subtitle="Your account information has been updated successfully."
+      />
+    </>
   );
 }

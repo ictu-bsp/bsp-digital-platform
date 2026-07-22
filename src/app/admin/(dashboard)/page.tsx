@@ -3,7 +3,7 @@
 // Bottom two boxes are placeholders — not yet scoped.
 
 import { fetchDashboardStats } from "@/app/actions/admin";
-import MonthRangePicker from "./(dashboard)/components/MonthRangePicker";
+import MonthRangePicker from "./components/MonthRangePicker";
 
 export default async function AdminDashboardPage() {
   const result = await fetchDashboardStats();

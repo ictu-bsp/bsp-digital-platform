@@ -10,36 +10,16 @@ import { submitApplicationAction } from "@/app/actions/application";
 import { getCouncilsAction, getRegionsAction } from "@/app/actions/councils";
 import SearchableSelect from "../components/SearchableSelect";
 import { useWizard } from "../WizardContext";
+import RegistrationStepper from "../components/RegistrationStepper";
 
-const FEE_PER_YEAR = 100;
-
-// single export only
-// Reads a previously-saved value back out of localStorage so that
-// navigating back into this step mid-flow doesn't wipe what the user
-// already selected. Guarded for SSR since localStorage doesn't exist
-// server-side.
-const readSaved = (key: string) => {
-  if (typeof window === "undefined") return "";
-  return localStorage.getItem(key) ?? "";
-};
-
-const readSavedBool = (key: string) => {
-  if (typeof window === "undefined") return false;
-  return localStorage.getItem(key) === "true";
-};
-
-// Border/background/text styling that reacts to whether a field is filled.
-const fieldShellClass = (filled: boolean, locked?: boolean) =>
-  `w-full rounded-lg py-3 text-lg border transition-colors ${
-    locked
-      ? "border-zinc-200 bg-zinc-100 text-zinc-400 cursor-not-allowed"
-      : filled
-      ? "border-green-600 bg-green-50 text-zinc-900"
-      : "border-zinc-300 bg-white text-zinc-400"
-  }`;
+const FEE_PER_YEAR = 50;
+const readSaved = (key: string) => {if (typeof window === "undefined") return "";return localStorage.getItem(key) ?? "";};
+const readSavedBool = (key: string) => {if (typeof window === "undefined") return false;return localStorage.getItem(key) === "true";};
+const fieldShellClass = (filled: boolean, locked?: boolean) =>`w-full rounded-lg py-3 text-lg border transition-colors ${locked? "border-zinc-200 bg-zinc-100 text-zinc-400 cursor-not-allowed": filled? "border-green-600 bg-green-50 text-zinc-900": "border-zinc-300 bg-white text-zinc-400"}`;
 
 export default function RegisterPage() {
   const router = useRouter();
+  const [isAdultScoutFlow, setIsAdultScoutFlow] = useState(false);
   const {
     bloodType,
     address,
@@ -56,9 +36,7 @@ export default function RegisterPage() {
   const [councilId, setCouncilId] = useState("");
   const [regions, setRegions] = useState<{ id: string; name: string }[]>([]);
   const [regionsLoading, setRegionsLoading] = useState(true);
-  const [councils, setCouncils] = useState<
-    { id: string; name: string; regionId: string | null }[]
-  >([]);
+  const [councils, setCouncils] = useState<{ id: string; name: string; regionId: string | null }[]>([]);
   const [councilsLoading, setCouncilsLoading] = useState(true);
   const [isCommunityBased, setIsCommunityBased] = useState(false);
   const [sponsoringInstitution, setSponsoringInstitution] = useState("");
@@ -68,7 +46,13 @@ export default function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
-  // Single Year has no dropdown â€” it's always exactly 1 year. Multi-Year
+  // Detect whether this registration is part of the adult-scout flow so the
+  // stepper shows the right step count/labels. Read once on mount.
+  useEffect(() => {
+    setIsAdultScoutFlow(localStorage.getItem("membershipFlow") === "adult_scout");
+  }, []);
+
+  // Single Year has no dropdown — it's always exactly 1 year. Multi-Year
   // requires the user to pick a real duration. Nothing is set until the
   // user actively clicks one of the two buttons (membershipType starts
   // as "").
@@ -107,8 +91,7 @@ export default function RegisterPage() {
     membershipValidity,
   ]);
 
-
-// Hydrate saved values from localStorage AFTER mount, not during initial
+  // Hydrate saved values from localStorage AFTER mount, not during initial
   // render. Reading localStorage inside useState's initializer causes a
   // server/client mismatch (server has no localStorage, client does),
   // which is what was triggering the hydration error. Doing it here
@@ -120,6 +103,7 @@ export default function RegisterPage() {
     setTenure(readSaved("registerTenure"));
     setRegionId(readSaved("registerRegionId"));
     setCouncilId(readSaved("registerCouncilId"));
+    setIsCommunityBased(readSavedBool("registerIsCommunityBased"));
     setSponsoringInstitution(readSaved("registerSponsoringInstitution"));
     setMembershipType(
       (readSaved("registerMembershipType") as "single" | "multi" | "") || ""
@@ -136,7 +120,6 @@ export default function RegisterPage() {
       }
       setCouncilsLoading(false);
     };
-
     loadCouncils();
   }, []);
 
@@ -148,17 +131,11 @@ export default function RegisterPage() {
       }
       setRegionsLoading(false);
     };
-
     loadRegions();
   }, []);
 
-  // Region name resolved from the selected region's id — this is what
-  // actually gets sent to submitApplicationAction, same as before.
   const regionName = regions.find((r) => r.id === regionId)?.name ?? "";
 
-  // Council and Region are fully independent selects now — neither
-  // filters or auto-fills the other. Both always show their complete,
-  // searchable list.
   // Council-first users (who know their council but not their region) see
   // every council until a Region is picked. Region-first users narrow the
   // Council list down once they pick a Region.
@@ -210,25 +187,17 @@ export default function RegisterPage() {
 
     const result = await submitApplicationAction({
     councilId,
-
     scoutingPosition,
-
     advancementRank,
-
     tenure: Number(tenure),
-
     region: regionName,
-
     communityBased: isCommunityBased,
-
     sponsoringInstitution:
         isCommunityBased
             ? null
             : sponsoringInstitution,
-
     requestedRegistrationYears:
         Number(membershipValidity),
-
     bloodType,
     address,
     telephone,
@@ -287,26 +256,12 @@ localStorage.setItem("paymentCouncilId", councilId);
           /></h1>
         <h2 className="text-2xl font-semibold mb-4">Register Membership</h2>
 
-        <div className="flex items-center justify-center gap-3 text-base text-green-800 mb-4">
-          <span className="w-8 h-8 rounded-full border-2 border-green-800 flex items-center justify-center">
-            1
-          </span>
-          <span>|</span>
-          <span className="w-8 h-8 rounded-full border-2 border-green-800 flex items-center justify-center">
-            2
-          </span>
-          <span>|</span>
-          <span className="flex items-center gap-2 bg-green-800 text-white rounded-full px-4 py-1.5">
-            <span className="w-6 h-6 rounded-full bg-white text-green-800 flex items-center justify-center text-sm font-semibold">
-              3
-            </span>
-            Scout Information
-          </span>
-          <span>|</span>
-          <span className="w-8 h-8 rounded-full border-2 border-green-800 flex items-center justify-center">
-            4
-          </span>
-        </div>
+        <RegistrationStepper
+          currentStep={isAdultScoutFlow ? 4 : 3}
+          totalSteps={isAdultScoutFlow ? 5 : 4}
+          currentLabel="Scout Information"
+          splitAfterStep={isAdultScoutFlow ? 2 : undefined}
+        />
 
         {/* Scouting Position */}
         <div className="relative">
@@ -377,7 +332,7 @@ localStorage.setItem("paymentCouncilId", councilId);
             loading={councilsLoading}
           />
 
-          {/* Region — searchable, filters the Council list when set */}
+          {/* Region — searchable, narrows the Council list when set */}
           <SearchableSelect
             options={regionOptions}
             value={regionId}
@@ -432,7 +387,7 @@ localStorage.setItem("paymentCouncilId", councilId);
 
         <label className="block text-lg font-medium">Membership Validity</label>
 
-        {/* Single Year vs Multi-Year toggle â€” starts with neither selected;
+        {/* Single Year vs Multi-Year toggle — starts with neither selected;
             the user must actively click one before Membership Validity
             resolves to anything. */}
         <div className="flex gap-3">
@@ -460,7 +415,7 @@ localStorage.setItem("paymentCouncilId", councilId);
           </button>
         </div>
 
-        {/* Years dropdown â€” only shown for Multi-Year. Single Year is
+        {/* Years dropdown — only shown for Multi-Year. Single Year is
             fixed at 1 year via the useEffect above, no dropdown needed. */}
         {membershipType === "multi" && (
           <div className="relative">

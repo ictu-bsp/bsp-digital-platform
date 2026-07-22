@@ -50,6 +50,20 @@
       "when": 1784526426491,
       "tag": "0006_majestic_bug",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1784596240793,
+      "tag": "0007_glossy_big_bertha",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1784604065516,
+      "tag": "0008_flawless_ink",
+      "breakpoints": true
     }
   ]
 }

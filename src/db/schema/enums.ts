@@ -57,3 +57,12 @@ export const activityCategoryEnum = pgEnum("activity_category", [
   "REGIONAL",
   "NATIONAL",
 ]);
+
+export const adminRoleEnum = pgEnum("admin_role", [
+  "CHIEF_EXECUTIVE",
+  "MEMBERSHIP_OFFICER",
+  "ACTIVITIES_OFFICER",
+  "FINANCE_OFFICER",
+  "REGISTRAR",
+  "REPORTS_OFFICER",
+]);
