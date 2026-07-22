@@ -321,7 +321,7 @@ export default function EditProfileModal({
         <EditAvatarModal
           currentAvatarUrl={
             avatarUrl
-              ? `/${avatarUrl}`
+              ? `/avatarUrl`
               : null
           }
           onSave={(newAvatarUrl) => {
