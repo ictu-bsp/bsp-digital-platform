@@ -15,7 +15,7 @@ export async function submitApplicationAction(data: {
   communityBased: boolean;
   sponsoringInstitution: string | null;
   requestedRegistrationYears: number;
-  // Personal info fields â€” stored in scoutApplications' dedicated
+  // Personal info fields — stored in scoutApplications' dedicated
   // columns (bloodType, address, telephoneNumber, etc.) by
   // submitApplication().
   bloodType: string;
@@ -24,6 +24,16 @@ export async function submitApplicationAction(data: {
   emergencyContactName: string;
   emergencyContactRelationship: string;
   emergencyContactNumber: string;
+  firstName?: string;
+  lastName?: string;
+  middleName?: string;
+  nameExtension?: string;
+  birthday?: string;
+  mobileNumber?: string;
+  gender?: string;
+  civilStatus?: string;
+  profession?: string;
+  positionTitle?: string;
 }) {
   try {
     const application =

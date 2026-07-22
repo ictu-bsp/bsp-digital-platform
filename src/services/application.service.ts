@@ -53,6 +53,16 @@ export async function submitApplication(data: {
   emergencyContactName: string;
   emergencyContactRelationship: string;
   emergencyContactNumber: string;
+  firstName?: string;
+  lastName?: string;
+  middleName?: string;
+  nameExtension?: string;
+  birthday?: string;
+  mobileNumber?: string;
+  gender?: string;
+  civilStatus?: string;
+  profession?: string;
+  positionTitle?: string;
 }) {
   const user = await getCurrentUser();
 
@@ -132,6 +142,16 @@ export async function submitApplication(data: {
     tenure: data.tenure,
     region: data.region,
     sponsoringInstitution: data.sponsoringInstitution,
+    firstName: data.firstName,
+    lastName: data.lastName,
+    middleName: data.middleName,
+    nameExtension: data.nameExtension,
+    birthday: data.birthday,
+    mobileNumber: data.mobileNumber,
+    gender: data.gender,
+    civilStatus: data.civilStatus,
+    profession: data.profession,
+    positionTitle: data.positionTitle,
   };
 
   const [registration] = await db
