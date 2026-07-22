@@ -51,6 +51,14 @@ export default function RegisterPage() {
     emergencyContactNumber,
   } = useWizard();
 
+  const [firstName, setFirstName] = useState(() => readSaved("registerFirstName"));
+  const [lastName, setLastName] = useState(() => readSaved("registerLastName"));
+  const [middleName, setMiddleName] = useState(() => readSaved("registerMiddleName"));
+  const [nameExtension, setNameExtension] = useState(() => readSaved("registerNameExtension"));
+  const [birthday, setBirthday] = useState(() => readSaved("registerBirthday"));
+  const [mobileNumber, setMobileNumber] = useState(() => readSaved("registerMobileNumber"));
+  const [gender, setGender] = useState(() => readSaved("registerGender"));
+  const [civilStatus, setCivilStatus] = useState(() => readSaved("registerCivilStatus"));
   const [scoutingPosition, setScoutingPosition] = useState(() =>
     readSaved("registerScoutingPosition")
   );
@@ -95,6 +103,14 @@ export default function RegisterPage() {
   // Persist every field as the user fills them in, so navigating back
   // into this step from method/payment doesn't lose what was entered.
   useEffect(() => {
+    localStorage.setItem("registerFirstName", firstName);
+    localStorage.setItem("registerLastName", lastName);
+    localStorage.setItem("registerMiddleName", middleName);
+    localStorage.setItem("registerNameExtension", nameExtension);
+    localStorage.setItem("registerBirthday", birthday);
+    localStorage.setItem("registerMobileNumber", mobileNumber);
+    localStorage.setItem("registerGender", gender);
+    localStorage.setItem("registerCivilStatus", civilStatus);
     localStorage.setItem("registerScoutingPosition", scoutingPosition);
     localStorage.setItem("registerAdvancementRank", advancementRank);
     localStorage.setItem("registerTenure", tenure);
@@ -104,6 +120,14 @@ export default function RegisterPage() {
     localStorage.setItem("registerSponsoringInstitution", sponsoringInstitution);
     localStorage.setItem("registerMembershipValidity", membershipValidity);
   }, [
+    firstName,
+    lastName,
+    middleName,
+    nameExtension,
+    birthday,
+    mobileNumber,
+    gender,
+    civilStatus,
     scoutingPosition,
     advancementRank,
     tenure,
@@ -267,6 +291,158 @@ localStorage.setItem("paymentCouncilId", councilId);
           currentLabel="Scout Information"
           splitAfterStep={isAdultScoutFlow ? 2 : undefined}
         />
+
+        {isAdultScoutFlow && (
+          <>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="relative">
+                <input
+                  placeholder="First Name"
+                  className={`${fieldShellClass(firstName !== "")} pl-4 pr-10`}
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                />
+                {firstName !== "" && (
+                  <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                )}
+              </div>
+
+              <div className="relative">
+                <input
+                  placeholder="Last Name"
+                  className={`${fieldShellClass(lastName !== "")} pl-4 pr-10`}
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  required
+                />
+                {lastName !== "" && (
+                  <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                )}
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="relative">
+                <input
+                  placeholder="Middle Name"
+                  className={`${fieldShellClass(middleName !== "")} pl-4 pr-10`}
+                  value={middleName}
+                  onChange={(e) => setMiddleName(e.target.value)}
+                />
+                {middleName !== "" && (
+                  <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                )}
+              </div>
+
+              <div className="relative">
+                <input
+                  placeholder="Name Extension"
+                  className={`${fieldShellClass(nameExtension !== "")} pl-4 pr-10`}
+                  value={nameExtension}
+                  onChange={(e) => setNameExtension(e.target.value)}
+                />
+                {nameExtension !== "" && (
+                  <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                )}
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="relative">
+                <input
+                  type="date"
+                  placeholder="Birthday"
+                  className={`${fieldShellClass(birthday !== "")} pl-4 pr-10`}
+                  value={birthday}
+                  onChange={(e) => setBirthday(e.target.value)}
+                  required
+                />
+                {birthday !== "" && (
+                  <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                )}
+              </div>
+
+              <div className="relative">
+                <input
+                  placeholder="Mobile Number"
+                  inputMode="numeric"
+                  maxLength={11}
+                  className={`${fieldShellClass(mobileNumber !== "")} pl-4 pr-10`}
+                  value={mobileNumber}
+                  onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, "").slice(0, 11))}
+                  required
+                />
+                {mobileNumber !== "" && (
+                  <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                )}
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="relative">
+                <select
+                  value={gender}
+                  onChange={(e) => setGender(e.target.value)}
+                  className={`${fieldShellClass(gender !== "")} appearance-none pl-4 pr-16`}
+                  required
+                >
+                  <option value="" disabled className="text-zinc-400">
+                    Gender
+                  </option>
+                  <option value="male" className="text-zinc-900">Male</option>
+                  <option value="female" className="text-zinc-900">Female</option>
+                  <option value="other" className="text-zinc-900">Other</option>
+                </select>
+                {gender !== "" && (
+                  <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-9 top-1/2 -translate-y-1/2 pointer-events-none" />
+                )}
+                <ChevronDownIcon className="w-5 h-5 text-zinc-500 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+
+              <div className="relative">
+                <select
+                  value={civilStatus}
+                  onChange={(e) => setCivilStatus(e.target.value)}
+                  className={`${fieldShellClass(civilStatus !== "")} appearance-none pl-4 pr-16`}
+                  required
+                >
+                  <option value="" disabled className="text-zinc-400">
+                    Civil Status
+                  </option>
+                  <option value="single" className="text-zinc-900">Single</option>
+                  <option value="married" className="text-zinc-900">Married</option>
+                  <option value="widowed" className="text-zinc-900">Widowed</option>
+                  <option value="separated" className="text-zinc-900">Separated</option>
+                </select>
+                {civilStatus !== "" && (
+                  <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-9 top-1/2 -translate-y-1/2 pointer-events-none" />
+                )}
+                <ChevronDownIcon className="w-5 h-5 text-zinc-500 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="relative">
+                <input
+                  placeholder="Profession/Occupation"
+                  className={`${fieldShellClass("" /* placeholder until filled */)} pl-4 pr-10`}
+                  value={""}
+                  onChange={() => {}}
+                />
+              </div>
+
+              <div className="relative">
+                <input
+                  placeholder="Position/Title"
+                  className={`${fieldShellClass("" /* placeholder until filled */)} pl-4 pr-10`}
+                  value={""}
+                  onChange={() => {}}
+                />
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Scouting Position */}
         <div className="relative">

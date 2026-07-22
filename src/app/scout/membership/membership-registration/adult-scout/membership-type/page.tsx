@@ -16,6 +16,17 @@ const membershipCategories = [
   "Lifetime Member Platinum",
 ];
 
+const membershipFees: Record<string, string> = {
+  "National Member at Large": "₱500.00",
+  "LCEB Member": "₱500.00",
+  "Council Scout Executive": "₱500.00",
+  "NEB Member": "₱2,000.00",
+  "Lifetime Member Bronze": "₱12,000.00",
+  "Lifetime Member Silver": "₱25,000.00",
+  "Lifetime Member Gold": "₱50,000.00",
+  "Lifetime Member Platinum": "₱100,000.00",
+};
+
 const clearAdultScoutDraft = () => {
   if (typeof window === "undefined") return;
 
@@ -42,8 +53,24 @@ export default function AdultScoutMembershipTypePage() {
     localStorage.setItem("adultScoutMembershipCategory", membershipCategory);
   }, [membershipType, membershipCategory]);
 
+  useEffect(() => {
+    if (!membershipCategory) {
+      localStorage.removeItem("adultScoutRegistrationFee");
+      return;
+    }
+
+    const selectedFee = membershipFees[membershipCategory] ?? "";
+    if (selectedFee) {
+      localStorage.setItem("adultScoutRegistrationFee", selectedFee);
+    } else {
+      localStorage.removeItem("adultScoutRegistrationFee");
+    }
+  }, [membershipCategory]);
+
+  const selectedFee = membershipCategory ? membershipFees[membershipCategory] ?? "" : "";
+
   const onNext = () => {
-    if (membershipType === "" || membershipCategory === "") return;
+    if (membershipType === "" || membershipCategory === "" || selectedFee === "") return;
 
     localStorage.setItem("membershipFlow", "adult_scout");
     router.push("/scout/membership/membership-registration/personal-info");
@@ -137,9 +164,11 @@ export default function AdultScoutMembershipTypePage() {
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-green-800">
               Registration Fee
             </p>
-            <p className="mt-2 text-sm leading-relaxed text-zinc-700 sm:text-base">
-              Registration fee will be updated based on the selected adult scout
-              membership category.
+            <p className="mt-3 text-sm font-medium text-zinc-700">
+              Fee shown to the user for this selected category
+            </p>
+            <p className="mt-2 text-base font-semibold text-zinc-900">
+              {selectedFee || "Select a category to view the fee"}
             </p>
           </div>
 
@@ -157,7 +186,7 @@ export default function AdultScoutMembershipTypePage() {
         <button
           type="button"
           onClick={onNext}
-          disabled={membershipType === "" || membershipCategory === ""}
+          disabled={membershipType === "" || membershipCategory === "" || selectedFee === ""}
           className="w-full rounded-lg bg-green-800 px-4 py-3.5 text-lg font-medium text-white transition-colors hover:bg-green-900 disabled:opacity-40"
         >
           Next
