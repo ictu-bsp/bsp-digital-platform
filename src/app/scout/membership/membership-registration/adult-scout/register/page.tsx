@@ -209,6 +209,7 @@ export default function AdultScoutRegisterPage() {
       return;
     }
 
+
     const description = `Adult Scout Membership Registration (${years} year${years > 1 ? "s" : ""})`;
     localStorage.setItem("registrationId", result.data.id);
     localStorage.setItem("paymentAmount", String(amount));
