@@ -1,1 +1,0 @@
-ALTER TABLE "councils" ALTER COLUMN "region_id" DROP NOT NULL;
