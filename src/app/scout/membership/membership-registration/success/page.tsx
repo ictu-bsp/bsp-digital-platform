@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import jsPDF from "jspdf";
 
 function formatTransactionId(id: string | null) {
   if (!id) return "—";
@@ -16,6 +17,78 @@ function formatToday() {
     day: "2-digit",
     year: "numeric",
   });
+}
+
+function generateReceiptPDF({
+  transactionId,
+  amount,
+  methodLabel,
+}: {
+  transactionId: string | null;
+  amount: string;
+  methodLabel: string;
+}) {
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const marginX = 56;
+  let y = 70;
+
+  // Header
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(20);
+  doc.setTextColor(6, 78, 59); // emerald-800
+  doc.text("eScout", marginX, y);
+
+  y += 24;
+  doc.setFontSize(14);
+  doc.setTextColor(30, 30, 30);
+  doc.text("Official Payment Receipt", marginX, y);
+
+  y += 10;
+  doc.setDrawColor(200, 200, 200);
+  doc.line(marginX, y, pageWidth - marginX, y);
+
+  // Body
+  y += 36;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(12);
+  doc.setTextColor(80, 80, 80);
+
+  const rows: [string, string][] = [
+    ["Transaction ID", formatTransactionId(transactionId)],
+    ["Date", formatToday()],
+    ["Type of Transaction", methodLabel],
+    ["Amount Paid", `PHP ${amount}`],
+  ];
+
+  rows.forEach(([label, value]) => {
+    doc.setTextColor(120, 120, 120);
+    doc.text(label, marginX, y);
+    doc.setTextColor(20, 20, 20);
+    doc.setFont("helvetica", "bold");
+    doc.text(value, pageWidth - marginX, y, { align: "right" });
+    doc.setFont("helvetica", "normal");
+    y += 26;
+  });
+
+  y += 20;
+  doc.setDrawColor(200, 200, 200);
+  doc.line(marginX, y, pageWidth - marginX, y);
+
+  y += 30;
+  doc.setFontSize(10);
+  doc.setTextColor(140, 140, 140);
+  doc.text(
+    "This receipt confirms payment for your Boy Scouts of the Philippines",
+    marginX,
+    y
+  );
+  y += 14;
+  doc.text("Scout Membership Registration.", marginX, y);
+
+  const fileNameSafeId = (transactionId ?? "receipt").replace(/[^a-zA-Z0-9]/g, "");
+  doc.save(`eScout-Receipt-${fileNameSafeId}.pdf`);
 }
 
 function SuccessPageContent() {
@@ -47,7 +120,7 @@ function SuccessPageContent() {
     localStorage.removeItem("paymentCouncil");
     localStorage.removeItem("paymentMethodLabel");
     localStorage.removeItem("paymentTransactionId");
-    router.replace("/scout/membership/membership-registration/agreement");
+    router.replace("/scout/membership/verified-member");
   };
 
   return (
@@ -135,10 +208,24 @@ function SuccessPageContent() {
           </div>
         </div>
 
+        {isSuccess && (
+          <button
+            type="button"
+            onClick={() =>
+              generateReceiptPDF({ transactionId, amount, methodLabel })
+            }
+            className="rounded-lg py-3 px-4 mt-6 w-full border-2 border-emerald-800 text-emerald-800 text-lg font-medium hover:bg-emerald-50 transition-colors"
+          >
+            Download Receipt
+          </button>
+        )}
+
         <button
           type="button"
           onClick={onDone}
-          className={`rounded-lg py-3.5 px-4 mt-6 w-full text-white text-lg font-medium transition-colors ${
+          className={`rounded-lg py-3.5 px-4 ${
+            isSuccess ? "mt-3" : "mt-6"
+          } w-full text-white text-lg font-medium transition-colors ${
             isSuccess ? "bg-emerald-800 hover:bg-emerald-900" : "bg-zinc-800 hover:bg-zinc-900"
           }`}
         >

@@ -23,9 +23,22 @@ const fieldShellClass = (filled: boolean) =>
 
 // Strips anything that isn't a digit, then caps length at 11
 // (PH mobile format: 09XXXXXXXXX). Used on phone-type fields only.
+
+
 const digitsOnly = (value: string) => value.replace(/\D/g, "").slice(0, 11);
 
-
+const RELATIONSHIP_OPTIONS = [
+  "Parent",
+  "Guardian",
+  "Sibling",
+  "Spouse",
+  "Grandparent",
+  "Aunt",
+  "Uncle",
+  "Cousin",
+  "Friend",
+  "Other",
+];
 
 export default function PersonalInfoPage() {
   const router = useRouter();
@@ -111,7 +124,7 @@ export default function PersonalInfoPage() {
             <option value="" disabled className="text-zinc-400">
               Blood Type
             </option>
-            {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((bt) => (
+            {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "N/A"].map((bt) => (
               <option key={bt} value={bt} className="text-zinc-900">
                 {bt}
               </option>
@@ -179,15 +192,23 @@ export default function PersonalInfoPage() {
         <div className="grid grid-cols-2 gap-4">
           {/* Emergency Contact Relationship */}
           <div className="relative">
-            <input
-              placeholder="Relationship"
-              className={`${fieldShellClass(emergencyContactRelationship !== "")} pl-4 pr-10`}
+            <select
               value={emergencyContactRelationship}
               onChange={(e) => setEmergencyContactRelationship(e.target.value)}
+              className={`${fieldShellClass(emergencyContactRelationship !== "")} appearance-none pl-4 pr-16`}
               required
-            />
+            >
+              <option value="" disabled className="text-zinc-400">
+                Relationship
+              </option>
+              {RELATIONSHIP_OPTIONS.map((rel) => (
+                <option key={rel} value={rel} className="text-zinc-900">
+                  {rel}
+                </option>
+              ))}
+            </select>
             {emergencyContactRelationship !== "" && (
-              <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-9 top-1/2 -translate-y-1/2 pointer-events-none" />
             )}
           </div>
 

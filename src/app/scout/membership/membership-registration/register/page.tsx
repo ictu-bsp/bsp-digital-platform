@@ -49,42 +49,39 @@ export default function RegisterPage() {
     emergencyContactNumber,
   } = useWizard();
 
-  const [scoutingPosition, setScoutingPosition] = useState(() =>
-    readSaved("registerScoutingPosition")
-  );
-  const [advancementRank, setAdvancementRank] = useState(() =>
-    readSaved("registerAdvancementRank")
-  );
-  const [tenure, setTenure] = useState(() => readSaved("registerTenure"));
-  const [regionId, setRegionId] = useState(() => readSaved("registerRegionId"));
-  const [councilId, setCouncilId] = useState(() => readSaved("registerCouncilId"));
+  const [scoutingPosition, setScoutingPosition] = useState("");
+  const [advancementRank, setAdvancementRank] = useState("");
+  const [tenure, setTenure] = useState("");
+  const [regionId, setRegionId] = useState("");
+  const [councilId, setCouncilId] = useState("");
   const [regions, setRegions] = useState<{ id: string; name: string }[]>([]);
   const [regionsLoading, setRegionsLoading] = useState(true);
   const [councils, setCouncils] = useState<
     { id: string; name: string; regionId: string | null }[]
   >([]);
   const [councilsLoading, setCouncilsLoading] = useState(true);
-  const [isCommunityBased, setIsCommunityBased] = useState(() =>
-    readSavedBool("registerIsCommunityBased")
-  );
-  const [sponsoringInstitution, setSponsoringInstitution] = useState(() =>
-    readSaved("registerSponsoringInstitution")
-  );
-  const [membershipValidity, setMembershipValidity] = useState(() =>
-    readSaved("registerMembershipValidity")
-  );
-
+  const [isCommunityBased, setIsCommunityBased] = useState(false);
+  const [sponsoringInstitution, setSponsoringInstitution] = useState("");
+  const [membershipType, setMembershipType] = useState<"single" | "multi" | "">("");
+  const [membershipValidity, setMembershipValidity] = useState("");
   const amount = FEE_PER_YEAR * (Number(membershipValidity) || 0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
-  // When community-based is checked, Sponsoring Institution is locked out —
-  // clear whatever was selected so a stale value doesn't get submitted.
+  // Single Year has no dropdown â€” it's always exactly 1 year. Multi-Year
+  // requires the user to pick a real duration. Nothing is set until the
+  // user actively clicks one of the two buttons (membershipType starts
+  // as "").
   useEffect(() => {
-    if (isCommunityBased) {
-      setSponsoringInstitution("");
+    if (membershipType === "single") {
+      setMembershipValidity("1");
+    } else if (membershipType === "multi" && membershipValidity === "1") {
+      setMembershipValidity("");
+    } else if (membershipType === "") {
+      setMembershipValidity("");
     }
-  }, [isCommunityBased]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [membershipType]);
 
   // Persist every field as the user fills them in, so navigating back
   // into this step from method/payment doesn't lose what was entered.
@@ -96,6 +93,7 @@ export default function RegisterPage() {
     localStorage.setItem("registerCouncilId", councilId);
     localStorage.setItem("registerIsCommunityBased", String(isCommunityBased));
     localStorage.setItem("registerSponsoringInstitution", sponsoringInstitution);
+    localStorage.setItem("registerMembershipType", membershipType);
     localStorage.setItem("registerMembershipValidity", membershipValidity);
   }, [
     scoutingPosition,
@@ -105,8 +103,30 @@ export default function RegisterPage() {
     councilId,
     isCommunityBased,
     sponsoringInstitution,
+    membershipType,
     membershipValidity,
   ]);
+
+
+// Hydrate saved values from localStorage AFTER mount, not during initial
+  // render. Reading localStorage inside useState's initializer causes a
+  // server/client mismatch (server has no localStorage, client does),
+  // which is what was triggering the hydration error. Doing it here
+  // instead means the first render always matches on both sides, and
+  // the saved values get applied a moment later once it's safe to.
+  useEffect(() => {
+    setScoutingPosition(readSaved("registerScoutingPosition"));
+    setAdvancementRank(readSaved("registerAdvancementRank"));
+    setTenure(readSaved("registerTenure"));
+    setRegionId(readSaved("registerRegionId"));
+    setCouncilId(readSaved("registerCouncilId"));
+    setSponsoringInstitution(readSaved("registerSponsoringInstitution"));
+    setMembershipType(
+      (readSaved("registerMembershipType") as "single" | "multi" | "") || ""
+    );
+    setMembershipValidity(readSaved("registerMembershipValidity"));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const loadCouncils = async () => {
@@ -136,8 +156,12 @@ export default function RegisterPage() {
   // actually gets sent to submitApplicationAction, same as before.
   const regionName = regions.find((r) => r.id === regionId)?.name ?? "";
 
-  // Council options are filtered down to the selected region once one is
-  // picked; with no region selected yet, every council is browsable.
+  // Council and Region are fully independent selects now — neither
+  // filters or auto-fills the other. Both always show their complete,
+  // searchable list.
+  // Council-first users (who know their council but not their region) see
+  // every council until a Region is picked. Region-first users narrow the
+  // Council list down once they pick a Region.
   const councilOptions = regionId
     ? councils
         .filter((c) => c.regionId === regionId)
@@ -146,9 +170,10 @@ export default function RegisterPage() {
 
   const regionOptions = regions.map((r) => ({ id: r.id, label: r.name }));
 
-  // Picking a Region filters the Council list above; if the currently
-  // selected Council no longer belongs to the newly picked Region, clear it
-  // out so the two fields never end up contradicting each other.
+  // Picking a Region narrows the Council list to that region. If a Council
+  // was already selected and it doesn't belong to the new Region, clear it
+  // so the two fields don't contradict each other. If nothing was selected
+  // yet, leave it as-is.
   const handleRegionChange = (newRegionId: string) => {
     setRegionId(newRegionId);
     const currentCouncil = councils.find((c) => c.id === councilId);
@@ -157,7 +182,8 @@ export default function RegisterPage() {
     }
   };
 
-  // Picking a Council auto-fills its Region (mutual cascade, other direction).
+  // Picking a Council auto-fills its Region, since most users know their
+  // Council before their Region.
   const handleCouncilChange = (newCouncilId: string) => {
     setCouncilId(newCouncilId);
     const council = councils.find((c) => c.id === newCouncilId);
@@ -169,6 +195,12 @@ export default function RegisterPage() {
   const onNext = async (event: React.FormEvent) => {
     event.preventDefault();
     setSubmitError("");
+
+    if (membershipType === "") {
+      setSubmitError("Please select Single Year or Multi-Year.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     const years = Number(membershipValidity);
@@ -399,27 +431,60 @@ localStorage.setItem("paymentCouncilId", councilId);
         <hr className="my-2" />
 
         <label className="block text-lg font-medium">Membership Validity</label>
-        <div className="relative">
-          <select
-            value={membershipValidity}
-            onChange={(e) => setMembershipValidity(e.target.value)}
-            className={`${fieldShellClass(membershipValidity !== "")} appearance-none pl-4 pr-16`}
-            required
+
+        {/* Single Year vs Multi-Year toggle â€” starts with neither selected;
+            the user must actively click one before Membership Validity
+            resolves to anything. */}
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => setMembershipType("single")}
+            className={`flex-1 rounded-lg py-3 text-base font-medium border transition-colors ${
+              membershipType === "single"
+                ? "bg-green-800 text-white border-green-800"
+                : "bg-white text-zinc-500 border-zinc-300 hover:border-green-800"
+            }`}
           >
-            <option value="" disabled className="text-zinc-400">
-              Membership Validity
-            </option>
-            {Array.from({ length: 10 }, (_, i) => i + 1).map((year) => (
-              <option key={year} value={year} className="text-zinc-900">
-                {year} Year{year > 1 ? "s" : ""}
-              </option>
-            ))}
-          </select>
-          {membershipValidity !== "" && (
-            <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-9 top-1/2 -translate-y-1/2 pointer-events-none" />
-          )}
-          <ChevronDownIcon className="w-5 h-5 text-zinc-500 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+            Single Year
+          </button>
+          <button
+            type="button"
+            onClick={() => setMembershipType("multi")}
+            className={`flex-1 rounded-lg py-3 text-base font-medium border transition-colors ${
+              membershipType === "multi"
+                ? "bg-green-800 text-white border-green-800"
+                : "bg-white text-zinc-500 border-zinc-300 hover:border-green-800"
+            }`}
+          >
+            Multi-Year
+          </button>
         </div>
+
+        {/* Years dropdown â€” only shown for Multi-Year. Single Year is
+            fixed at 1 year via the useEffect above, no dropdown needed. */}
+        {membershipType === "multi" && (
+          <div className="relative">
+            <select
+              value={membershipValidity}
+              onChange={(e) => setMembershipValidity(e.target.value)}
+              className={`${fieldShellClass(membershipValidity !== "")} appearance-none pl-4 pr-16`}
+              required
+            >
+              <option value="" disabled className="text-zinc-400">
+                Number of Years
+              </option>
+              {Array.from({ length: 9 }, (_, i) => i + 2).map((year) => (
+                <option key={year} value={year} className="text-zinc-900">
+                  {year} Years
+                </option>
+              ))}
+            </select>
+            {membershipValidity !== "" && (
+              <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-9 top-1/2 -translate-y-1/2 pointer-events-none" />
+            )}
+            <ChevronDownIcon className="w-5 h-5 text-zinc-500 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+        )}
 
         <p className="text-zinc-600 text-lg">
           Amount to pay: ₱{amount} (₱{FEE_PER_YEAR}/year — placeholder fee)

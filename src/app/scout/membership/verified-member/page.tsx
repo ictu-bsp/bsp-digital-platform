@@ -50,7 +50,7 @@ export default async function VerifiedMemberPage() {
     value: string | null | undefined,
     map: Record<string, string>
   ) => {
-    if (!value) return "â€”";
+    if (!value) return "N/A";
     return map[value] ?? humanize(value);
   };
 
@@ -74,23 +74,23 @@ export default async function VerifiedMemberPage() {
       application?.scoutingPosition ?? personalInfo.scoutingPosition,
       scoutingPositionLabels
     ),
-    council: council?.name ?? "â€”",
-    idNumber: scout.membershipNumber ?? "â€”",
+    council: council?.name ?? "N/A",
+    idNumber: scout.membershipNumber ?? "N/A",
     validUntil: formatDate(registration?.endDate),
     status: scout.verificationStatus === "active" ? "VALID" : "PENDING",
     dob: formatDate(user.birthdate),
-    sex: user.gender ?? "â€”",
-    bloodType: personalInfo.bloodType ?? "â€”",
+    sex: user.gender ?? "N/A",
+    bloodType: personalInfo.bloodType ?? "N/A",
     sponsoringInst: formatLabel(
       application?.sponsoringInstitution,
       sponsoringInstitutionLabels
     ),
-    address: personalInfo.address ?? "—",
-    telephone: personalInfo.telephone ?? "—",
+    address: personalInfo.address ?? "N/A",
+    telephone: personalInfo.telephone ?? "N/A",
     email: user.email,
-    emergencyContact: personalInfo.emergencyContactName ?? "—",
-    emergencyRelationship: personalInfo.emergencyContactRelationship ?? "—",
-    emergencyContactNum: personalInfo.emergencyContactNumber ?? "—",
+    emergencyContact: personalInfo.emergencyContactName ?? "N/A",
+    emergencyRelationship: personalInfo.emergencyContactRelationship ?? "N/A",
+    emergencyContactNum: personalInfo.emergencyContactNumber ?? "N/A",
   };
 
   return (

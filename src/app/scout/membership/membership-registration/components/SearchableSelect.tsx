@@ -28,6 +28,7 @@ export default function SearchableSelect({
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const selectedLabel = options.find((o) => o.id === value)?.label ?? "";
   const filled = value !== "";
@@ -50,7 +51,16 @@ export default function SearchableSelect({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleFocus = () => {
+  // When we switch into "open/search" mode, the <input> only exists in the
+  // DOM at that point (see render below) — focus it right after it mounts.
+  useEffect(() => {
+    if (isOpen) {
+      inputRef.current?.focus();
+    }
+  }, [isOpen]);
+
+  const handleOpen = () => {
+    if (loading) return;
     // Start each search fresh so the full option list is visible immediately.
     setQuery("");
     setIsOpen(true);
@@ -65,27 +75,41 @@ export default function SearchableSelect({
   // ~44px per row, so maxVisible rows show before it becomes scrollable.
   const listMaxHeight = maxVisible * 44;
 
+  const boxClass = `w-full rounded-lg py-3 text-lg border transition-colors pl-4 pr-16 text-left ${
+    loading
+      ? "border-zinc-200 bg-zinc-100 text-zinc-400 cursor-not-allowed"
+      : filled
+      ? "border-green-600 bg-green-50 text-zinc-900"
+      : "border-zinc-300 bg-white text-zinc-400"
+  }`;
+
   return (
     <div className="relative" ref={containerRef}>
-      <input
-        type="text"
-        value={isOpen ? query : selectedLabel}
-        onChange={(e) => {
-          setQuery(e.target.value);
-          setIsOpen(true);
-        }}
-        onFocus={handleFocus}
-        disabled={loading}
-        placeholder={loading ? "Loading..." : placeholder}
-        autoComplete="off"
-        className={`w-full rounded-lg py-3 text-lg border transition-colors pl-4 pr-16 ${
-          loading
-            ? "border-zinc-200 bg-zinc-100 text-zinc-400 cursor-not-allowed"
-            : filled
-            ? "border-green-600 bg-green-50 text-zinc-900"
-            : "border-zinc-300 bg-white text-zinc-400"
-        }`}
-      />
+      {isOpen ? (
+        // SEARCH MODE — a real single-line input for typing a filter query.
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          disabled={loading}
+          placeholder={loading ? "Loading..." : placeholder}
+          autoComplete="off"
+          className={boxClass}
+        />
+      ) : (
+        // CLOSED MODE — a button, not an input, so long labels can wrap
+        // onto multiple lines instead of being clipped/cut off.
+        <button
+          type="button"
+          onClick={handleOpen}
+          disabled={loading}
+          className={`${boxClass} whitespace-normal break-words leading-snug min-h-[52px] flex items-center`}
+        >
+          {loading ? "Loading..." : filled ? selectedLabel : placeholder}
+        </button>
+      )}
+
       {filled && !loading && (
         <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-9 top-1/2 -translate-y-1/2 pointer-events-none" />
       )}
