@@ -156,7 +156,8 @@ export async function verifyCurrentPasswordAction(
   currentPassword: string
 ): Promise<ActionResult> {
   try {
-    const sessionId = await getSessionCookie();
+    const sessionId =
+      await getSessionCookie();
 
     if (!sessionId) {
       return {
@@ -165,7 +166,8 @@ export async function verifyCurrentPasswordAction(
       };
     }
 
-    const user = await getCurrentUser(sessionId);
+    const user =
+      await getCurrentUser(sessionId);
 
     if (!user) {
       return {
@@ -174,10 +176,11 @@ export async function verifyCurrentPasswordAction(
       };
     }
 
-    const verified = await verifyCurrentPassword(
-      user.id,
-      currentPassword
-    );
+    const verified =
+      await verifyCurrentPassword(
+        user.id,
+        currentPassword
+      );
 
     if (!verified) {
       return {
@@ -230,11 +233,18 @@ export async function loginAction(
 
     let redirectTo = "/scout";
 
-    if (
-      user.role === "COUNCIL_ADMIN" ||
-      user.role === "SUPER_ADMIN"
-    ) {
-      redirectTo = "/admin";
+    switch (user.role) {
+      case "SUPER_ADMIN":
+        redirectTo = "/admin";
+        break;
+
+      case "COUNCIL_ADMIN":
+        redirectTo = "/admin/login";
+        break;
+
+      default:
+        redirectTo = "/scout";
+        break;
     }
 
     return {

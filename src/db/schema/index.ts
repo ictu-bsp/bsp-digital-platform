@@ -1,3 +1,5 @@
+//src/db/schema/index.ts
+
 export * from "./activities";
 export * from "./admin";
 export * from "./advancements";
@@ -16,3 +18,4 @@ export * from "./announcements";
 export * from "./scoutApplications";
 export * from "./activity-registrations";
 export * from "./regions";
+export * from "./adminUsers";
