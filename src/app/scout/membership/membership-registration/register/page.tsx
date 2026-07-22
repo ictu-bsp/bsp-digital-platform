@@ -10,6 +10,7 @@ import { submitApplicationAction } from "@/app/actions/application";
 import { getCouncilsAction, getRegionsAction } from "@/app/actions/councils";
 import SearchableSelect from "../components/SearchableSelect";
 import { useWizard } from "../WizardContext";
+import RegistrationStepper from "../components/RegistrationStepper";
 
 const FEE_PER_YEAR = 50;
 const readSaved = (key: string) => {if (typeof window === "undefined") return "";return localStorage.getItem(key) ?? "";};
@@ -18,9 +19,28 @@ const fieldShellClass = (filled: boolean, locked?: boolean) =>`w-full rounded-lg
 
 export default function RegisterPage() {
   const router = useRouter();
+<<<<<<< HEAD
   const {bloodType,address,telephone,emergencyContactName,emergencyContactRelationship,emergencyContactNumber,} = useWizard();
   const [scoutingPosition, setScoutingPosition] = useState(() =>readSaved("registerScoutingPosition"));
   const [advancementRank, setAdvancementRank] = useState(() =>readSaved("registerAdvancementRank"));
+=======
+  const [isAdultScoutFlow, setIsAdultScoutFlow] = useState(false);
+  const {
+    bloodType,
+    address,
+    telephone,
+    emergencyContactName,
+    emergencyContactRelationship,
+    emergencyContactNumber,
+  } = useWizard();
+
+  const [scoutingPosition, setScoutingPosition] = useState(() =>
+    readSaved("registerScoutingPosition")
+  );
+  const [advancementRank, setAdvancementRank] = useState(() =>
+    readSaved("registerAdvancementRank")
+  );
+>>>>>>> f8931c57a3329a259d79b4d9b8e79d16751efe86
   const [tenure, setTenure] = useState(() => readSaved("registerTenure"));
   const [regionId, setRegionId] = useState(() => readSaved("registerRegionId"));
   const [councilId, setCouncilId] = useState(() => readSaved("registerCouncilId"));
@@ -35,7 +55,24 @@ export default function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
+<<<<<<< HEAD
   useEffect(() => {if (isCommunityBased) {setSponsoringInstitution("");}}, [isCommunityBased]);
+=======
+  useEffect(() => {
+    setIsAdultScoutFlow(localStorage.getItem("membershipFlow") === "adult_scout");
+  }, []);
+
+  // When community-based is checked, Sponsoring Institution is locked out —
+  // clear whatever was selected so a stale value doesn't get submitted.
+  useEffect(() => {
+    if (isCommunityBased) {
+      setSponsoringInstitution("");
+    }
+  }, [isCommunityBased]);
+
+  // Persist every field as the user fills them in, so navigating back
+  // into this step from method/payment doesn't lose what was entered.
+>>>>>>> f8931c57a3329a259d79b4d9b8e79d16751efe86
   useEffect(() => {
     localStorage.setItem("registerScoutingPosition", scoutingPosition);
     localStorage.setItem("registerAdvancementRank", advancementRank);
@@ -155,26 +192,12 @@ localStorage.setItem("paymentCouncilId", councilId);
           /></h1>
         <h2 className="text-2xl font-semibold mb-4">Register Membership</h2>
 
-        <div className="flex items-center justify-center gap-3 text-base text-green-800 mb-4">
-          <span className="w-8 h-8 rounded-full border-2 border-green-800 flex items-center justify-center">
-            1
-          </span>
-          <span>|</span>
-          <span className="w-8 h-8 rounded-full border-2 border-green-800 flex items-center justify-center">
-            2
-          </span>
-          <span>|</span>
-          <span className="flex items-center gap-2 bg-green-800 text-white rounded-full px-4 py-1.5">
-            <span className="w-6 h-6 rounded-full bg-white text-green-800 flex items-center justify-center text-sm font-semibold">
-              3
-            </span>
-            Scout Information
-          </span>
-          <span>|</span>
-          <span className="w-8 h-8 rounded-full border-2 border-green-800 flex items-center justify-center">
-            4
-          </span>
-        </div>
+        <RegistrationStepper
+          currentStep={isAdultScoutFlow ? 4 : 3}
+          totalSteps={isAdultScoutFlow ? 5 : 4}
+          currentLabel="Scout Information"
+          splitAfterStep={isAdultScoutFlow ? 2 : undefined}
+        />
 
         {/* Scouting Position */}
         <div className="relative">

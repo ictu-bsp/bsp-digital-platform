@@ -6,6 +6,7 @@ import ConfirmationModal from "@/components-general/ui/ConfirmationModal";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import RegistrationStepper from "../components/RegistrationStepper";
 
 function IconChip({
   label,
@@ -53,6 +54,7 @@ function IconChip({
 
 export default function MethodPage() {
   const router = useRouter();
+  const [isAdultScoutFlow, setIsAdultScoutFlow] = useState(false);
 
   const [amount, setAmount] = useState<string | null>(null);
 
@@ -84,6 +86,7 @@ export default function MethodPage() {
     setAmount(localStorage.getItem("paymentAmount"));
   }, []);
 
+<<<<<<< HEAD
   const canProceed =
     (category === "card" && cardBrand !== "") ||
     (category === "ewallet" && wallet !== "") ||
@@ -149,6 +152,17 @@ export default function MethodPage() {
     } catch {
       setSubmitError(
         "Unable to continue. Please try again."
+=======
+  useEffect(() => {
+    setIsAdultScoutFlow(localStorage.getItem("membershipFlow") === "adult_scout");
+  }, []);
+
+  const onNext = () => {
+    if (category === "card" && cardBrand !== "") {
+      localStorage.setItem(
+        "paymentCardBrand",
+        cardBrand === "mastercard" ? "Mastercard" : "Visa"
+>>>>>>> f8931c57a3329a259d79b4d9b8e79d16751efe86
       );
     } finally {
       setIsSubmitting(false);
@@ -427,6 +441,143 @@ export default function MethodPage() {
           }}
         />
 
+<<<<<<< HEAD
+=======
+        <RegistrationStepper
+          currentStep={isAdultScoutFlow ? 5 : 4}
+          totalSteps={isAdultScoutFlow ? 5 : 4}
+          currentLabel="Payment Method"
+          splitAfterStep={isAdultScoutFlow ? 2 : undefined}
+        />
+
+        <p className="text-zinc-600 text-lg text-center mb-8">Amount to pay: ₱{amount}</p>
+
+        <div className="flex flex-col gap-3">
+
+          {/* Credit / Debit Card */}
+          <div className="border rounded-lg px-5 py-4">
+            <label className="flex items-center gap-3 text-lg cursor-pointer">
+              <input
+                type="radio"
+                name="category"
+                checked={category === "card"}
+                onChange={() => setCategory("card")}
+                className="w-5 h-5 accent-green-800"
+              />
+              Credit / Debit Card
+            </label>
+            {category === "card" && (
+              <div className="flex gap-3 mt-3 ml-8">
+                <IconChip
+                  label="Mastercard"
+                  logoSrc="/scout/membership/membership-registration/logos/mastercard.png"
+                  active={cardBrand === "mastercard"}
+                  onClick={() => setCardBrand("mastercard")}
+                />
+                <IconChip
+                  label="Visa"
+                  logoSrc="/scout/membership/membership-registration/logos/visa.png"
+                  active={cardBrand === "visa"}
+                  onClick={() => setCardBrand("visa")}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* E-Wallets */}
+          <div className="border rounded-lg px-5 py-4">
+            <label className="flex items-center gap-3 text-lg cursor-pointer">
+              <input
+                type="radio"
+                name="category"
+                checked={category === "ewallet"}
+                onChange={() => setCategory("ewallet")}
+                className="w-5 h-5 accent-green-800"
+              />
+              E-Wallets
+            </label>
+            {category === "ewallet" && (
+              <div className="flex gap-3 mt-3 ml-8 flex-wrap">
+                <IconChip
+                  label="Maya"
+                  logoSrc="/scout/membership/membership-registration/logos/maya.png"
+                  active={wallet === "maya"}
+                  onClick={() => setWallet("maya")}
+                />
+                <IconChip
+                  label="GCash"
+                  logoSrc="/scout/membership/membership-registration/logos/gcash.png"
+                  active={wallet === "gcash"}
+                  onClick={() => setWallet("gcash")}
+                />
+                <IconChip
+                  label="GrabPay"
+                  logoSrc="/scout/membership/membership-registration/logos/grabpay.png"
+                  active={wallet === "grabpay"}
+                  onClick={() => setWallet("grabpay")}
+                />
+                <IconChip
+                  label="ShopeePay"
+                  logoSrc="/scout/membership/membership-registration/logos/shopeepay.png"
+                  active={wallet === "shopeepay"}
+                  onClick={() => setWallet("shopeepay")}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Online Banking — greyed out until PayMongo activates BPI/UnionBank/Brankas for this account */}
+          <div className="border rounded-lg px-5 py-4 bg-zinc-50">
+            <label className="flex items-center gap-3 text-lg cursor-not-allowed text-zinc-400">
+              <input
+                type="radio"
+                name="category"
+                disabled
+                className="w-5 h-5 accent-zinc-300 cursor-not-allowed"
+              />
+              Online Banking
+              <span className="text-xs font-medium text-zinc-400 bg-zinc-200 rounded-full px-2 py-0.5">
+                Coming soon
+              </span>
+            </label>
+            <div className="flex gap-3 mt-3 ml-8 flex-wrap">
+              <IconChip label="BPI" logoSrc="/scout/membership/membership-registration/logos/bpi.png" disabled />
+              <IconChip label="UnionBank" logoSrc="/scout/membership/membership-registration/logos/unionbank.png" disabled />
+              <IconChip label="Metrobank" logoSrc="/scout/membership/membership-registration/logos/metrobank.png" disabled />
+              <IconChip label="LandBank" logoSrc="/scout/membership/membership-registration/logos/landbank.png" disabled />
+              <IconChip label="BDO" logoSrc="/scout/membership/membership-registration/logos/bdo.png" disabled />
+            </div>
+          </div>
+
+          {/* QR Ph */}
+          <div className="border rounded-lg px-5 py-4">
+            <label className="flex items-center gap-3 text-lg cursor-pointer">
+              <input
+                type="radio"
+                name="category"
+                checked={category === "qrph"}
+                onChange={() => setCategory("qrph")}
+                className="w-5 h-5 accent-green-800"
+              />
+              QR Ph
+            </label>
+            {category === "qrph" && (
+              <div className="flex gap-3 mt-3 ml-8">
+                <IconChip label="QR Ph" logoSrc="/scout/membership/membership-registration/logos/qrph.png" active />
+              </div>
+            )}
+          </div>
+
+        </div>
+
+        <button
+          onClick={onNext}
+          disabled={!canProceed}
+          className="rounded-lg bg-green-800 hover:bg-green-900 transition-colors text-white text-lg font-medium py-3.5 px-4 mt-8 w-full disabled:opacity-40"
+        >
+          Next
+        </button>
+>>>>>>> f8931c57a3329a259d79b4d9b8e79d16751efe86
       </div>
     </div>
   </>
