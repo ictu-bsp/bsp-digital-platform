@@ -19,11 +19,6 @@ const fieldShellClass = (filled: boolean, locked?: boolean) =>`w-full rounded-lg
 
 export default function RegisterPage() {
   const router = useRouter();
-<<<<<<< HEAD
-  const {bloodType,address,telephone,emergencyContactName,emergencyContactRelationship,emergencyContactNumber,} = useWizard();
-  const [scoutingPosition, setScoutingPosition] = useState(() =>readSaved("registerScoutingPosition"));
-  const [advancementRank, setAdvancementRank] = useState(() =>readSaved("registerAdvancementRank"));
-=======
   const [isAdultScoutFlow, setIsAdultScoutFlow] = useState(false);
   const {
     bloodType,
@@ -40,7 +35,6 @@ export default function RegisterPage() {
   const [advancementRank, setAdvancementRank] = useState(() =>
     readSaved("registerAdvancementRank")
   );
->>>>>>> f8931c57a3329a259d79b4d9b8e79d16751efe86
   const [tenure, setTenure] = useState(() => readSaved("registerTenure"));
   const [regionId, setRegionId] = useState(() => readSaved("registerRegionId"));
   const [councilId, setCouncilId] = useState(() => readSaved("registerCouncilId"));
@@ -55,9 +49,6 @@ export default function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
-<<<<<<< HEAD
-  useEffect(() => {if (isCommunityBased) {setSponsoringInstitution("");}}, [isCommunityBased]);
-=======
   useEffect(() => {
     setIsAdultScoutFlow(localStorage.getItem("membershipFlow") === "adult_scout");
   }, []);
@@ -72,7 +63,6 @@ export default function RegisterPage() {
 
   // Persist every field as the user fills them in, so navigating back
   // into this step from method/payment doesn't lose what was entered.
->>>>>>> f8931c57a3329a259d79b4d9b8e79d16751efe86
   useEffect(() => {
     localStorage.setItem("registerScoutingPosition", scoutingPosition);
     localStorage.setItem("registerAdvancementRank", advancementRank);
