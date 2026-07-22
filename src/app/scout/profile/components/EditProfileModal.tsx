@@ -7,17 +7,27 @@ import { useState } from "react";
 import { updateProfileAction } from "@/app/actions/profile";
 import EditAvatarModal from "./EditAvatarModal";
 
+type MembershipData = Awaited<
+  ReturnType<
+    typeof import("@/services/application.service").getMembershipCardData
+  >
+>;
+
 interface EditProfileModalProps {
   user: {
     firstName: string;
     middleName: string | null;
     lastName: string;
-    suffix: string |null;
+    suffix: string | null;
+
     email: string;
     birthdate: Date;
     gender: string;
+
     avatarUrl?: string | null;
   };
+
+  membershipData: MembershipData;
 
   onClose: () => void;
 
@@ -34,17 +44,28 @@ interface EditProfileModalProps {
 
 export default function EditProfileModal({
   user,
+  membershipData,
   onClose,
   onSave,
 }: EditProfileModalProps) {
+
+  const isVerifiedScout =
+    membershipData?.scout?.verificationStatus ===
+    "active";
+
+  const isScout =
+    !!membershipData?.scout;
+
   const [form, setForm] = useState({
     firstName: user.firstName,
     middleName: user.middleName ?? "",
     lastName: user.lastName,
     suffix: user.suffix ?? "",
+
     birthdate: new Date(user.birthdate)
       .toISOString()
       .split("T")[0],
+
     gender: user.gender,
   });
 
@@ -105,9 +126,6 @@ export default function EditProfileModal({
         avatarUrl,
       });
 
-      setTimeout(() => {
-        onClose();
-      }, 700);
     } finally {
       setLoading(false);
     }
@@ -135,7 +153,6 @@ export default function EditProfileModal({
                 />
               ) : (
                 <div className="flex h-full items-center justify-center">
-
                   <svg
                     className="h-14 w-14 text-white"
                     fill="currentColor"
@@ -143,7 +160,6 @@ export default function EditProfileModal({
                   >
                     <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4Zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                   </svg>
-
                 </div>
               )}
 
@@ -160,8 +176,7 @@ export default function EditProfileModal({
             </button>
 
           </div>
-
-          {[
+                    {[
             ["First Name", "firstName"],
             ["Middle Name", "middleName"],
             ["Last Name", "lastName"],
@@ -228,7 +243,40 @@ export default function EditProfileModal({
             <option value="Female">
               Female
             </option>
+
+            <option value="Other">
+              Other
+            </option>
           </select>
+
+          {isScout && !isVerifiedScout && (
+            <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
+              <p className="text-sm font-semibold text-amber-800">
+                Membership Under Review
+              </p>
+
+              <p className="mt-2 text-sm text-amber-700">
+                Your membership application is still awaiting
+                verification. Personal information submitted for your
+                application cannot be edited until the review has been
+                completed.
+              </p>
+            </div>
+          )}
+
+          {isVerifiedScout && (
+            <div className="mb-6 rounded-xl border border-green-200 bg-green-50 p-4">
+              <p className="text-sm font-semibold text-green-800">
+                Verified Scout
+              </p>
+
+              <p className="mt-2 text-sm text-green-700">
+                As a verified Scout, you may edit your profile details.
+                Information originating from official membership
+                documents will remain locked and cannot be modified here.
+              </p>
+            </div>
+          )}
 
           {error && (
             <p className="mb-3 text-center text-sm text-red-600">
@@ -245,6 +293,7 @@ export default function EditProfileModal({
           <div className="flex gap-3">
 
             <button
+              type="button"
               onClick={onClose}
               disabled={loading}
               className="flex-1 rounded-xl border py-3 font-semibold hover:bg-gray-100"
@@ -253,6 +302,7 @@ export default function EditProfileModal({
             </button>
 
             <button
+              type="button"
               onClick={handleSave}
               disabled={loading}
               className="flex-1 rounded-xl bg-green-900 py-3 font-semibold text-white hover:bg-green-800 disabled:opacity-50"
@@ -267,8 +317,7 @@ export default function EditProfileModal({
         </div>
 
       </div>
-
-      {showAvatarModal && (
+            {showAvatarModal && (
         <EditAvatarModal
           currentAvatarUrl={
             avatarUrl
