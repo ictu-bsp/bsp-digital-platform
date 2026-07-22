@@ -76,7 +76,7 @@ export async function seedUsers(
       gender: "Male",
       role: "SCOUT",
       avatarUrl:
-        "/uploads/avatars/a9d46276-0e0a-409d-bd75-93cfbc9ece15.jpg",
+        "/uploads/avatars/748499266_1045264668022779_5816455208986934213_n.jpg",
       emailVerified: new Date(),
     },
   ];
