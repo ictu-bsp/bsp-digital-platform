@@ -18,6 +18,7 @@ export async function seedRegions(
     "Western Mindanao Region Coordination Office",
     "Eastern Mindanao Region Coordination Office",
     "Northeastern Mindanao Region Coordination Office",
+    "National Office",
   ];
 
   await db.insert(schema.regions).values(

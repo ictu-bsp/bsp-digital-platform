@@ -36,6 +36,7 @@ interface ProfileClientProps {
     gender: string;
     avatarUrl?: string | null;
   };
+
   membershipData: MembershipData;
 }
 
@@ -44,6 +45,8 @@ export default function ProfileClient({
   membershipData,
 }: ProfileClientProps) {
   const router = useRouter();
+
+  const [profile, setProfile] = useState(user);
 
   const [showPasswordModal, setShowPasswordModal] =
     useState(false);
@@ -54,15 +57,21 @@ export default function ProfileClient({
   const [showSuccess, setShowSuccess] =
     useState(false);
 
-  const [profile, setProfile] =
-    useState(user);
+  const [showConfirmSave, setShowConfirmSave] =
+    useState(false);
 
-  const membershipStatus =
+  const [pendingProfile, setPendingProfile] =
+    useState<any>(null);
+
+  const isVerifiedScout =
     membershipData?.scout?.verificationStatus ===
     "active";
 
-  const status = membershipData?.scout
-    ? membershipStatus
+  const isScout =
+    !!membershipData?.scout;
+
+  const status = isScout
+    ? isVerifiedScout
       ? "Scout"
       : "Pending Verification"
     : "Visitor";
@@ -80,6 +89,31 @@ export default function ProfileClient({
     router.push("/login");
   }
 
+  function handleEditSuccess(updatedProfile: any) {
+    setPendingProfile(updatedProfile);
+    setShowEditProfileModal(false);
+    setShowConfirmSave(true);
+  }
+
+  function confirmSave() {
+    if (!pendingProfile) return;
+
+    setProfile({
+      ...profile,
+      ...pendingProfile,
+    });
+
+    setShowConfirmSave(false);
+    setPendingProfile(null);
+
+    setShowSuccess(true);
+  }
+
+  function cancelSave() {
+    setPendingProfile(null);
+    setShowConfirmSave(false);
+  }
+
   return (
     <>
       <main className="min-h-screen bg-gradient-to-b from-white via-[#f7fdf8] to-[#e7f6ea] text-slate-950">
@@ -90,6 +124,7 @@ export default function ProfileClient({
           />
 
           <div className="flex-1 pb-28">
+
             <div className="space-y-5 px-1 py-5">
 
               <ProfileAvatar
@@ -110,12 +145,8 @@ export default function ProfileClient({
               />
 
               <MembershipCta
-                membershipStatus={
-                  membershipStatus
-                }
-                membershipData={
-                  membershipData
-                }
+                membershipStatus={isVerifiedScout}
+                membershipData={membershipData}
               />
 
               <EditProfileButton
@@ -125,6 +156,7 @@ export default function ProfileClient({
               />
 
             </div>
+
           </div>
 
           <BottomNav />
@@ -144,22 +176,51 @@ export default function ProfileClient({
           {showEditProfileModal && (
             <EditProfileModal
               user={profile}
+              membershipData={membershipData}
               onClose={() =>
                 setShowEditProfileModal(false)
               }
-              onSave={(
-                updatedProfile
-              ) => {
-                setProfile({
-                  ...profile,
-                  ...updatedProfile,
-                });
-
-                setShowEditProfileModal(false);
-
-                setShowSuccess(true);
-              }}
+              onSave={handleEditSuccess}
             />
+          )}
+                    {showConfirmSave && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+
+              <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+
+                <h2 className="text-xl font-bold text-green-900">
+                  Save Profile Changes?
+                </h2>
+
+                <p className="mt-3 text-sm leading-relaxed text-gray-600">
+                  Are you sure you want to apply these changes to your
+                  profile? This will immediately update your account
+                  information.
+                </p>
+
+                <div className="mt-6 flex gap-3">
+
+                  <button
+                    type="button"
+                    onClick={cancelSave}
+                    className="flex-1 rounded-xl border py-3 font-semibold transition hover:bg-gray-100"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={confirmSave}
+                    className="flex-1 rounded-xl bg-green-900 py-3 font-semibold text-white transition hover:bg-green-800"
+                  >
+                    Apply Changes
+                  </button>
+
+                </div>
+
+              </div>
+
+            </div>
           )}
 
         </div>
