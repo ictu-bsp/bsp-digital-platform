@@ -9,10 +9,12 @@
 // submitApplicationAction call (serialized into scoutApplications.remarks
 // as a temporary workaround until Reuben adds real columns).
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import { useWizard } from "../WizardContext";
+import RegistrationStepper from "../components/RegistrationStepper";
 
 const fieldShellClass = (filled: boolean) =>
   `w-full rounded-lg py-3 text-lg border transition-colors ${
@@ -29,6 +31,11 @@ const digitsOnly = (value: string) => value.replace(/\D/g, "").slice(0, 11);
 
 export default function PersonalInfoPage() {
   const router = useRouter();
+  const [isAdultScoutFlow, setIsAdultScoutFlow] = useState(false);
+
+  useEffect(() => {
+    setIsAdultScoutFlow(localStorage.getItem("membershipFlow") === "adult_scout");
+  }, []);
 
   const {
     bloodType,
@@ -79,26 +86,12 @@ export default function PersonalInfoPage() {
         </h1>
         <h2 className="text-2xl font-semibold mb-4">Register Membership</h2>
 
-        <div className="flex items-center justify-center gap-3 text-base text-green-800 mb-4">
-          <span className="w-8 h-8 rounded-full border-2 border-green-800 flex items-center justify-center">
-            1
-          </span>
-          <span>|</span>
-          <span className="flex items-center gap-2 bg-green-800 text-white rounded-full px-4 py-1.5">
-            <span className="w-6 h-6 rounded-full bg-white text-green-800 flex items-center justify-center text-sm font-semibold">
-              2
-            </span>
-            Personal Info
-          </span>
-          <span>|</span>
-          <span className="w-8 h-8 rounded-full border-2 border-green-800 flex items-center justify-center">
-            3
-          </span>
-          <span>|</span>
-          <span className="w-8 h-8 rounded-full border-2 border-green-800 flex items-center justify-center">
-            4
-          </span>
-        </div>
+        <RegistrationStepper
+          currentStep={isAdultScoutFlow ? 3 : 2}
+          totalSteps={isAdultScoutFlow ? 5 : 4}
+          currentLabel="Personal Info"
+          splitAfterStep={isAdultScoutFlow ? 2 : undefined}
+        />
 
         {/* Blood Type */}
         <div className="relative">

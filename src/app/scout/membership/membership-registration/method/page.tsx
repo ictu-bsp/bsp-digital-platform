@@ -5,6 +5,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import RegistrationStepper from "../components/RegistrationStepper";
 
 function IconChip({
   label,
@@ -51,6 +52,7 @@ function IconChip({
 
 export default function MethodPage() {
   const router = useRouter();
+  const [isAdultScoutFlow, setIsAdultScoutFlow] = useState(false);
 
   const [amount, setAmount] = useState(null as string | null);
   const [category, setCategory] = useState(
@@ -64,6 +66,10 @@ export default function MethodPage() {
 
   useEffect(() => {
     setAmount(localStorage.getItem("paymentAmount"));
+  }, []);
+
+  useEffect(() => {
+    setIsAdultScoutFlow(localStorage.getItem("membershipFlow") === "adult_scout");
   }, []);
 
   const onNext = () => {
@@ -128,26 +134,12 @@ export default function MethodPage() {
         </h1>
         <h2 className="text-2xl font-semibold mb-4">Register Membership</h2>
 
-        <div className="flex items-center justify-center gap-3 text-base text-green-800 mb-8">
-  <span className="w-8 h-8 rounded-full border-2 border-green-800 flex items-center justify-center">
-    1
-  </span>
-  <span>|</span>
-  <span className="w-8 h-8 rounded-full border-2 border-green-800 flex items-center justify-center">
-    2
-  </span>
-  <span>|</span>
-  <span className="w-8 h-8 rounded-full border-2 border-green-800 flex items-center justify-center">
-    3
-  </span>
-  <span>|</span>
-  <span className="flex items-center gap-2 bg-green-800 text-white rounded-full px-4 py-1.5">
-    <span className="w-6 h-6 rounded-full bg-white text-green-800 flex items-center justify-center text-sm font-semibold">
-      4
-    </span>
-    Payment Method
-  </span>
-</div>
+        <RegistrationStepper
+          currentStep={isAdultScoutFlow ? 5 : 4}
+          totalSteps={isAdultScoutFlow ? 5 : 4}
+          currentLabel="Payment Method"
+          splitAfterStep={isAdultScoutFlow ? 2 : undefined}
+        />
 
         <p className="text-zinc-600 text-lg text-center mb-8">Amount to pay: ₱{amount}</p>
 

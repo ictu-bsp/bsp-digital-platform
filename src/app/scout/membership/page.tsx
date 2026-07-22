@@ -222,6 +222,13 @@ export default async function MembershipPage() {
                         : "Apply Membership"}
                     </Link>
 
+                    <Link
+                      href="/scout/membership/membership-registration/adult-scout/agreement"
+                      className="mt-3 block w-full rounded-full border border-green-900 py-3 font-bold text-green-900 transition hover:bg-green-50"
+                    >
+                      Adult Scout Registration
+                    </Link>
+
                     <p className="mt-3 text-center text-sm text-gray-700">
                       Already a member?{" "}
                       <Link
