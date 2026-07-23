@@ -15,7 +15,7 @@ export function CouncilScoutsTable({ initialScouts }: Props) {
   const [scouts] = useState<ScoutRecord[]>(initialScouts);
 
   const handleApprove = async (id: string) => {
-    const response = await verifyScoutPayment(id, 'MANUAL_CASH_CONFIRM');
+    const response = await verifyScoutPayment(id, 'paid');
 
     if (response.success) {
       alert(response.message);

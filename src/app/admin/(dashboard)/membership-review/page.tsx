@@ -1,4 +1,4 @@
-// src/app/admin/membership-review/page.tsx
+// src/app/admin/(dashboard)/membership-review/page.tsx
 // Membership Review admin page — lists pending scout registrations
 // awaiting approval, with a click-to-open modal for full details.
 

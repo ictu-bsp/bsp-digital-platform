@@ -31,14 +31,13 @@ const digitsOnly = (value: string) => value.replace(/\D/g, "").slice(0, 11);
 
 const RELATIONSHIP_OPTIONS = [
   "Parent",
-  "Guardian",
+  "Legal Guardian",
   "Sibling",
   "Spouse",
-  "Grandparent",
-  "Aunt",
-  "Uncle",
-  "Cousin",
+  "Partner",
+  "Extended Family Member",
   "Friend",
+  "Child",
   "Other",
 ];
 
@@ -64,6 +63,35 @@ export default function PersonalInfoPage() {
     emergencyContactNumber,
     setEmergencyContactNumber,
   } = useWizard();
+
+  // Warn the user before they reload/close the tab if they've started
+  // filling out this step — prevents silent loss of entered info.
+  useEffect(() => {
+    const hasUnsavedData =
+      bloodType !== "" ||
+      address !== "" ||
+      telephone !== "" ||
+      emergencyContactName !== "" ||
+      emergencyContactRelationship !== "" ||
+      emergencyContactNumber !== "";
+
+    if (!hasUnsavedData) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [
+    bloodType,
+    address,
+    telephone,
+    emergencyContactName,
+    emergencyContactRelationship,
+    emergencyContactNumber,
+  ]);
 
   const onNext = (event: React.FormEvent) => {
     event.preventDefault();
@@ -145,15 +173,15 @@ export default function PersonalInfoPage() {
         {/* Telephone Number */}
         <div className="relative">
           <input
-            placeholder="Telephone Number (e.g. 09171234567)"
+            placeholder="Contact Number"
             inputMode="numeric"
             maxLength={11}
-            className={`${fieldShellClass(telephone !== "")} pl-4 pr-10`}
+            className={`${fieldShellClass(telephone.length === 11)} pl-4 pr-10`}
             value={telephone}
             onChange={(e) => setTelephone(digitsOnly(e.target.value))}
             required
           />
-          {telephone !== "" && (
+          {telephone.length === 11 && (
             <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
           )}
         </div>
@@ -184,6 +212,7 @@ export default function PersonalInfoPage() {
 
         <div className="grid grid-cols-2 gap-4">
           {/* Emergency Contact Relationship */}
+        <div>
           <div className="relative">
             <select
               value={emergencyContactRelationship}
@@ -204,23 +233,38 @@ export default function PersonalInfoPage() {
               <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-9 top-1/2 -translate-y-1/2 pointer-events-none" />
             )}
           </div>
+          {emergencyContactRelationship === "Extended Family Member" && (
+            <p className="text-xs text-zinc-500 mt-1">
+              e.g., Uncle, Aunt, Cousin, Grandparent, etc.
+            </p>
+          )}
+        </div>
 
           {/* Emergency Contact Number */}
+        <div>
           <div className="relative">
             <input
-              placeholder="Contact Number (e.g. 09171234567)"
+              placeholder="Contact Number"
               inputMode="numeric"
               maxLength={11}
-              className={`${fieldShellClass(emergencyContactNumber !== "")} pl-4 pr-10`}
+              className={`${fieldShellClass(emergencyContactNumber.length === 11)} pl-4 pr-10`}
               value={emergencyContactNumber}
               onChange={(e) => setEmergencyContactNumber(digitsOnly(e.target.value))}
               required
             />
-            {emergencyContactNumber !== "" && (
+            {emergencyContactNumber.length === 11 && (
               <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
             )}
           </div>
+          {emergencyContactNumber !== "" && emergencyContactNumber.length < 11 && (
+            <p className="text-xs text-amber-600 mt-1">
+              Enter a full 11-digit number (e.g. 09171234567)
+            </p>
+          )}
         </div>
+        </div>
+
+       
 
         <button
           type="submit"

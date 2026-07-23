@@ -32,6 +32,12 @@ const WALLET_LABELS: Record<WalletType, string> = {
   shopee_pay: "ShopeePay",
 };
 
+// Strips non-digits, caps at 11 (PH mobile format: 09XXXXXXXXX).
+const digitsOnly = (value: string) => value.replace(/\D/g, "").slice(0, 11);
+
+// Only accepts full addresses ending in @gmail.com or @yahoo.com.
+const EMAIL_PATTERN = /^[^\s@]+@(gmail|yahoo)\.com$/i;
+
 // gcash / grab_pay -> Source workflow.
 // paymaya / shopee_pay -> Payment Intent workflow.
 const SOURCE_WORKFLOW_TYPES: WalletType[] = [
@@ -81,6 +87,10 @@ export default function EWallet({
 
   const isSourceWorkflow =
     SOURCE_WORKFLOW_TYPES.includes(walletType);
+
+  const isPhoneValid = phone.length === 11;
+  const isEmailValid = EMAIL_PATTERN.test(email);
+  const isFormValid = isPhoneValid && isEmailValid && name !== "";
       // ---------- Source workflow (GCash / GrabPay) ----------
   const createSource = async () => {
     setPaymentStatus("Creating Source");
@@ -510,13 +520,20 @@ export default function EWallet({
 
             <input
               placeholder="09xxxxxxxxx"
+              inputMode="numeric"
+              maxLength={11}
               className="rounded-lg border border-zinc-300 px-4 py-2.5 text-zinc-900 focus:border-green-800 focus:outline-none focus:ring-2 focus:ring-green-800"
               value={phone}
               onChange={(e) =>
-                setPhone(e.target.value)
+                setPhone(digitsOnly(e.target.value))
               }
               required
             />
+            {phone !== "" && phone.length < 11 && (
+              <p className="text-xs text-amber-600">
+                Enter a full 11-digit number (e.g. 09171234567)
+              </p>
+            )}
           </div>
 
           <div className="flex flex-col gap-1">
@@ -525,7 +542,8 @@ export default function EWallet({
             </label>
 
             <input
-              placeholder="user@domain.com"
+              placeholder="user@gmail.com"
+              type="email"
               className="rounded-lg border border-zinc-300 px-4 py-2.5 text-zinc-900 focus:border-green-800 focus:outline-none focus:ring-2 focus:ring-green-800"
               value={email}
               onChange={(e) =>
@@ -533,6 +551,11 @@ export default function EWallet({
               }
               required
             />
+            {email !== "" && !isEmailValid && (
+              <p className="text-xs text-amber-600">
+                Must be a full @gmail.com or @yahoo.com email address
+              </p>
+            )}
           </div>
                     {submitError && (
             <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -557,7 +580,7 @@ export default function EWallet({
 
           <button
             type="button"
-            disabled={isBusy || isSubmitting}
+            disabled={isBusy || isSubmitting || !isFormValid}
             onClick={() =>
               setShowConfirmation(true)
             }
