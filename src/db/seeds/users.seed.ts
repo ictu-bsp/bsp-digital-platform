@@ -82,6 +82,6 @@ export async function seedUsers(
   ];
 
   await db.insert(schema.users).values(users);
-
+//
   console.log(`✅ Seeded ${users.length} users.`);
 }
