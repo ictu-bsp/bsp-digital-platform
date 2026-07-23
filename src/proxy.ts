@@ -28,7 +28,7 @@ export function proxy(
   //
   // Visitors attempting to access protected pages
   //
-
+// hello
   if (!session && !isPublic) {
     return NextResponse.redirect(
       new URL("/login", request.url)
