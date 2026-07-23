@@ -22,7 +22,7 @@ export const signUpSchema = z.object({
 
   birthdate: birthdateSchema,
 
-  gender: z.string().min(1, "Gender is required."),
+  sex: z.string().min(1, "Field is required."),
 });
 
 export type SignUpInput = z.infer<typeof signUpSchema>;

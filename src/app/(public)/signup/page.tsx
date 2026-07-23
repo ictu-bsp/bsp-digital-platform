@@ -17,7 +17,7 @@ export default function SignUpPage() {
     lastName: "",
     suffix: "",
     birthdate: "",
-    gender: "",
+    sex: "",
     email: "",
     noMiddleName: false,
   });
@@ -75,7 +75,7 @@ export default function SignUpPage() {
     data.append("lastName", formData.lastName);
     data.append("suffix", formData.suffix);
     data.append("birthdate", formData.birthdate);
-    data.append("gender", formData.gender);
+    data.append("sex", formData.sex);
     data.append("email", formData.email);
 
     const result = await signUpAction(
@@ -293,9 +293,9 @@ export default function SignUpPage() {
 
                 <div className="w-[35%]">
                   <select
-                    name="gender"
+                    name="sex"
                     required
-                    value={formData.gender}
+                    value={formData.sex}
                     onChange={handleInputChange}
                     className={`w-full rounded-lg border bg-white p-3 text-base text-gray-700 outline-none transition-all focus:ring-1 ${
                       errors.gender
@@ -304,16 +304,13 @@ export default function SignUpPage() {
                     }`}
                   >
                     <option value="" disabled hidden>
-                      Gender
+                      Sex
                     </option>
                     <option value="Male">
                       Male
                     </option>
                     <option value="Female">
                       Female
-                    </option>
-                    <option value="Other">
-                      Other
                     </option>
                   </select>
                 </div>
@@ -325,7 +322,7 @@ export default function SignUpPage() {
                 </p>
               )}
 
-              {errors.gender &&
+              {errors.sex &&
                 !errors.birthdate && (
                   <p className="mt-1 pl-1 text-xs text-red-600">
                     {errors.gender[0]}
