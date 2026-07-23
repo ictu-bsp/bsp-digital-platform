@@ -6,6 +6,7 @@ const PUBLIC_ROUTES = [
   "/",
   "/login",
   "/signup",
+  "/scout/membership/membership-registration/webhook",
 ];
 
 export function proxy(

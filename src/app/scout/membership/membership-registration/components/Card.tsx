@@ -13,6 +13,16 @@ import { verifyScoutPayment } from "@/app/actions/scouts";
 
 export type CardBrand = "Mastercard" | "Visa";
 
+// Strips non-digits, caps at 11 (PH mobile format: 09XXXXXXXXX).
+const digitsOnly = (value: string) => value.replace(/\D/g, "").slice(0, 11);
+
+// Only accepts full addresses ending in @gmail.com or @yahoo.com.
+const EMAIL_PATTERN = /^[^\s@]+@(gmail|yahoo)\.com$/i;
+
+// Generic digit-stripper with a custom max length, for card fields.
+const digitsOnlyMax = (value: string, max: number) =>
+  value.replace(/\D/g, "").slice(0, max);
+
 type CardProps = {
   amount: number;
   description: string;
@@ -377,7 +387,23 @@ export default function Card({
       });
   };
 
-    const onSubmit = async () => {
+    const isPhoneValid = phone.length === 11;
+  const isEmailValid = EMAIL_PATTERN.test(email);
+  const isCardNumberValid = number.length === 16;
+  const isMonthValid =
+    month.length === 2 && Number(month) >= 1 && Number(month) <= 12;
+  const isYearValid = year.length === 4;
+  const isCvcValid = code.length === 3;
+  const isFormValid =
+    isPhoneValid &&
+    isEmailValid &&
+    isCardNumberValid &&
+    isMonthValid &&
+    isYearValid &&
+    isCvcValid &&
+    name !== "";
+
+  const onSubmit = async () => {
     try {
       setIsSubmitting(true);
       setSubmitError("");
@@ -439,7 +465,8 @@ export default function Card({
         />
 
         <input
-          placeholder="user@domain.com"
+          placeholder="user@gmail.com"
+          type="email"
           className="rounded border px-3 py-2"
           value={email}
           onChange={(e) =>
@@ -447,59 +474,99 @@ export default function Card({
           }
           required
         />
+        {email !== "" && !isEmailValid && (
+          <p className="text-xs text-amber-600 -mt-2">
+            Must be a full @gmail.com or @yahoo.com email address
+          </p>
+        )}
 
         <input
           placeholder="09xxxxxxxxx"
+          inputMode="numeric"
+          maxLength={11}
           className="rounded border px-3 py-2"
           value={phone}
           onChange={(e) =>
-            setPhone(e.target.value)
+            setPhone(digitsOnly(e.target.value))
           }
           required
         />
+        {phone !== "" && phone.length < 11 && (
+          <p className="text-xs text-amber-600 -mt-2">
+            Enter a full 11-digit number (e.g. 09171234567)
+          </p>
+        )}
 
         <input
           placeholder="Card Number (4343434343434345)"
+          inputMode="numeric"
+          maxLength={16}
           className="rounded border px-3 py-2"
           value={number}
           onChange={(e) =>
-            setNumber(e.target.value)
+            setNumber(digitsOnlyMax(e.target.value, 16))
           }
           required
         />
+        {number !== "" && number.length < 16 && (
+          <p className="text-xs text-amber-600 -mt-2">
+            Card number must be 16 digits
+          </p>
+        )}
 
         <div className="flex gap-2">
           <input
             placeholder="MM"
+            inputMode="numeric"
+            maxLength={2}
             className="w-1/3 rounded border px-3 py-2"
             value={month}
             onChange={(e) =>
-              setMonth(e.target.value)
+              setMonth(digitsOnlyMax(e.target.value, 2))
             }
             required
           />
 
           <input
             placeholder="YYYY"
+            inputMode="numeric"
+            maxLength={4}
             className="w-1/3 rounded border px-3 py-2"
             value={year}
             onChange={(e) =>
-              setYear(e.target.value)
+              setYear(digitsOnlyMax(e.target.value, 4))
             }
             required
           />
 
           <input
             placeholder="CVC"
+            inputMode="numeric"
+            maxLength={3}
             className="w-1/3 rounded border px-3 py-2"
             value={code}
             onChange={(e) =>
-              setCode(e.target.value)
+              setCode(digitsOnlyMax(e.target.value, 3))
             }
             required
           />
 
-                  </div>
+        </div>
+        {month !== "" && !isMonthValid && (
+          <p className="text-xs text-amber-600 -mt-2">
+            Month must be 01–12
+          </p>
+        )}
+        {year !== "" && year.length < 4 && (
+          <p className="text-xs text-amber-600 -mt-2">
+            Enter a full 4-digit year (e.g. 2027)
+          </p>
+        )}
+        {code !== "" && code.length < 3 && (
+          <p className="text-xs text-amber-600 -mt-2">
+            CVC must be 3 digits
+          </p>
+        )}
 
         {submitError && (
           <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -509,7 +576,7 @@ export default function Card({
 
         <button
           type="button"
-          disabled={isSubmitting}
+          disabled={isSubmitting || !isFormValid}
           onClick={() => setShowConfirmation(true)}
           className="rounded bg-black px-4 py-2 text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
         >

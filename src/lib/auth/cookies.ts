@@ -11,11 +11,7 @@ export async function setSessionCookie(
   const cookieStore = await cookies();
 
   cookieStore.set(COOKIE_NAME, sessionId, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    expires: expiresAt,
-    path: "/",
+    sameSite: "lax",
   });
 }
 
