@@ -17,5 +17,5 @@ if (process.env.NODE_ENV !== 'production' || !process.env.CF_PAGES) {
   });
   databaseClient = drizzleEdge(pool, { schema });
 }
-
+//
 export const db = databaseClient;
