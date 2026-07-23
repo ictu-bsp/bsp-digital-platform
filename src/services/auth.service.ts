@@ -3,10 +3,10 @@
 import { db } from "@/db";
 import { eq } from "drizzle-orm";
 import { sendVerificationEmail } from "@/lib/email";
-import { setSessionCookie } from "@/lib/auth/cookies";
+import { getSessionCookie, setSessionCookie } from "@/lib/auth/cookies";
 import { users, pendingUserRegistrations } from "@/db/schema";
-import { hashPassword, verifyPassword, } from "@/lib/auth/hash";
-import { createSession, deleteExpiredSessions } from "@/lib/auth/session";
+import { hashPassword, verifyPassword } from "@/lib/auth/hash";
+import { createSession, deleteExpiredSessions, getSession } from "@/lib/auth/session";
 
 export interface CreatePendingRegistrationInput {
   email: string;
@@ -69,13 +69,24 @@ export async function loginUser(
       );
     }
 
-    await deleteExpiredSessions(); 
+    await deleteExpiredSessions();
 
-    const session = await createSession(user.id);
-      await setSessionCookie(
-        session.id,
-        session.expiresAt
-      );
+    const existingSessionId = await getSessionCookie();
+    let existingAdminUserId: string | undefined = undefined;
+
+    if (existingSessionId) {
+      const existingSession = await getSession(existingSessionId);
+      if (existingSession?.adminUserId) {
+        existingAdminUserId = existingSession.adminUserId;
+      }
+    }
+
+    // Pass existing adminUserId if present so officer status is preserved
+    const session = await createSession(user.id, existingAdminUserId);
+    await setSessionCookie(
+      session.id,
+      session.expiresAt
+    );
 
     return user;
   } catch (error) {
@@ -167,7 +178,6 @@ export async function verifyUserEmail(
   }
 }
 
-//Creates Random 6-Digit Verification Code
 function generateVerificationCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }

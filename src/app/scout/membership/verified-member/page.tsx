@@ -1,5 +1,3 @@
-//src/app/scout/membership/verified-member/page.tsx
-
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { getMembershipCardData } from "@/services/application.service";
@@ -12,19 +10,17 @@ export default async function VerifiedMemberPage() {
     redirect("/login");
   }
 
-  const cardData = await getMembershipCardData(user.id);
+  // FIX 1: getMembershipCardData takes 0 arguments (it uses session internally)
+  const cardData = await getMembershipCardData();
 
-  // Not approved/verified yet — this page isn't reachable directly.
-  if (!cardData || cardData.scout.verificationStatus !== "active") {
+  // FIX 2: Check cardData and cardData.scout nullability
+  if (!cardData || !cardData.scout || cardData.scout.verificationStatus !== "active") {
     redirect("/scout/membership");
   }
 
-  const { application, scout, registration, council, personalInfo } = cardData;
+  // FIX 3: Removed non-existent `personalInfo` from destructure
+  const { application, scout, registration, council } = cardData;
 
-  // Maps raw enum values (as stored via the register step's <select> options)
-  // to human-readable labels for display on the card. Falls back to a
-  // generic "replace underscores + capitalize" for anything unmapped,
-  // so a future enum value doesn't silently render as "â€”".
   const scoutingPositionLabels: Record<string, string> = {
     kid_scout: "Kid Scout",
     kab_scout: "Kab Scout",
@@ -54,7 +50,6 @@ export default async function VerifiedMemberPage() {
     return map[value] ?? humanize(value);
   };
 
-
   const formatDate = (value: Date | string | null | undefined) => {
     if (!value) return "—";
     const date = new Date(value);
@@ -71,7 +66,7 @@ export default async function VerifiedMemberPage() {
     middleInitial: user.middleName ? `${user.middleName.charAt(0)}.` : "",
     lastName: user.lastName,
     designation: formatLabel(
-      application?.scoutingPosition ?? personalInfo.scoutingPosition,
+      application?.scoutingPosition,
       scoutingPositionLabels
     ),
     council: council?.name ?? "N/A",
@@ -80,17 +75,18 @@ export default async function VerifiedMemberPage() {
     status: scout.verificationStatus === "active" ? "VALID" : "PENDING",
     dob: formatDate(user.birthdate),
     sex: user.gender ?? "N/A",
-    bloodType: personalInfo.bloodType ?? "N/A",
+    // FIX 4: Access emergency & personal data from scout/application directly
+    bloodType: scout.bloodType || application?.bloodType || "N/A",
     sponsoringInst: formatLabel(
       application?.sponsoringInstitution,
       sponsoringInstitutionLabels
     ),
-    address: personalInfo.address ?? "N/A",
-    telephone: personalInfo.telephone ?? "N/A",
+    address: scout.address || application?.address || "N/A",
+    telephone: scout.telephoneNumber || application?.telephoneNumber || "N/A",
     email: user.email,
-    emergencyContact: personalInfo.emergencyContactName ?? "N/A",
-    emergencyRelationship: personalInfo.emergencyContactRelationship ?? "N/A",
-    emergencyContactNum: personalInfo.emergencyContactNumber ?? "N/A",
+    emergencyContact: scout.emergencyContactName || application?.emergencyContactName || "N/A",
+    emergencyRelationship: scout.emergencyContactRelationship || application?.emergencyContactRelationship || "N/A",
+    emergencyContactNum: scout.emergencyContactNumber || application?.emergencyContactNumber || "N/A",
   };
 
   return (
