@@ -19,17 +19,15 @@ export default async function MembershipPage() {
   }
 
   const application = await getApplicationByUser(user.id);
-  const cardData = await getMembershipCardData(user.id);
+  
+  // FIX 1: Call getMembershipCardData without arguments
+  const cardData = await getMembershipCardData();
 
-  // An application can say APPROVED while the underlying scout record no
-  // longer exists (e.g. permanently deleted via the admin roster for
-  // testing). Only trust APPROVED if there's still a live, active scout
-  // record backing it — otherwise this would redirect to
-  // verified-member, which would bounce right back here.
+  // FIX 2: Safe optional chaining on `cardData?.scout?.verificationStatus`
   const hasActiveScout =
-    cardData !== null && cardData.scout.verificationStatus === "active";
+    cardData !== null && cardData?.scout?.verificationStatus === "active";
 
-  // Approved â†’ this page's job is done, go straight to the real card.
+  // Approved -> this page's job is done, go straight to the real card.
   if (application?.status === "APPROVED" && hasActiveScout) {
     redirect("/scout/membership/verified-member");
   }
@@ -58,11 +56,11 @@ export default async function MembershipPage() {
                   <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-green-700">
                     Membership Preview
                   </p>
-                  <h2 className="text-lg font-semibold text-slate-900">Verified Member</h2>
+                  <h2 className="text-lg font-semibold text-slate-900">Non Member</h2>
                 </div>
 
                 <div className="rounded-full bg-green-900 px-3 py-1 text-xs font-semibold text-white">
-                  PENDING
+                  INVALID
                 </div>
               </div>
 
@@ -75,15 +73,11 @@ export default async function MembershipPage() {
                     height={32}
                     className="h-8 w-8 shrink-0 object-contain"
                   />
-                    <div className="text-[10px] font-semibold uppercase leading-tight text-slate-700">
-                      Boy Scouts of the Philippines
-                    </div>
+                  <div className="text-[10px] font-semibold uppercase leading-tight text-slate-700">
+                    Boy Scouts of the Philippines
+                  </div>
                 </div>
 
-                {/* This card is always blurred here — this page is a status
-                    gate only. The real, unblurred card lives on
-                    /scout/membership/verified-member, which this page
-                    redirects to once the application is APPROVED. */}
                 <div className="blur-[4px]">
                   <div className="w-full aspect-[1.58/1] [perspective:1000px]">
                     <div className="relative h-full w-full rounded-2xl border border-gray-200 bg-[#F1F7EC] p-4 shadow-md overflow-hidden flex flex-col justify-between pl-9">
@@ -177,7 +171,7 @@ export default async function MembershipPage() {
                       Membership Status
                     </p>
                     <p className="mt-2 text-4xl font-black tracking-[0.25em] text-slate-900">
-                      PENDING
+                      INVALID
                     </p>
                   </div>
                 </div>

@@ -36,9 +36,19 @@ interface EditProfileModalProps {
     middleName: string | null;
     lastName: string;
     suffix: string | null;
+
     birthdate: Date;
     gender: string;
+
     avatarUrl?: string | null;
+
+    bloodType?: string;
+    address?: string;
+    telephoneNumber?: string;
+
+    emergencyContactName?: string;
+    emergencyContactRelationship?: string;
+    emergencyContactNumber?: string;
   }) => void;
 }
 
@@ -49,25 +59,49 @@ export default function EditProfileModal({
   onSave,
 }: EditProfileModalProps) {
 
-  const isVerifiedScout =
-    membershipData?.scout?.verificationStatus ===
-    "active";
+  const scout = membershipData?.scout;
+  const isVerifiedScout = scout?.verificationStatus === "active";
+  const [form, setForm] =
+    useState({
 
-  const isScout =
-    !!membershipData?.scout;
+      firstName:
+        user.firstName,
 
-  const [form, setForm] = useState({
-    firstName: user.firstName,
-    middleName: user.middleName ?? "",
-    lastName: user.lastName,
-    suffix: user.suffix ?? "",
+      middleName:
+        user.middleName ?? "",
 
-    birthdate: new Date(user.birthdate)
-      .toISOString()
-      .split("T")[0],
+      lastName:
+        user.lastName,
 
-    gender: user.gender,
-  });
+      suffix:
+        user.suffix ?? "",
+
+      birthdate:
+        new Date(user.birthdate)
+          .toISOString()
+          .split("T")[0],
+
+      gender:
+        user.gender,
+
+      bloodType:
+        scout?.bloodType ?? "",
+
+      address:
+        scout?.address ?? "",
+
+      telephoneNumber:
+        scout?.telephoneNumber ?? "",
+
+      emergencyContactName:
+        scout?.emergencyContactName ?? "",
+
+      emergencyContactRelationship:
+        scout?.emergencyContactRelationship ?? "",
+
+      emergencyContactNumber:
+        scout?.emergencyContactNumber ?? "",
+    });
 
   const [avatarUrl, setAvatarUrl] =
     useState<string | null>(
@@ -95,15 +129,23 @@ export default function EditProfileModal({
       [field]: value,
     }));
   }
+    async function handleSave() {
 
-  async function handleSave() {
     setLoading(true);
     setError("");
     setMessage("");
 
     try {
+
       const result =
-        await updateProfileAction(form);
+        await updateProfileAction({
+
+          ...form,
+
+          avatarUrl:
+            avatarUrl ?? undefined,
+
+        });
 
       if (!result.success) {
         setError(result.message);
@@ -113,21 +155,53 @@ export default function EditProfileModal({
       setMessage(result.message);
 
       onSave?.({
-        firstName: form.firstName,
+
+        firstName:
+          form.firstName,
+
         middleName:
           form.middleName || null,
-        lastName: form.lastName,
+
+        lastName:
+          form.lastName,
+
         suffix:
           form.suffix || null,
-        birthdate: new Date(
-          form.birthdate
-        ),
-        gender: form.gender,
+
+        birthdate:
+          new Date(
+            form.birthdate
+          ),
+
+        gender:
+          form.gender,
+
         avatarUrl,
+
+        bloodType:
+          form.bloodType,
+
+        address:
+          form.address,
+
+        telephoneNumber:
+          form.telephoneNumber,
+
+        emergencyContactName:
+          form.emergencyContactName,
+
+        emergencyContactRelationship:
+          form.emergencyContactRelationship,
+
+        emergencyContactNumber:
+          form.emergencyContactNumber,
+
       });
 
     } finally {
+
       setLoading(false);
+
     }
   }
 
@@ -146,21 +220,27 @@ export default function EditProfileModal({
             <div className="mb-4 h-28 w-28 overflow-hidden rounded-full bg-green-900 shadow">
 
               {avatarUrl ? (
+
                 <img
                   src={avatarUrl}
                   alt="User Avatar"
                   className="h-full w-full object-cover"
                 />
+
               ) : (
+
                 <div className="flex h-full items-center justify-center">
+
                   <svg
                     className="h-14 w-14 text-white"
                     fill="currentColor"
                     viewBox="0 0 24 24"
                   >
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4Zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4 1.79-4 4-4 4 1.79 4 4-1.79 4-4 4Zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                   </svg>
+
                 </div>
+
               )}
 
             </div>
@@ -182,6 +262,7 @@ export default function EditProfileModal({
             ["Last Name", "lastName"],
             ["Suffix", "suffix"],
           ].map(([label, field]) => (
+
             <div key={field}>
 
               <label className="mb-1 block text-sm font-medium">
@@ -204,6 +285,7 @@ export default function EditProfileModal({
               />
 
             </div>
+
           ))}
 
           <label className="mb-1 block text-sm font-medium">
@@ -227,7 +309,7 @@ export default function EditProfileModal({
           </label>
 
           <select
-            className="mb-6 w-full rounded-lg border p-3"
+            className="mb-4 w-full rounded-lg border p-3"
             value={form.gender}
             onChange={(e) =>
               updateField(
@@ -247,51 +329,81 @@ export default function EditProfileModal({
             <option value="Other">
               Other
             </option>
+
           </select>
 
-          {isScout && !isVerifiedScout && (
-            <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
-              <p className="text-sm font-semibold text-amber-800">
-                Membership Under Review
-              </p>
-
-              <p className="mt-2 text-sm text-amber-700">
-                Your membership application is still awaiting
-                verification. Personal information submitted for your
-                application cannot be edited until the review has been
-                completed.
-              </p>
-            </div>
-          )}
-
           {isVerifiedScout && (
-            <div className="mb-6 rounded-xl border border-green-200 bg-green-50 p-4">
-              <p className="text-sm font-semibold text-green-800">
-                Verified Scout
-              </p>
-
-              <p className="mt-2 text-sm text-green-700">
-                As a verified Scout, you may edit your profile details.
-                Information originating from official membership
-                documents will remain locked and cannot be modified here.
-              </p>
-            </div>
+            <>
+              <hr className="my-6" />
+              <h3 className="mb-4 text-lg font-bold text-green-900">
+                Scout Information
+              </h3>
+              <label className="mb-1 block text-sm font-medium">
+               Blood Type
+              </label>
+              <input
+                className="mb-4 w-full rounded-lg border p-3"
+                value={form.bloodType}
+                onChange={(e) =>updateField("bloodType", e.target.value)}
+              />
+              <label className="mb-1 block text-sm font-medium">
+                Address
+              </label>
+              <textarea
+                rows={3}
+                className="mb-4 w-full rounded-lg border p-3"
+                value={form.address}
+                onChange={(e) =>updateField("address", e.target.value)}
+              />
+              <label className="mb-1 block text-sm font-medium">
+                Telephone Number
+              </label>
+              <input
+              className="mb-4 w-full rounded-lg border p-3"
+              value={form.telephoneNumber}
+              onChange={(e) =>updateField("telephoneNumber", e.target.value)}
+              />
+              <hr className="my-6" />
+              <h3 className="mb-4 text-lg font-bold text-green-900">
+                Emergency Contact
+              </h3>
+              <label className="mb-1 block text-sm font-medium">
+                Contact Name
+              </label>
+              <input
+                className="mb-4 w-full rounded-lg border p-3"
+                value={form.emergencyContactName}
+                onChange={(e) =>updateField("emergencyContactName",e.target.value)}
+              />
+              <label className="mb-1 block text-sm font-medium">
+                Relationship
+              </label>
+              <input
+                className="mb-4 w-full rounded-lg border p-3"
+                value={form.emergencyContactRelationship}
+                onChange={(e) =>updateField("emergencyContactRelationship",e.target.value)}
+              />
+              <label className="mb-1 block text-sm font-medium">
+                Contact Number
+              </label>
+              <input
+                className="mb-6 w-full rounded-lg border p-3"
+                value={form.emergencyContactNumber}
+                onChange={(e) =>updateField("emergencyContactNumber",e.target.value)}
+              />
+            </>
           )}
-
           {error && (
             <p className="mb-3 text-center text-sm text-red-600">
               {error}
             </p>
           )}
-
           {message && (
             <p className="mb-3 text-center text-sm text-green-700">
               {message}
             </p>
           )}
-
           <div className="flex gap-3">
-
             <button
               type="button"
               onClick={onClose}
@@ -300,7 +412,6 @@ export default function EditProfileModal({
             >
               Cancel
             </button>
-
             <button
               type="button"
               onClick={handleSave}
@@ -311,17 +422,14 @@ export default function EditProfileModal({
                 ? "Saving..."
                 : "Save Changes"}
             </button>
-
           </div>
-
         </div>
-
       </div>
-            {showAvatarModal && (
+      {showAvatarModal && (
         <EditAvatarModal
           currentAvatarUrl={
             avatarUrl
-              ? `/avatarUrl`
+              ? avatarUrl
               : null
           }
           onSave={(newAvatarUrl) => {

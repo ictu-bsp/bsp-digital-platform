@@ -8,6 +8,13 @@ import {
 
 export async function createPaymentRecordAction(registrationId: string) {
   try {
+    if (!registrationId || registrationId === "undefined" || registrationId === "null") {
+      return {
+        success: false,
+        error: "Your session details were not found. Please restart your registration.",
+      };
+    }
+
     const record = await createPaymentRecord(registrationId);
 
     return {
@@ -15,11 +22,13 @@ export async function createPaymentRecordAction(registrationId: string) {
       data: record,
     };
   } catch (error) {
-    console.error(error);
+    // Log technical trace in server terminal for developer review
+    console.error("Error creating payment record:", error);
 
+    // Return friendly, readable message for the UI
     return {
       success: false,
-      error: "Failed to create payment record.",
+      error: "Unable to set up payment details. Please go back and try again.",
     };
   }
 }
@@ -35,11 +44,11 @@ export async function setPaymentProviderIdAction(
       success: true,
     };
   } catch (error) {
-    console.error(error);
+    console.error("Error updating payment provider ID:", error);
 
     return {
       success: false,
-      error: "Failed to update payment record.",
+      error: "Unable to complete payment setup. Please try again.",
     };
   }
 }

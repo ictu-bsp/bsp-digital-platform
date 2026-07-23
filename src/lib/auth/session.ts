@@ -2,13 +2,8 @@
 
 import { randomUUID } from "crypto";
 import { eq, lt } from "drizzle-orm";
-
 import { db } from "@/db";
-import {
-  sessions,
-  users,
-  adminUsers,
-} from "@/db/schema";
+import {sessions,users,adminUsers,} from "@/db/schema";
 
 const SESSION_DURATION_DAYS = 7;
 
@@ -63,7 +58,7 @@ export async function getCurrentUser(
   const session =
     await getSession(sessionId);
 
-  if (!session) {
+  if (!session || !session.userId) {
     return null;
   }
 
@@ -123,7 +118,7 @@ export async function getCurrentSession(
   let adminUser = null;
 
   if (session.adminUserId) {
-    [adminUser] = await db
+    const [foundAdmin] = await db
       .select()
       .from(adminUsers)
       .where(
@@ -132,6 +127,7 @@ export async function getCurrentSession(
           session.adminUserId
         )
       );
+    adminUser = foundAdmin ?? null;
   }
 
   return {
