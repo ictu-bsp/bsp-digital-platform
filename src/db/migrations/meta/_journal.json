@@ -22,6 +22,20 @@
       "when": 1784794630467,
       "tag": "0002_deep_madrox",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784799742865,
+      "tag": "0003_chunky_doctor_spectrum",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784801430391,
+      "tag": "0004_glossy_jean_grey",
+      "breakpoints": true
     }
   ]
 }

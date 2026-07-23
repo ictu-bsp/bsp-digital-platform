@@ -8,8 +8,6 @@ import {
 
 export const regions = pgTable("regions", {
   id: uuid("id").defaultRandom().primaryKey(),
-
-  name: text("name")
-    .unique()
-    .notNull(),
+  name: text("name").unique().notNull(),
+  regionNumber: text("region_number").unique().notNull(), // e.g., "01", "12"
 });
