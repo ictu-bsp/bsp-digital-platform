@@ -1,4 +1,4 @@
-// src/db/schema/registrations.ts
+// src/db/schema/scout-registrations.ts
 
 import {
   pgTable,
@@ -10,6 +10,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { scouts } from "./scouts";
+import { councils } from "./councils";
 import { registrationStatusEnum } from "./enums";
 
 export const registrations = pgTable("scout_registrations", {
@@ -18,6 +19,9 @@ export const registrations = pgTable("scout_registrations", {
   scoutId: uuid("scout_id")
     .references(() => scouts.id)
     .notNull(),
+
+  councilId: uuid("council_id")
+    .references(() => councils.id),
 
   registrationYears: integer("registration_years")
     .default(1)

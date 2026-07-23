@@ -3,8 +3,18 @@
 "use server";
 
 import { db } from "@/db";
-import { users } from "@/db/schema/users";
-import { eq } from "drizzle-orm";
+
+import {
+  users,
+} from "@/db/schema/users";
+
+import {
+  scoutApplications,
+} from "@/db/schema/scoutApplications";
+
+import {
+  eq,
+} from "drizzle-orm";
 
 export interface UpdateProfileInput {
   userId: string;
@@ -18,44 +28,116 @@ export interface UpdateProfileInput {
   gender: string;
 
   avatarUrl?: string;
+
+  bloodType?: string;
+  address?: string;
+  telephoneNumber?: string;
+
+  emergencyContactName?: string;
+  emergencyContactRelationship?: string;
+  emergencyContactNumber?: string;
 }
 
 export async function updateProfile(
   data: UpdateProfileInput
 ) {
   try {
+
     await db
       .update(users)
       .set({
-        firstName: data.firstName.trim(),
-        middleName: data.middleName.trim() || null,
-        lastName: data.lastName.trim(),
-        suffix: data.suffix.trim() || null,
 
-        birthdate: new Date(data.birthdate),
+        firstName:
+          data.firstName.trim(),
 
-        gender: data.gender,
+        middleName:
+          data.middleName.trim() ||
+          null,
+
+        lastName:
+          data.lastName.trim(),
+
+        suffix:
+          data.suffix.trim() ||
+          null,
+
+        birthdate:
+          new Date(
+            data.birthdate
+          ),
+
+        gender:
+          data.gender,
 
         ...(data.avatarUrl
           ? {
-              avatarUrl: data.avatarUrl,
+              avatarUrl:
+                data.avatarUrl,
             }
           : {}),
 
-        updatedAt: new Date(),
+        updatedAt:
+          new Date(),
+
       })
-      .where(eq(users.id, data.userId));
+      .where(
+        eq(
+          users.id,
+          data.userId
+        )
+      );
+          await db
+      .update(scoutApplications)
+      .set({
+
+        address:
+          data.address?.trim() ||
+          null,
+
+        telephoneNumber:
+          data.telephoneNumber?.trim() ||
+          null,
+
+        emergencyContactName:
+          data.emergencyContactName?.trim() ||
+          null,
+
+        emergencyContactRelationship:
+          data.emergencyContactRelationship?.trim() ||
+          null,
+
+        emergencyContactNumber:
+          data.emergencyContactNumber?.trim() ||
+          null,
+
+        updatedAt:
+          new Date(),
+
+      })
+      .where(
+        eq(
+          scoutApplications.userId,
+          data.userId
+        )
+      );
 
     return {
       success: true,
-      message: "Profile updated successfully.",
+      message:
+        "Profile updated successfully.",
     };
+
   } catch (error) {
-    console.error("updateProfile()", error);
+
+    console.error(
+      "updateProfile()",
+      error
+    );
 
     return {
       success: false,
-      message: "Unable to update profile.",
+      message:
+        "Unable to update profile.",
     };
   }
 }
@@ -65,20 +147,30 @@ export async function updateAvatar(
   avatarUrl: string
 ) {
   try {
+
     await db
       .update(users)
       .set({
         avatarUrl,
         updatedAt: new Date(),
       })
-      .where(eq(users.id, userId));
-
-    return {
+      .where(
+        eq(
+          users.id,
+          userId
+        )
+      );
+          return {
       success: true,
       avatarUrl,
     };
+
   } catch (error) {
-    console.error("updateAvatar()", error);
+
+    console.error(
+      "updateAvatar()",
+      error
+    );
 
     return {
       success: false,
@@ -92,10 +184,19 @@ export async function getAvatar(
 ) {
   const [user] = await db
     .select({
-      avatarUrl: users.avatarUrl,
+      avatarUrl:
+        users.avatarUrl,
     })
     .from(users)
-    .where(eq(users.id, userId));
+    .where(
+      eq(
+        users.id,
+        userId
+      )
+    );
 
-  return user?.avatarUrl ?? null;
+  return (
+    user?.avatarUrl ??
+    null
+  );
 }

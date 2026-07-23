@@ -3,6 +3,11 @@
 "use client";
 
 import { useState } from "react";
+import {
+  EyeIcon,
+  EyeSlashIcon,
+} from "@heroicons/react/24/outline";
+
 import { verifyCurrentPasswordAction } from "@/app/actions/auth";
 
 interface VerifyPasswordModalProps {
@@ -14,10 +19,18 @@ export default function VerifyPasswordModal({
   onSuccess,
   onClose,
 }: VerifyPasswordModalProps) {
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+
+  const [password, setPassword] =
+    useState("");
+
+  const [showPassword, setShowPassword] =
+    useState(false);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
 
   async function handleSubmit(
     e: React.FormEvent<HTMLFormElement>
@@ -27,88 +40,126 @@ export default function VerifyPasswordModal({
     setLoading(true);
     setError("");
 
-    const result =
-      await verifyCurrentPasswordAction(password);
+    try {
+      const result =
+        await verifyCurrentPasswordAction(
+          password
+        );
 
-    setLoading(false);
+      if (!result.success) {
+        setError(
+          result.message ??
+            "Incorrect password."
+        );
+        return;
+      }
 
-    if (!result.success) {
-      setError(result.message ?? "Incorrect password.");
-      return;
+      onSuccess();
+    } finally {
+      setLoading(false);
     }
-
-    onSuccess();
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+
       <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
 
         <h2 className="text-2xl font-bold text-green-900">
           Verify Password
         </h2>
 
-        <p className="mt-2 text-sm text-gray-600">
-          Please enter your current password before editing your account.
+        <p className="mt-2 text-sm leading-relaxed text-gray-600">
+          For your security, please confirm your
+          current password before you can edit your
+          profile.
         </p>
 
         <form
           onSubmit={handleSubmit}
-          className="mt-6 space-y-4"
+          className="mt-6 space-y-5"
         >
+
           <div>
-            <label className="mb-2 block text-sm font-medium">
+
+            <label className="mb-2 block text-sm font-medium text-gray-700">
               Current Password
             </label>
 
             <div className="relative">
+
               <input
-                type={showPassword ? "text" : "password"}
+                type={
+                  showPassword
+                    ? "text"
+                    : "password"
+                }
                 value={password}
                 onChange={(e) =>
-                  setPassword(e.target.value)
+                  setPassword(
+                    e.target.value
+                  )
                 }
-                className="w-full rounded-xl border px-4 py-3 pr-16"
                 required
+                autoFocus
+                className="w-full rounded-xl border border-gray-300 px-4 py-3 pr-12 outline-none transition focus:border-green-900 focus:ring-1 focus:ring-green-900"
               />
 
               <button
                 type="button"
                 onClick={() =>
-                  setShowPassword(!showPassword)
+                  setShowPassword(
+                    !showPassword
+                  )
                 }
-                className="absolute right-4 top-3 text-sm text-green-700"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 transition hover:text-green-900"
               >
-                {showPassword ? "Hide" : "Show"}
+                {showPassword ? (
+                  <EyeSlashIcon className="h-5 w-5" />
+                ) : (
+                  <EyeIcon className="h-5 w-5" />
+                )}
               </button>
+
             </div>
+                        {error && (
+              <p className="mt-2 text-sm text-red-600">
+                {error}
+              </p>
+            )}
+
           </div>
 
-          {error && (
-            <p className="text-sm text-red-600">
-              {error}
-            </p>
-          )}
+          <div className="flex gap-3 pt-2">
 
-          <div className="flex gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-xl border py-3"
+              disabled={loading}
+              className="flex-1 rounded-xl border border-gray-300 py-3 font-semibold transition hover:bg-gray-100 disabled:opacity-50"
             >
               Cancel
             </button>
 
             <button
               type="submit"
-              disabled={loading}
-              className="flex-1 rounded-xl bg-green-900 py-3 font-semibold text-white"
+              disabled={
+                loading ||
+                password.trim() === ""
+              }
+              className="flex-1 rounded-xl bg-green-900 py-3 font-semibold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loading ? "Verifying..." : "Verify"}
+              {loading
+                ? "Verifying..."
+                : "Continue"}
             </button>
+
           </div>
+
         </form>
+
       </div>
+
     </div>
   );
 }

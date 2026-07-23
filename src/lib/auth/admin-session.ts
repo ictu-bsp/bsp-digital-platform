@@ -1,36 +1,24 @@
 //src/lib/auth/admin-session.ts
 
 import { cookies } from "next/headers";
-import { eq } from "drizzle-orm";
+import { getSessionCookie } from "./cookies";
+import {
+  getCurrentAdminUser as getAdminFromSession,
+  clearAdminUserFromSession,
+} from "./session";
 
-import { db } from "@/db";
-import { adminUsers } from "@/db/schema/adminUsers";
-
-const COOKIE_NAME = "admin_session";
+const COOKIE_NAME = "bsp_session";
 
 export async function getCurrentAdminUser() {
-  const cookieStore = await cookies();
+  const sessionId = await getSessionCookie();
 
-  const adminSession =
-    cookieStore.get(COOKIE_NAME)?.value;
-
-  if (!adminSession) {
+  if (!sessionId) {
     return null;
   }
 
-  const adminUser =
-    await db.query.adminUsers.findFirst({
-      where: eq(
-        adminUsers.id,
-        adminSession
-      ),
-    });
+  const adminUser = await getAdminFromSession(sessionId);
 
-  if (!adminUser) {
-    return null;
-  }
-
-  if (!adminUser.active) {
+  if (!adminUser || !adminUser.active) {
     return null;
   }
 
@@ -38,7 +26,13 @@ export async function getCurrentAdminUser() {
 }
 
 export async function clearAdminSession() {
-  const cookieStore = await cookies();
+  const sessionId = await getSessionCookie();
 
-  cookieStore.delete(COOKIE_NAME);
+  if (sessionId) {
+    // Unlink officer from session while keeping the Scout user logged in
+    await clearAdminUserFromSession(sessionId);
+  } else {
+    const cookieStore = await cookies();
+    cookieStore.delete(COOKIE_NAME);
+  }
 }

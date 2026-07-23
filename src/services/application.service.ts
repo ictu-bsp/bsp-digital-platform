@@ -1,272 +1,97 @@
-//src/services/application.service.ts
+// src/services/application.service.ts
 
 import { db } from "@/db";
 import { desc, eq } from "drizzle-orm";
 import { scoutApplications } from "@/db/schema";
 import { scouts } from "@/db/schema/scouts";
 import { registrations } from "@/db/schema/scout-registrations";
-import { getCurrentUser } from "@/lib/auth/current-user";
 import { councils } from "@/db/schema/councils";
-//
-// ─────────────────────────────────────────────────────────────
-// PLACEHOLDER — BSP's real Membership ID sequencing scheme
-// (Proposal 1: Region/Local Council–Based Series, e.g. "01-01-0001")
-// is not finalized yet. Once Reuben/the client confirms the real
-// region and council codes, replace the "00-00" prefix below with
-// the actual region/council code lookup, and consider making
-// scouts.membershipNumber a unique DB constraint.
-// ─────────────────────────────────────────────────────────────
-export async function generateMembershipNumber(): Promise<string> {
-  let candidate = "";
-  let isUnique = false;
 
-  while (!isUnique) {
-    const sequence = Math.floor(1 + Math.random() * 9999)
-      .toString()
-      .padStart(4, "0");
-    candidate = `00-00-${sequence}`;
+import { getCurrentUser } from "@/lib/auth/current-user";
 
-    const [existing] = await db
-      .select()
-      .from(scouts)
-      .where(eq(scouts.membershipNumber, candidate))
-      .limit(1);
-
-    isUnique = !existing;
-  }
-
-  return candidate;
+export interface SubmitApplicationInput {
+  userId?: string | null;
+  preferredCouncilId?: string | null;
+  councilId?: string | null;
+  scoutingPosition?: string | null;
+  advancementRank?: string | null;
+  tenure?: number | string | null;
+  region?: string | null;
+  communityBased?: boolean | string | null;
+  sponsoringInstitution?: string | null;
+  requestedRegistrationYears?: number | string | null;
+  bloodType?: string | null;
+  address?: string | null;
+  telephoneNumber?: string | null;
+  emergencyContactName?: string | null;
+  emergencyContactRelationship?: string | null;
+  emergencyContactNumber?: string | null;
+  remarks?: string | null;
+  status?: string | null;
+  [key: string]: any; // Allows flexible form payloads
 }
 
-export async function submitApplication(data: {
-  councilId: string;
-  scoutingPosition: string;
-  advancementRank: string;
-  tenure: number;
-  region: string;
-  communityBased: boolean;
-  sponsoringInstitution: string | null;
-  requestedRegistrationYears: number;
-  bloodType: string;
-  address: string;
-  telephone: string;
-  emergencyContactName: string;
-  emergencyContactRelationship: string;
-  emergencyContactNumber: string;
-  firstName?: string;
-  lastName?: string;
-  middleName?: string;
-  nameExtension?: string;
-  birthday?: string;
-  mobileNumber?: string;
-  gender?: string;
-  civilStatus?: string;
-  profession?: string;
-  positionTitle?: string;
-}) {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    throw new Error("Unauthorized");
+export async function submitApplication(data: SubmitApplicationInput) {
+  // Resolve userId either from explicit payload or current active session
+  let userId = data.userId;
+  if (!userId) {
+    const user = await getCurrentUser();
+    if (!user) {
+      throw new Error(
+        "Unauthorized: User session required to submit an application."
+      );
+    }
+    userId = user.id;
   }
 
- const [application] = await db
-    .insert(scoutApplications)
-    .values({
-      userId: user.id,
-      preferredCouncilId: data.councilId,
+  // Handle council ID mapping from common form property variants
+  const rawCouncil = data.preferredCouncilId || data.councilId;
+  const preferredCouncilId =
+    rawCouncil && String(rawCouncil).trim() !== "" ? String(rawCouncil) : null;
 
-      scoutingPosition: data.scoutingPosition,
-      advancementRank: data.advancementRank,
-      tenure: data.tenure,
-      region: data.region,
-      communityBased: data.communityBased,
-      sponsoringInstitution: data.sponsoringInstitution,
+  // Build clean payload with explicit primitives and nulls
+  const insertPayload = {
+    userId: userId,
+    preferredCouncilId: preferredCouncilId,
+    scoutingPosition: data.scoutingPosition ? String(data.scoutingPosition) : null,
+    advancementRank: data.advancementRank ? String(data.advancementRank) : null,
+    tenure:
+      data.tenure !== undefined && data.tenure !== null && data.tenure !== ""
+        ? Number(data.tenure)
+        : 0,
+    region: data.region ? String(data.region) : null,
+    communityBased:
+      data.communityBased === true || data.communityBased === "true",
+    sponsoringInstitution: data.sponsoringInstitution
+      ? String(data.sponsoringInstitution)
+      : null,
+    requestedRegistrationYears: data.requestedRegistrationYears
+      ? Number(data.requestedRegistrationYears)
+      : 1,
+    bloodType: data.bloodType ? String(data.bloodType) : null,
+    address: data.address ? String(data.address) : null,
+    telephoneNumber: data.telephoneNumber ? String(data.telephoneNumber) : null,
+    emergencyContactName: data.emergencyContactName
+      ? String(data.emergencyContactName)
+      : null,
+    emergencyContactRelationship: data.emergencyContactRelationship
+      ? String(data.emergencyContactRelationship)
+      : null,
+    emergencyContactNumber: data.emergencyContactNumber
+      ? String(data.emergencyContactNumber)
+      : null,
+    remarks: data.remarks ? String(data.remarks) : null,
 
-      requestedRegistrationYears:
-        data.requestedRegistrationYears,
-
-      // Personal & emergency-contact info now has real columns
-      // (was previously JSON-serialized into remarks).
-      bloodType: data.bloodType,
-      address: data.address,
-      telephoneNumber: data.telephone,
-      emergencyContactName: data.emergencyContactName,
-      emergencyContactRelationship: data.emergencyContactRelationship,
-      emergencyContactNumber: data.emergencyContactNumber,
-
-      status: "PENDING",
-    })
-    .returning();
-
-  // ─────────────────────────────────────────────────────────────
-  // TEMPORARY WORKAROUND — remove once Reuben implements the real
-  // approval → scouts → scout_registrations flow.
-  //
-  // Nothing currently creates a `scouts` or `scout_registrations`
-  // row anywhere in the codebase, but payments require a valid
-  // scout_registrations.id (FK constraint). This creates minimal
-  // placeholder rows so the payment wizard can be tested end-to-end
-  // before the real admin-approval-triggered flow exists.
-  // ─────────────────────────────────────────────────────────────
-
-  let [scout] = await db
-    .select()
-    .from(scouts)
-    .where(eq(scouts.userId, user.id))
-    .limit(1);
-
-  if (!scout) {
-    [scout] = await db
-      .insert(scouts)
-      .values({
-        userId: user.id,
-        councilId: data.councilId,
-        status: "PENDING",
-      })
-      .returning();
-  }
-
-  const startDate = new Date();
-  const endDate = new Date();
-  endDate.setFullYear(
-    endDate.getFullYear() + data.requestedRegistrationYears
-  );
-
-  // Known schema gap workaround (Option A): serialize extra wizard
-  // fields as JSON into remarks until Reuben adds real columns.
-  const extraFields = {
-    applicationId: application.id,
-    scoutingPosition: data.scoutingPosition,
-    advancementRank: data.advancementRank,
-    tenure: data.tenure,
-    region: data.region,
-    sponsoringInstitution: data.sponsoringInstitution,
-    firstName: data.firstName,
-    lastName: data.lastName,
-    middleName: data.middleName,
-    nameExtension: data.nameExtension,
-    birthday: data.birthday,
-    mobileNumber: data.mobileNumber,
-    gender: data.gender,
-    civilStatus: data.civilStatus,
-    profession: data.profession,
-    positionTitle: data.positionTitle,
+    // Convert status to UPPERCASE to match applicationStatusEnum ('PENDING', 'APPROVED', etc.)
+    status: data.status ? String(data.status).toUpperCase() : "PENDING",
   };
 
-  const [registration] = await db
-    .insert(registrations)
-    .values({
-      scoutId: scout.id,
-      registrationYears: data.requestedRegistrationYears,
-      startDate: startDate.toISOString().split("T")[0],
-      endDate: endDate.toISOString().split("T")[0],
-      status: "pending",
-      remarks: JSON.stringify(extraFields),
-    })
+  const [inserted] = await db
+    .insert(scoutApplications)
+    .values(insertPayload as typeof scoutApplications.$inferInsert)
     .returning();
 
-  return registration;
-}
-
-export async function getApplicationByUser(
-  userId: string
-) {
-  return await db.query.scoutApplications.findFirst({
-    where: eq(scoutApplications.userId, userId),
-    orderBy: desc(scoutApplications.createdAt),
-  });
-}
-
-export async function getPendingApplications() {
-  return await db.query.scoutApplications.findMany({
-    where: eq(scoutApplications.status, "PENDING"),
-    orderBy: desc(scoutApplications.createdAt),
-  });
-}
-
-export async function approveApplication(
-  applicationId: string,
-  reviewerId: string
-) {
-  const [application] = await db
-    .update(scoutApplications)
-    .set({
-      status: "APPROVED",
-      reviewedBy: reviewerId,
-      reviewedAt: new Date(),
-      updatedAt: new Date(),
-    })
-    .where(eq(scoutApplications.id, applicationId))
-    .returning();
-
-  if (!application) {
-    return application;
-  }
-
-  // Mirror the approval onto the scout's own record: mark them
-  // verified/active and assign a membership number if they don't
-  // already have one (e.g. re-approval after a prior rejection
-  // should keep their existing number — "Retainment of ID Number").
-  const [scout] = await db
-    .select()
-    .from(scouts)
-    .where(eq(scouts.userId, application.userId))
-    .limit(1);
-
-  if (scout) {
-    const membershipNumber =
-      scout.membershipNumber ?? (await generateMembershipNumber());
-
-    await db
-      .update(scouts)
-      .set({
-        status: "ACTIVE",
-        verificationStatus: "active",
-        membershipNumber,
-        approvedBy: reviewerId,
-        approvedAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(eq(scouts.id, scout.id));
-  }
-
-  return application;
-}
-
-export async function rejectApplication(
-  applicationId: string,
-  reviewerId: string,
-  remarks: string
-) {
-  const [application] = await db
-    .update(scoutApplications)
-    .set({
-      status: "REJECTED",
-      remarks,
-      reviewedBy: reviewerId,
-      reviewedAt: new Date(),
-      updatedAt: new Date(),
-    })
-    .where(eq(scoutApplications.id, applicationId))
-    .returning();
-
-  return application;
-}
-
-export async function cancelApplication(
-  applicationId: string
-) {
-  const [application] = await db
-    .update(scoutApplications)
-    .set({
-      status: "CANCELLED",
-      updatedAt: new Date(),
-    })
-    .where(eq(scoutApplications.id, applicationId))
-    .returning();
-
-  return application;
+  return inserted;
 }
 
 export async function getLatestApplication(userId: string) {
@@ -280,7 +105,26 @@ export async function getLatestApplication(userId: string) {
   return application ?? null;
 }
 
-export async function getMembershipCardData(userId: string) {
+export async function getApplicationByUser(userId: string) {
+  const [application] = await db
+    .select()
+    .from(scoutApplications)
+    .where(eq(scoutApplications.userId, userId))
+    .orderBy(desc(scoutApplications.createdAt))
+    .limit(1);
+
+  return application ?? null;
+}
+
+export async function getMembershipCardData() {
+  const currentUser = await getCurrentUser();
+
+  if (!currentUser) {
+    return null;
+  }
+
+  const userId = currentUser.id;
+
   const [scout] = await db
     .select()
     .from(scouts)
@@ -291,9 +135,6 @@ export async function getMembershipCardData(userId: string) {
     return null;
   }
 
-  // scoutApplications may not exist for legacy registrations created via
-  // the older createRegistrationAction flow (before this application-based
-  // flow existed) — treat it as optional supplementary data.
   const application = await getLatestApplication(userId);
 
   const [registration] = await db
@@ -303,62 +144,51 @@ export async function getMembershipCardData(userId: string) {
     .orderBy(desc(registrations.createdAt))
     .limit(1);
 
-  // Use scout.councilId directly rather than application.preferredCouncilId
-  // — scouts always has a council, applications may not exist at all.
   const [council] = await db
     .select()
     .from(councils)
     .where(eq(councils.id, scout.councilId))
     .limit(1);
 
-  // Personal-info now lives on real scoutApplications columns. Older
-  // approved applications created before this migration only have the
-  // data as JSON inside remarks (application's or, for legacy
-  // pre-application registrations, registration's) — fall back to
-  // parsing that JSON only when the real columns are empty.
-  let personalInfo: {
-    bloodType?: string;
-    address?: string;
-    telephone?: string;
-    emergencyContactName?: string;
-    emergencyContactRelationship?: string;
-    emergencyContactNumber?: string;
-    scoutingPosition?: string;
-  } = {};
-
-  const hasRealColumnData =
-    application?.bloodType ||
-    application?.address ||
-    application?.telephoneNumber ||
-    application?.emergencyContactName;
-
-  if (hasRealColumnData) {
-    personalInfo = {
-      bloodType: application?.bloodType ?? undefined,
-      address: application?.address ?? undefined,
-      telephone: application?.telephoneNumber ?? undefined,
-      emergencyContactName: application?.emergencyContactName ?? undefined,
-      emergencyContactRelationship:
-        application?.emergencyContactRelationship ?? undefined,
-      emergencyContactNumber:
-        application?.emergencyContactNumber ?? undefined,
-    };
-  } else {
-    const remarksSource = application?.remarks ?? registration?.remarks;
-    if (remarksSource) {
-      try {
-        personalInfo = JSON.parse(remarksSource);
-      } catch {
-        personalInfo = {};
-      }
-    }
-  }
-
   return {
     application: application ?? null,
-    scout,
+
+    scout: scout
+      ? {
+          ...scout,
+
+          bloodType: application?.bloodType ?? "",
+
+          address: application?.address ?? "",
+
+          telephoneNumber: application?.telephoneNumber ?? "",
+
+          emergencyContactName: application?.emergencyContactName ?? "",
+
+          emergencyContactRelationship:
+            application?.emergencyContactRelationship ?? "",
+
+          emergencyContactNumber: application?.emergencyContactNumber ?? "",
+        }
+      : null,
+
     registration: registration ?? null,
+
     council: council ?? null,
-    personalInfo,
   };
+}
+
+export function generateMembershipNumber(
+  regionNumber: string | number = "01",
+  councilNumber: string | number = "001",
+  userNumber: string | number = "0001"
+): string {
+  const year = new Date().getFullYear();
+
+  const region = String(regionNumber).padStart(2, "0");
+  const council = String(councilNumber).padStart(3, "0");
+  const userSeq = String(userNumber).padStart(4, "0");
+  const randomDigits = Math.floor(100 + Math.random() * 900);
+
+  return `BSP-${year}-${region}-${council}-${userSeq}-${randomDigits}`;
 }

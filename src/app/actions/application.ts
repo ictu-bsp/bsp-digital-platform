@@ -1,13 +1,15 @@
-//src/app/actions/applications.ts
-
+// src/app/actions/application.ts
 "use server";
 
 import { getCurrentUser } from "@/lib/auth/current-user";
-import { submitApplication } from "@/services/application.service";
-import { getLatestApplication } from "@/services/application.service";
+import {
+  submitApplication,
+  getLatestApplication,
+} from "@/services/application.service";
 
-export async function submitApplicationAction(data: {
-  councilId: string;
+export interface SubmitApplicationActionInput {
+  councilId?: string;
+  preferredCouncilId?: string;
   scoutingPosition: string;
   advancementRank: string;
   tenure: number;
@@ -15,12 +17,10 @@ export async function submitApplicationAction(data: {
   communityBased: boolean;
   sponsoringInstitution: string | null;
   requestedRegistrationYears: number;
-  // Personal info fields — stored in scoutApplications' dedicated
-  // columns (bloodType, address, telephoneNumber, etc.) by
-  // submitApplication().
   bloodType: string;
   address: string;
-  telephone: string;
+  telephone?: string;
+  telephoneNumber?: string;
   emergencyContactName: string;
   emergencyContactRelationship: string;
   emergencyContactNumber: string;
@@ -34,10 +34,29 @@ export async function submitApplicationAction(data: {
   civilStatus?: string;
   profession?: string;
   positionTitle?: string;
-}) {
+}
+
+export async function submitApplicationAction(data: SubmitApplicationActionInput) {
   try {
-    const application =
-      await submitApplication(data);
+    const user = await getCurrentUser();
+
+    if (!user) {
+      return {
+        success: false,
+        error: "Unauthorized: You must be logged in to submit an application.",
+      };
+    }
+
+    // Map incoming action data cleanly to service expectations
+    const payload = {
+      ...data,
+      userId: user.id,
+      preferredCouncilId: data.councilId || data.preferredCouncilId || null,
+      telephoneNumber: data.telephone || data.telephoneNumber || null,
+      sponsoringInstitution: data.sponsoringInstitution,
+    };
+
+    const application = await submitApplication(payload);
 
     return {
       success: true,
@@ -49,17 +68,22 @@ export async function submitApplicationAction(data: {
       error:
         error instanceof Error
           ? error.message
-          : "Application failed.",
+          : "Application failed. Please try again later.",
     };
   }
 }
 
 export async function getLatestApplicationAction() {
-  const user = await getCurrentUser();
+  try {
+    const user = await getCurrentUser();
 
-  if (!user) {
+    if (!user) {
+      return null;
+    }
+
+    return await getLatestApplication(user.id);
+  } catch (error) {
+    console.error("Failed to fetch latest application:", error);
     return null;
   }
-
-  return await getLatestApplication(user.id);
 }
