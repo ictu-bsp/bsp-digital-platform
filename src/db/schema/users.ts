@@ -38,7 +38,7 @@ export const users = pgTable("users", {
     mode: "date",
   }).notNull(),
 
-  gender: text("gender")
+  sex: text("sex")
     .notNull(),
 
   role: text("role")
@@ -67,4 +67,18 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at")
     .defaultNow()
     .notNull(),
+});
+
+import { z } from "zod";
+
+const SEX_ENUM = z.enum(["MALE", "FEMALE"]);
+
+export const nonVerifiedScoutSchema = z.object({
+  userID: z.string().uuid(),
+  firstName: z.string().min(2),
+  lastName: z.string().min(2),
+  suffix: z.string().optional(),
+  dateOfBirth: z.string(), // ISO format (YYYY-MM-DD)
+  sex: SEX_ENUM,
+  email: z.string().email(),
 });

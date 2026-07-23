@@ -30,7 +30,7 @@ interface ProfileClientProps {
     suffix: string | null;
     email: string;
     birthdate: Date;
-    gender: string;
+    sex: string;
     avatarUrl?: string | null;
   };
   membershipData: MembershipData;
@@ -117,7 +117,7 @@ export default function ProfileClient({
 
           <div className="flex-1 pb-28">
             <div className="space-y-5 px-1 py-5">
-                            <ProfileAvatar
+              <ProfileAvatar
                 avatarUrl={profile.avatarUrl ?? null}
               />
 
@@ -129,7 +129,7 @@ export default function ProfileClient({
               <AccountInformationCard
                 email={profile.email}
                 birthdate={profile.birthdate}
-                gender={profile.gender}
+                sex={profile.sex}
                 isVerifiedScout={isVerifiedScout}
                 bloodType={membershipData?.scout?.bloodType ?? ""}
                 address={membershipData?.scout?.address ?? ""}
@@ -203,7 +203,7 @@ export default function ProfileClient({
               </div>
             </div>
           )}
-                  </div>
+        </div>
       </main>
 
       <SuccessOverlay

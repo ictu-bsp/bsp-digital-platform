@@ -25,7 +25,7 @@ export interface UpdateProfileInput {
   suffix: string;
 
   birthdate: string;
-  gender: string;
+  sex: string;
 
   avatarUrl?: string;
 
@@ -42,11 +42,9 @@ export async function updateProfile(
   data: UpdateProfileInput
 ) {
   try {
-
     await db
       .update(users)
       .set({
-
         firstName:
           data.firstName.trim(),
 
@@ -66,8 +64,8 @@ export async function updateProfile(
             data.birthdate
           ),
 
-        gender:
-          data.gender,
+        sex:
+          data.sex,
 
         ...(data.avatarUrl
           ? {
@@ -78,7 +76,6 @@ export async function updateProfile(
 
         updatedAt:
           new Date(),
-
       })
       .where(
         eq(
@@ -86,10 +83,10 @@ export async function updateProfile(
           data.userId
         )
       );
-          await db
+
+    await db
       .update(scoutApplications)
       .set({
-
         address:
           data.address?.trim() ||
           null,
@@ -112,7 +109,6 @@ export async function updateProfile(
 
         updatedAt:
           new Date(),
-
       })
       .where(
         eq(
@@ -128,7 +124,6 @@ export async function updateProfile(
     };
 
   } catch (error) {
-
     console.error(
       "updateProfile()",
       error
@@ -147,7 +142,6 @@ export async function updateAvatar(
   avatarUrl: string
 ) {
   try {
-
     await db
       .update(users)
       .set({
@@ -160,13 +154,13 @@ export async function updateAvatar(
           userId
         )
       );
-          return {
+        
+    return {
       success: true,
       avatarUrl,
     };
 
   } catch (error) {
-
     console.error(
       "updateAvatar()",
       error
