@@ -46,28 +46,72 @@ export async function getRegistrationSummary() {
 }
 
 // ---------------------------------------------------------------------------
-// 2. Payment Collections — payments joined to registrations, grouped by
-//    paymentStatus. Amount is an ESTIMATE (registrationYears * 50).
+// 2. Payment Collections — one payment picked per registration (prefer the
+//    most recent "paid" row, else the most recent row overall) to avoid
+//    double-counting a registration that has multiple payment attempts
+//    (e.g. an old "awaiting_payment" retry row plus the final "paid" row).
+//    Amount is an ESTIMATE (registrationYears * 50).
 // ---------------------------------------------------------------------------
 export async function getPaymentCollectionsSummary() {
-  const rows = await db
+  const rawRows = await db
     .select({
+      registrationId: payments.registrationId,
       paymentStatus: payments.paymentStatus,
-      count: sql<number>`count(*)`.mapWith(Number),
-      estimatedAmount: sql<number>`coalesce(sum(${registrations.registrationYears} * ${FEE_PER_YEAR}), 0)`.mapWith(
-        Number
-      ),
+      createdAt: payments.createdAt,
+      registrationYears: registrations.registrationYears,
     })
     .from(payments)
-    .innerJoin(registrations, eq(payments.registrationId, registrations.id))
-    .groupBy(payments.paymentStatus);
+    .innerJoin(registrations, eq(payments.registrationId, registrations.id));
 
-  const totalEstimatedAmount = rows.reduce((sum, r) => sum + r.estimatedAmount, 0);
+  // Dedupe: keep exactly one payment row per registrationId.
+  const winnerByRegistration = new Map<string, (typeof rawRows)[number]>();
+
+  for (const row of rawRows) {
+    const existing = winnerByRegistration.get(row.registrationId);
+    if (!existing) {
+      winnerByRegistration.set(row.registrationId, row);
+      continue;
+    }
+
+    const rowIsPaid = row.paymentStatus === "paid";
+    const existingIsPaid = existing.paymentStatus === "paid";
+
+    if (rowIsPaid && !existingIsPaid) {
+      // Prefer a "paid" row over a non-paid row.
+      winnerByRegistration.set(row.registrationId, row);
+    } else if (rowIsPaid === existingIsPaid) {
+      // Same "paid-ness" — prefer the more recent createdAt.
+      if (new Date(row.createdAt).getTime() > new Date(existing.createdAt).getTime()) {
+        winnerByRegistration.set(row.registrationId, row);
+      }
+    }
+    // else: existing is already "paid" and row isn't — keep existing.
+  }
+
+  const winners = Array.from(winnerByRegistration.values());
+
+  // Now group the deduped winners by paymentStatus.
+  const grouped = new Map<string, { count: number; estimatedAmount: number }>();
+
+  for (const row of winners) {
+    const bucket = grouped.get(row.paymentStatus) ?? { count: 0, estimatedAmount: 0 };
+    bucket.count += 1;
+    bucket.estimatedAmount += row.registrationYears * FEE_PER_YEAR;
+    grouped.set(row.paymentStatus, bucket);
+  }
+
+  const byStatus = Array.from(grouped.entries()).map(([paymentStatus, v]) => ({
+    paymentStatus,
+    count: v.count,
+    estimatedAmount: v.estimatedAmount,
+  }));
+
+  const totalEstimatedAmount = byStatus.reduce((sum, r) => sum + r.estimatedAmount, 0);
 
   return {
-    byStatus: rows,
+    byStatus,
     totalEstimatedAmount,
-    note: "Amounts are estimates (registrationYears x PHP 50/year). Payment method breakdown is not available — the payments table does not store a method column.",
+    note: "Amounts are estimates (registrationYears x PHP 50/year), one payment counted per registration. Payment method breakdown is not available — the payments table does not store a method column.",
   };
 }
 
@@ -182,7 +226,6 @@ export async function getActivityEnrollees(activityId: string) {
       middleName: users.middleName,
       lastName: users.lastName,
       email: users.email,
-      gender: users.gender,
       birthdate: users.birthdate,
     })
     .from(activityRegistrations)

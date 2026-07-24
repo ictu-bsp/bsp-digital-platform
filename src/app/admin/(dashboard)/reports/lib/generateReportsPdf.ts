@@ -74,6 +74,24 @@ export function generateReportsPdf(reports: AllReports) {
     cursorY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 24;
   };
 
+const NOTE_MAX_WIDTH = 515;
+  const NOTE_LINE_HEIGHT = 10;
+
+  // Draws an italic footnote in the gap under a table, then returns the
+  // Y position the next section should start at — accounting for how many
+  // lines the note actually wrapped to (fixes overlap with the next
+  // section's title when a note is long enough to wrap to 2+ lines).
+  const addNoteAndAdvance = (text: string, startY: number): number => {
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(140, 140, 140);
+    const noteY = startY - 14;
+    const wrappedLines = doc.splitTextToSize(text, NOTE_MAX_WIDTH);
+    doc.text(wrappedLines, marginX, noteY);
+    const noteBottom = noteY + wrappedLines.length * NOTE_LINE_HEIGHT;
+    return Math.max(startY, noteBottom + 12);
+  };
+
   // ---- Header ----
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
@@ -118,10 +136,7 @@ export function generateReportsPdf(reports: AllReports) {
     styles: { fontSize: 9 },
   });
   afterTable();
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "italic");
-  doc.setTextColor(140, 140, 140);
-  doc.text(reports.paymentCollections.note, marginX, cursorY - 14, { maxWidth: 515 });
+  cursorY = addNoteAndAdvance(reports.paymentCollections.note, cursorY);
 
   // ---- 3. Registrations by Region/Council ----
   addSectionTitle("3. Registrations by Region/Council");
@@ -169,13 +184,9 @@ export function generateReportsPdf(reports: AllReports) {
     styles: { fontSize: 9 },
   });
   afterTable();
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "italic");
-  doc.setTextColor(140, 140, 140);
-  doc.text(
+  cursorY = addNoteAndAdvance(
     "Revenue is estimated at PHP 50/year and counts paid registrations only.",
-    marginX,
-    cursorY - 14
+    cursorY
   );
 
   // ---- 6. Activities & Enrollment ----
