@@ -1,3 +1,5 @@
+//src/lib/validation/auth/signup.ts
+
 import { z } from "zod";
 
 import {
@@ -7,18 +9,23 @@ import {
   suffixSchema,
 } from "./shared";
 
+// Helper to normalize empty string inputs to undefined
+const optionalString = <T extends z.ZodTypeAny>(schema: T) =>
+  schema
+    .optional()
+    .or(z.literal(""))
+    .transform((val) => (val === "" || val === null ? undefined : val));
+
 export const signUpSchema = z.object({
   email: emailSchema,
 
   firstName: nameSchema,
 
-  middleName: nameSchema
-    .optional()
-    .or(z.literal("")),
+  middleName: optionalString(nameSchema),
 
   lastName: nameSchema,
 
-  suffix: suffixSchema,
+  suffix: optionalString(suffixSchema),
 
   birthdate: birthdateSchema,
 
