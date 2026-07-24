@@ -1,5 +1,6 @@
 //src/app/scout/profile/components/MembershipCta.tsx
 
+import Link from "next/link";
 import { getMembershipCardData } from "@/services/application.service";
 
 type MembershipData = Awaited<ReturnType<typeof getMembershipCardData>>;
@@ -43,7 +44,7 @@ export default function MembershipCta({
           <div>
             <p className="text-xs text-gray-500">Membership Number</p>
             <p className="font-semibold text-gray-900">
-              {scout.membershipNumber ?? "—"}
+              {scout?.membershipNumber ?? "—"}
             </p>
           </div>
 
@@ -62,38 +63,31 @@ export default function MembershipCta({
           </div>
         </div>
 
-        <a
+        <Link
           href="/scout/membership/verified-member"
           className="mt-5 block w-full rounded-xl bg-green-900 py-3 text-center font-semibold text-white transition hover:bg-green-800"
         >
           View Membership Card
-        </a>
+        </Link>
       </div>
     );
   }
 
   return (
     <div className="mx-4 mb-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-      <h3 className="mb-5 text-lg font-bold text-green-900">
-        Membership
+      <h3 className="mb-2 text-lg font-bold text-green-900">
+        Membership Status
       </h3>
+      <p className="mb-4 text-xs text-slate-500">
+        Complete your registration to access all features.
+      </p>
 
-      <a
+      <Link
         href="/scout/membership"
         className="block w-full rounded-xl bg-green-900 py-3 text-center font-semibold text-white transition hover:bg-green-800"
       >
-        Go to Membership
-      </a>
-
-      <p className="mt-4 text-center text-sm text-gray-600">
-        Already a member?{" "}
-        <a
-          href="/scout/membership/membership-verification"
-          className="font-semibold text-green-700 hover:text-green-900"
-        >
-          Verify Membership
-        </a>
-      </p>
+        Apply for Scout Membership
+      </Link>
     </div>
   );
 }

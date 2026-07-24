@@ -11,9 +11,9 @@ import { createSession, deleteExpiredSessions, getSession } from "@/lib/auth/ses
 export interface CreatePendingRegistrationInput {
   email: string;
   firstName: string;
-  middleName?: string;
+  middleName?: string | null;
   lastName: string;
-  suffix?: string;
+  suffix?: string | null;
   birthdate: Date;
   sex: string;
   role: "VISITOR" | "SCOUT";
@@ -183,11 +183,19 @@ function generateVerificationCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+// Helper function to sanitize optional string parameters
+function cleanOptionalString(val?: string | null): string | null {
+  if (!val || typeof val !== "string" || val.trim() === "") {
+    return null;
+  }
+  return val.trim();
+}
+
 export async function createPendingUserRegistration(data: {
   firstName: string;
-  middleName?: string;
+  middleName?: string | null;
   lastName: string;
-  suffix?: string;
+  suffix?: string | null;
   birthdate: Date;
   sex: string;
   role: "VISITOR" | "SCOUT";
@@ -209,17 +217,20 @@ export async function createPendingUserRegistration(data: {
   });
 
   const verificationCode = generateVerificationCode();
-
   const verificationExpires = new Date(Date.now() + 10 * 60 * 1000);
+
+  // Normalize optional string fields to null if empty
+  const sanitizedMiddleName = cleanOptionalString(data.middleName);
+  const sanitizedSuffix = cleanOptionalString(data.suffix);
 
   if (existingPending) {
     await db
       .update(pendingUserRegistrations)
       .set({
         firstName: data.firstName,
-        middleName: data.middleName,
+        middleName: sanitizedMiddleName,
         lastName: data.lastName,
-        suffix: data.suffix,
+        suffix: sanitizedSuffix,
         birthdate: data.birthdate,
         sex: data.sex,
         role: data.role,
@@ -245,73 +256,73 @@ export async function createPendingUserRegistration(data: {
       .insert(
         pendingUserRegistrations
       )
-      .values(
-        {
-          ...data,
-          verificationCode: verificationCode,
-          verificationExpires: verificationExpires,
-        }
-      )
+      .values({
+        ...data,
+        middleName: sanitizedMiddleName,
+        suffix: sanitizedSuffix,
+        verificationCode: verificationCode,
+        verificationExpires: verificationExpires,
+      })
       .returning();
 
-    const emailResult = await sendVerificationEmail(
-      data.email,
-      verificationCode
-    );
+  const emailResult = await sendVerificationEmail(
+    data.email,
+    verificationCode
+  );
 
-    if (!emailResult.success) {
-      throw new Error("Failed to send verification email.");
-    }
+  if (!emailResult.success) {
+    throw new Error("Failed to send verification email.");
+  }
 
-    return registration;
+  return registration;
 }
 
 export async function verifyPendingUserRegistration(
   email: string,
   code: string
 ) {
-    const registration =
-      await db.query.pendingUserRegistrations.findFirst({
-        where: eq(
-          pendingUserRegistrations.email,
-          email
-        ),
-      });
+  const registration =
+    await db.query.pendingUserRegistrations.findFirst({
+      where: eq(
+        pendingUserRegistrations.email,
+        email
+      ),
+    });
 
-    if (!registration) {
-      throw new Error(
-        "Registration not found."
-      );
-    }
+  if (!registration) {
+    throw new Error(
+      "Registration not found."
+    );
+  }
 
-    if (
-      registration.verificationCode !== code
-    ) {
-      throw new Error(
-        "Invalid verification code."
-      );
-    }
+  if (
+    registration.verificationCode !== code
+  ) {
+    throw new Error(
+      "Invalid verification code."
+    );
+  }
 
-    if (
-      registration.verificationExpires <
-      new Date()
-    ) {
-      throw new Error(
-        "Verification code has expired."
-      );
-    }
+  if (
+    registration.verificationExpires <
+    new Date()
+  ) {
+    throw new Error(
+      "Verification code has expired."
+    );
+  }
 
-    await db
-      .update(pendingUserRegistrations)
-      .set({
-        emailVerifiedAt: new Date(),
-      })
-      .where(
-        eq(
-          pendingUserRegistrations.id,
-          registration.id
-        )
-      );
+  await db
+    .update(pendingUserRegistrations)
+    .set({
+      emailVerifiedAt: new Date(),
+    })
+    .where(
+      eq(
+        pendingUserRegistrations.id,
+        registration.id
+      )
+    );
   return true;
 }
 
@@ -365,9 +376,9 @@ export async function resendPendingVerification(
 
     return verificationCode;
   }
-    catch (error) {
-      mapDatabaseError(error);
-    }
+  catch (error) {
+    mapDatabaseError(error);
+  }
 }
 
 export async function completePendingRegistration(
