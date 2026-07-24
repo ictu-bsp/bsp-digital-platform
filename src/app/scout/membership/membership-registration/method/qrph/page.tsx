@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import BackButton from "@/components-general/ui/BackButton";
 import QRPay from "../../components/QRPay";
 import { createPaymentRecordAction } from "@/app/actions/payment";
 
@@ -61,14 +62,9 @@ export default function QRPhMethodPage() {
   return (
     <div className="flex flex-col items-center justify-center py-10 px-6 bg-zinc-50 min-h-screen">
       <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl p-14 text-zinc-900">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="text-3xl text-zinc-700 mb-4"
-          aria-label="Go back"
-        >
-          &lt;
-        </button>
+        <div className="mb-4">
+          <BackButton onClick={() => router.back()} />
+        </div>
         <h1 className="text-4xl font-bold text-green-800 mb-2">QR Ph</h1>
         <p className="text-zinc-600 text-lg mb-8">Amount to pay: ₱{amount}</p>
 

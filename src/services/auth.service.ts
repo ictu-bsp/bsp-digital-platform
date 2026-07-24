@@ -15,7 +15,8 @@ export interface CreatePendingRegistrationInput {
   lastName: string;
   suffix?: string;
   birthdate: Date;
-  gender: string;
+  sex: string;
+  role: "VISITOR" | "SCOUT";
 }
 
 function mapDatabaseError(error: unknown): never {
@@ -188,7 +189,8 @@ export async function createPendingUserRegistration(data: {
   lastName: string;
   suffix?: string;
   birthdate: Date;
-  gender: string;
+  sex: string;
+  role: "VISITOR" | "SCOUT";
   email: string;
 }) {
   const existingUser = await findUserByEmail(data.email);
@@ -219,7 +221,8 @@ export async function createPendingUserRegistration(data: {
         lastName: data.lastName,
         suffix: data.suffix,
         birthdate: data.birthdate,
-        gender: data.gender,
+        sex: data.sex,
+        role: data.role,
         verificationCode: verificationCode,
         verificationExpires: verificationExpires,
         emailVerifiedAt: null,
@@ -415,7 +418,8 @@ export async function completePendingRegistration(
           lastName: registration.lastName,
           suffix: registration.suffix,
           birthdate: registration.birthdate,
-          gender: registration.gender,
+          sex: registration.sex,
+          role: registration.role,
           emailVerified: registration.emailVerifiedAt,
         })
         .returning();

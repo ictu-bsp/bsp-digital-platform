@@ -78,7 +78,7 @@ export const nonVerifiedScoutSchema = z.object({
   firstName: z.string().min(2),
   lastName: z.string().min(2),
   suffix: z.string().optional(),
-  dateOfBirth: z.string(), // ISO format (YYYY-MM-DD)
+  birthdate: z.string(), // ISO format (YYYY-MM-DD)
   sex: SEX_ENUM,
   email: z.string().email(),
 });

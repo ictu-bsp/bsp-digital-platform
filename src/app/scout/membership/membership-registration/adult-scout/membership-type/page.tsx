@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import BackButton from "@/components-general/ui/BackButton";
 import RegistrationStepper from "../../components/RegistrationStepper";
 
 const membershipCategories = [
@@ -79,14 +80,9 @@ export default function AdultScoutMembershipTypePage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 px-4 py-6 sm:px-6 sm:py-10">
       <div className="w-full max-w-3xl rounded-2xl bg-white p-6 text-zinc-900 shadow-xl sm:p-14">
-        <button
-          type="button"
-          onClick={() => router.push("/scout/membership/membership-registration/adult-scout/agreement")}
-          className="mb-4 text-2xl text-zinc-700 sm:text-3xl"
-          aria-label="Go back"
-        >
-          &lt;
-        </button>
+        <div className="mb-4">
+          <BackButton onClick={() => router.push("/scout/membership/membership-registration/adult-scout/agreement")} />
+        </div>
 
         <h1 className="mb-2 text-2xl font-bold text-green-800 sm:text-4xl">
           <Image

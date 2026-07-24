@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { calculateAge } from "@/lib/utils/age";
 
 // Shared Password Schema
 export const passwordSchema = z
@@ -35,19 +36,7 @@ export const emailSchema = z
 // Shared Birthdate Schema
 export const birthdateSchema = z.coerce.date().refine(
   (birthdate) => {
-    const today = new Date();
-
-    let age = today.getFullYear() - birthdate.getFullYear();
-
-    const hasHadBirthday =
-      today.getMonth() > birthdate.getMonth() ||
-      (today.getMonth() === birthdate.getMonth() &&
-        today.getDate() >= birthdate.getDate());
-
-    if (!hasHadBirthday) {
-      age--;
-    }
-
+    const age = calculateAge(birthdate);
     return age >= 5 && age <= 100;
   },
   {

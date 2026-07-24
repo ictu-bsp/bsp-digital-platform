@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import BackButton from "@/components-general/ui/BackButton";
 import { signUpAction } from "@/app/actions/auth";
 
 export default function SignUpPage() {
@@ -27,6 +28,10 @@ export default function SignUpPage() {
 
   // Confirmation dialog state
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+
+  // Role selection: asked up front, before the person can fill in the form
+  const [role, setRole] = useState<"VISITOR" | "SCOUT" | null>(null);
+  const [showRoleDialog, setShowRoleDialog] = useState(true);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -59,6 +64,12 @@ export default function SignUpPage() {
     e: React.FormEvent<HTMLFormElement>
   ) => {
     e.preventDefault();
+
+    if (!role) {
+      setShowRoleDialog(true);
+      return;
+    }
+
     setShowConfirmDialog(true);
   };
 
@@ -77,6 +88,7 @@ export default function SignUpPage() {
     data.append("birthdate", formData.birthdate);
     data.append("sex", formData.sex);
     data.append("email", formData.email);
+    data.append("role", role ?? "");
 
     const result = await signUpAction(
       { success: false },
@@ -86,7 +98,10 @@ export default function SignUpPage() {
     setIsSubmitting(false);
 
     if (!result.success) {
-      setErrors(result.errors ?? {});
+      setErrors(
+        result.errors ??
+          (result.message ? { root: [result.message] } : {})
+      );
       return;
     }
 
@@ -103,26 +118,7 @@ export default function SignUpPage() {
         <div className="w-full max-w-md bg-white px-6 pb-8 pt-4 md:rounded-2xl md:border md:border-gray-100 md:shadow-sm">
           {/* Top Navigation & Brand Header */}
           <div className="mb-6">
-            <Link
-              href="/"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-green-950 transition-colors hover:bg-gray-100"
-              aria-label="Go back"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-                stroke="currentColor"
-                className="h-6 w-6"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15.75 19.5L8.25 12l7.5-7.5"
-                />
-              </svg>
-            </Link>
+            <BackButton onClick={() => router.push("/")} />
 
             <h1 className="mt-2 text-4xl font-extrabold tracking-tight text-green-900">
               <Image
@@ -142,6 +138,26 @@ export default function SignUpPage() {
               Enter your information to receive a verification code.
               You'll create your password after verifying your email.
             </p>
+
+            {role && (
+              <div className="mt-3 flex items-center justify-between rounded-lg bg-green-50 px-3 py-2 text-sm text-green-900">
+                <span>
+                  Registering as:{" "}
+                  <strong>
+                    {role === "SCOUT"
+                      ? "Existing Scout"
+                      : "New to Scouting"}
+                  </strong>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowRoleDialog(true)}
+                  className="font-bold underline hover:no-underline"
+                >
+                  Change
+                </button>
+              </div>
+            )}
           </div>
 
           <form
@@ -267,7 +283,7 @@ export default function SignUpPage() {
                 I have no middle name
               </label>
             </div>
-                        {/* Birthdate & Gender Split */}
+                        {/* Birthdate & Sex Split */}
             <div>
               <div className="flex gap-3">
                 <div className="w-[65%]">
@@ -298,7 +314,7 @@ export default function SignUpPage() {
                     value={formData.sex}
                     onChange={handleInputChange}
                     className={`w-full rounded-lg border bg-white p-3 text-base text-gray-700 outline-none transition-all focus:ring-1 ${
-                      errors.gender
+                      errors.sex
                         ? "border-red-500 focus:border-red-500 focus:ring-red-500"
                         : "border-gray-300 focus:border-green-900 focus:ring-green-900"
                     }`}
@@ -325,7 +341,7 @@ export default function SignUpPage() {
               {errors.sex &&
                 !errors.birthdate && (
                   <p className="mt-1 pl-1 text-xs text-red-600">
-                    {errors.gender[0]}
+                    {errors.sex[0]}
                   </p>
                 )}
             </div>
@@ -401,6 +417,55 @@ export default function SignUpPage() {
           </form>
         </div>
       </main>
+
+      {showRoleDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+            <h2 className="text-xl font-bold text-green-900">
+              Welcome to eScout
+            </h2>
+
+            <p className="mt-3 text-sm leading-relaxed text-gray-600">
+              Before we get started, tell us a bit about yourself.
+            </p>
+
+            <div className="mt-6 space-y-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setRole("VISITOR");
+                  setShowRoleDialog(false);
+                }}
+                className="w-full rounded-lg border border-green-900 bg-white px-4 py-3.5 text-left transition-colors hover:bg-green-50"
+              >
+                <span className="block font-bold text-green-900">
+                  I'm new to Scouting
+                </span>
+                <span className="mt-0.5 block text-sm text-gray-500">
+                  I don't have a Scout membership yet and want to join.
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setRole("SCOUT");
+                  setShowRoleDialog(false);
+                }}
+                className="w-full rounded-lg border border-green-900 bg-white px-4 py-3.5 text-left transition-colors hover:bg-green-50"
+              >
+                <span className="block font-bold text-green-900">
+                  I'm already a Scout
+                </span>
+                <span className="mt-0.5 block text-sm text-gray-500">
+                  I have an existing Scout membership but I'm new to this app.
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
             {showConfirmDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">

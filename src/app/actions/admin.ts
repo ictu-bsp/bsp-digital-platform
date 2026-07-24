@@ -1,3 +1,5 @@
+// src/app/actions/admin.ts
+
 'use server';
 
 import {
@@ -11,7 +13,8 @@ import {
   approveRegistration,
   rejectRegistration,
 } from '@/services/admin.service';
-//Dashboard
+
+// Dashboard
 export async function fetchDashboardStats() {
   try {
     const data = await getDashboardStats();
@@ -30,7 +33,7 @@ export async function fetchDashboardStats() {
   }
 }
 
-//Scouts
+// Scouts
 export async function fetchAllScouts() {
   try {
     const data = await getAllScouts();
@@ -85,7 +88,7 @@ export async function fetchCouncilScouts(councilId: string) {
   }
 }
 
-//Administrators
+// Administrators
 export async function fetchAdministrators() {
   try {
     const data = await getAdministrators();
@@ -122,7 +125,7 @@ export async function fetchAdministratorById(id: string) {
   }
 }
 
-//Membership Review
+// Membership Review
 export async function fetchPendingRegistrations() {
   try {
     const data = await getPendingRegistrations();
