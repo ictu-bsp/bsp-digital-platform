@@ -9,6 +9,7 @@ import { CheckCircleIcon, ChevronDownIcon, LockClosedIcon } from "@heroicons/rea
 import { submitApplicationAction } from "@/app/actions/application";
 import { getCouncilsAction, getRegionsAction } from "@/app/actions/councils";
 import SearchableSelect from "../components/SearchableSelect";
+import BackButton from "@/components-general/ui/BackButton";
 import { useWizard } from "../WizardContext";
 import RegistrationStepper from "../components/RegistrationStepper";
 

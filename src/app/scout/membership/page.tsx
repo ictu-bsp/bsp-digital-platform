@@ -5,7 +5,6 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import PageLayout from "../../components/PageLayout";
 import { getCurrentUser } from "@/lib/auth/current-user";
-import { isAdult } from "@/lib/utils/age";
 import {
   getApplicationByUser,
   getMembershipCardData,
@@ -19,17 +18,16 @@ export default async function MembershipPage() {
     redirect("/login");
   }
 
-  const canApplyAsAdult = isAdult(user.birthdate);
-
   // Retrieve applications and pick the most recent / single record
   const applications = await getApplicationByUser(user.id);
   const application = Array.isArray(applications) ? applications[0] : applications;
 
+  // Retrieve existing membership card data
   const cardData = await getMembershipCardData();
-  const scoutRecord = cardData?.scout ?? null;
 
-  const hasActiveScout = scoutRecord?.verificationStatus === "active";
-  const hasUnverifiedScout = Boolean(scoutRecord) && scoutRecord?.verificationStatus !== "active";
+  // Safe optional chaining on `cardData?.scout?.verificationStatus`
+  const hasActiveScout =
+    cardData !== null && cardData?.scout?.verificationStatus === "active";
 
   // Approved -> this page's job is done, go straight to the real card.
   if (application?.status === "APPROVED" && hasActiveScout) {
@@ -48,13 +46,6 @@ export default async function MembershipPage() {
     hasRejectedApplication ||
     hasCancelledApplication ||
     isOrphanedApproval;
-
-  const continueScoutHref = canApplyAsAdult
-    ? "/scout/membership/membership-registration/adult-scout/agreement"
-    : "/scout/membership/membership-registration/agreement";
-
-  const youthApplicationHref = "/scout/membership/membership-registration/agreement";
-  const adultApplicationHref = "/scout/membership/membership-registration/adult-scout/agreement";
 
   return (
     <PageLayout userName={user.firstName} avatarUrl={user.avatarUrl ?? undefined}>
@@ -107,7 +98,9 @@ export default async function MembershipPage() {
                         <div className="text-[9px] uppercase leading-tight font-bold text-blue-900 tracking-wide">
                           <p>Boy Scouts of the Philippines</p>
                           <p className="font-normal text-gray-600">National Office</p>
-                          <p className="font-light normal-case text-[7px] text-gray-400">181 Natividad Almeda-Lopez St., Ermita, Manila</p>
+                          <p className="font-light normal-case text-[7px] text-gray-400">
+                            181 Natividad Almeda-Lopez St., Ermita, Manila
+                          </p>
                         </div>
                       </div>
 
@@ -126,21 +119,27 @@ export default async function MembershipPage() {
                             <span className="font-bold text-blue-900 border-b border-blue-900/40 pb-0.5 leading-none">
                               —
                             </span>
-                            <span className="text-[5px] text-gray-400 uppercase font-bold tracking-tight pt-0.5">Name</span>
+                            <span className="text-[5px] text-gray-400 uppercase font-bold tracking-tight pt-0.5">
+                              Name
+                            </span>
                           </div>
 
                           <div className="flex flex-col">
                             <span className="font-bold text-blue-900 border-b border-blue-900/40 pb-0.5 leading-none">
                               —
                             </span>
-                            <span className="text-[5px] text-gray-400 uppercase font-bold tracking-tight pt-0.5">Designation</span>
+                            <span className="text-[5px] text-gray-400 uppercase font-bold tracking-tight pt-0.5">
+                              Designation
+                            </span>
                           </div>
 
                           <div className="flex flex-col">
                             <span className="font-bold text-blue-900 border-b border-blue-900/40 pb-0.5 leading-none">
                               —
                             </span>
-                            <span className="text-[5px] text-gray-400 uppercase font-bold tracking-tight pt-0.5">Council</span>
+                            <span className="text-[5px] text-gray-400 uppercase font-bold tracking-tight pt-0.5">
+                              Council
+                            </span>
                           </div>
                         </div>
 
@@ -198,7 +197,6 @@ export default async function MembershipPage() {
                         <p className="font-bold text-red-700">
                           Application Rejected
                         </p>
-
                         <p className="mt-2 text-sm text-slate-600">
                           Your payment has been refunded. You may submit
                           another membership application.
@@ -211,49 +209,33 @@ export default async function MembershipPage() {
                         <p className="font-bold text-red-700">
                           Application Cancelled
                         </p>
-
                         <p className="mt-2 text-sm text-slate-600">
                           You may submit another membership application.
                         </p>
                       </div>
                     )}
 
-                    {hasUnverifiedScout && !hasPendingApplication && (
-                      <Link
-                        href={continueScoutHref}
-                        className="mb-3 block w-full rounded-full border border-green-900 bg-green-50 py-3 font-bold text-green-900 transition hover:bg-green-100"
-                      >
-                        Continue Scout Application
-                      </Link>
-                    )}
+                    {/* Single Dynamic Route Entry Point */}
+                    <Link
+                      href="/scout/membership/membership-registration/agreement"
+                      className="block w-full rounded-full bg-green-900 py-3 font-bold text-white transition hover:bg-green-800"
+                    >
+                      {hasRejectedApplication || hasCancelledApplication
+                        ? "Apply Again"
+                        : "Apply for Scout Membership"}
+                    </Link>
 
-                    {!canApplyAsAdult && (
-                      <Link
-                        href={youthApplicationHref}
-                        className="block w-full rounded-full bg-green-900 py-3 font-bold text-white transition hover:bg-green-800"
-                      >
-                        Apply for scout membership
-                      </Link>
+                    {user.role === "SCOUT" && !hasActiveScout && (
+                      <p className="mt-3 text-center text-sm text-gray-700">
+                        Already a Scout?{" "}
+                        <Link
+                          href="/scout/membership/membership-verification"
+                          className="font-semibold text-green-700 underline hover:text-green-800"
+                        >
+                          Click Here
+                        </Link>
+                      </p>
                     )}
-
-                    {canApplyAsAdult && (
-                      <Link
-                        href={adultApplicationHref}
-                        className="block w-full rounded-full border border-green-900 py-3 font-bold text-green-900 transition hover:bg-green-50"
-                      >
-                        Apply for adult scout membership
-                      </Link>
-                    )}
-
-                    <p className="mt-3 text-center text-sm text-gray-700">
-                      Already a member?{" "}
-                      <Link
-                        href="/scout/membership/membership-verification"
-                        className="font-semibold text-green-700 underline hover:text-green-800"
-                      >
-                        Click Here
-                      </Link>
-                    </p>
                   </>
                 )}
 
@@ -265,7 +247,6 @@ export default async function MembershipPage() {
                       <p className="text-lg font-bold text-amber-700">
                         Application Submitted
                       </p>
-
                       <p className="mt-2 text-sm text-slate-600">
                         Your application has been forwarded to your selected
                         council and is currently awaiting review.
