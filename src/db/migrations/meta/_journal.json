@@ -15,6 +15,13 @@
       "when": 1784776174080,
       "tag": "0001_parallel_madame_hydra",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784791424529,
+      "tag": "0002_cold_pyro",
+      "breakpoints": true
     }
   ]
 }

@@ -10,6 +10,11 @@ import { createContext, useContext, useState, ReactNode } from "react";
 type PersonalInfoState = {
   bloodType: string;
   address: string;
+  region: string;
+  province: string;
+  cityMunicipality: string;
+  barangay: string;
+  streetAddress: string;
   telephone: string;
   emergencyContactName: string;
   emergencyContactRelationship: string;
@@ -19,6 +24,11 @@ type PersonalInfoState = {
 type WizardContextValue = PersonalInfoState & {
   setBloodType: (value: string) => void;
   setAddress: (value: string) => void;
+  setRegion: (value: string) => void;
+  setProvince: (value: string) => void;
+  setCityMunicipality: (value: string) => void;
+  setBarangay: (value: string) => void;
+  setStreetAddress: (value: string) => void;
   setTelephone: (value: string) => void;
   setEmergencyContactName: (value: string) => void;
   setEmergencyContactRelationship: (value: string) => void;
@@ -30,6 +40,11 @@ const WizardContext = createContext<WizardContextValue | null>(null);
 export function WizardProvider({ children }: { children: ReactNode }) {
   const [bloodType, setBloodType] = useState("");
   const [address, setAddress] = useState("");
+  const [region, setRegion] = useState("");
+  const [province, setProvince] = useState("");
+  const [cityMunicipality, setCityMunicipality] = useState("");
+  const [barangay, setBarangay] = useState("");
+  const [streetAddress, setStreetAddress] = useState("");
   const [telephone, setTelephone] = useState("");
   const [emergencyContactName, setEmergencyContactName] = useState("");
   const [emergencyContactRelationship, setEmergencyContactRelationship] =
@@ -41,12 +56,22 @@ export function WizardProvider({ children }: { children: ReactNode }) {
       value={{
         bloodType,
         address,
+        region,
+        province,
+        cityMunicipality,
+        barangay,
+        streetAddress,
         telephone,
         emergencyContactName,
         emergencyContactRelationship,
         emergencyContactNumber,
         setBloodType,
         setAddress,
+        setRegion,
+        setProvince,
+        setCityMunicipality,
+        setBarangay,
+        setStreetAddress,
         setTelephone,
         setEmergencyContactName,
         setEmergencyContactRelationship,

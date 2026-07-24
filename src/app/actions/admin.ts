@@ -8,8 +8,15 @@ import {
   getAdministrators,
   getAdministratorById,
   getPendingRegistrations,
-  approveRegistration,
+  approveMembershipReview,
   rejectRegistration,
+  getRegistrationsAwaitingFinance,
+  verifyAndActivateRegistration,
+  getRegistrationStatusBreakdown,
+  getPaymentTotals,
+  getCouncilRegionBreakdown,
+  getScoutRankBreakdown,
+  getActivityParticipationStats,
 } from '@/services/admin.service';
 //Dashboard
 export async function fetchDashboardStats() {
@@ -143,14 +150,12 @@ export async function fetchPendingRegistrations() {
 
 export async function approveRegistrationAction(registrationId: string) {
   try {
-    await approveRegistration(registrationId);
-
+    await approveMembershipReview(registrationId);
     return {
       success: true,
     };
   } catch (error) {
     console.error(error);
-
     return {
       success: false,
       error: 'Failed to approve registration.',
@@ -174,6 +179,119 @@ export async function rejectRegistrationAction(
     return {
       success: false,
       error: 'Failed to reject registration.',
+    };
+  }
+}
+
+//Finance
+export async function fetchRegistrationsAwaitingFinance() {
+  try {
+    const data = await getRegistrationsAwaitingFinance();
+    return {
+      success: true,
+      data,
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      success: false,
+      error: 'Failed to load registrations awaiting finance verification.',
+    };
+  }
+}
+
+export async function verifyAndActivateRegistrationAction(registrationId: string) {
+  try {
+    await verifyAndActivateRegistration(registrationId);
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      success: false,
+      error: 'Failed to verify and activate registration.',
+    };
+  }
+}
+
+//Reports
+export async function fetchRegistrationStatusBreakdown() {
+  try {
+    const data = await getRegistrationStatusBreakdown();
+    return {
+      success: true,
+      data,
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      success: false,
+      error: 'Failed to load registration status breakdown.',
+    };
+  }
+}
+
+export async function fetchPaymentTotals() {
+  try {
+    const data = await getPaymentTotals();
+    return {
+      success: true,
+      data,
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      success: false,
+      error: 'Failed to load payment totals.',
+    };
+  }
+}
+
+export async function fetchCouncilRegionBreakdown() {
+  try {
+    const data = await getCouncilRegionBreakdown();
+    return {
+      success: true,
+      data,
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      success: false,
+      error: 'Failed to load council/region breakdown.',
+    };
+  }
+}
+
+export async function fetchScoutRankBreakdown() {
+  try {
+    const data = await getScoutRankBreakdown();
+    return {
+      success: true,
+      data,
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      success: false,
+      error: 'Failed to load scout rank breakdown.',
+    };
+  }
+}
+
+export async function fetchActivityParticipationStats() {
+  try {
+    const data = await getActivityParticipationStats();
+    return {
+      success: true,
+      data,
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      success: false,
+      error: 'Failed to load activity participation stats.',
     };
   }
 }

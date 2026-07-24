@@ -30,6 +30,12 @@ export function proxy(
   //
 // hello
   if (!session && !isPublic) {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
     return NextResponse.redirect(
       new URL("/login", request.url)
     );
@@ -72,5 +78,6 @@ export const config = {
     "/profile/:path*",
     "/scout/:path*",
     "/admin/:path*",
+    "/api/admin/:path*",
   ],
 };

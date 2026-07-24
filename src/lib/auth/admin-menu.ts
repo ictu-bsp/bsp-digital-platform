@@ -53,9 +53,14 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     roles: ["CHIEF_EXECUTIVE"],
   },
   {
+    label: "Finance",
+    href: "/admin/finance",
+    roles: ["CHIEF_EXECUTIVE", "FINANCE_OFFICER"],
+  },
+  {
     label: "Generate Reports", // (TODO) folder not built yet
     href: "/admin/reports",
-    roles: ["CHIEF_EXECUTIVE", "FINANCE_OFFICER", "REPORTS_OFFICER"],
+    roles: ["CHIEF_EXECUTIVE", "REPORTS_OFFICER"],
   },
   {
     label: "Help Desk", // (TODO) folder not built yet

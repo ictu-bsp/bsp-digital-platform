@@ -1,3 +1,5 @@
+//src/app/api/admin/activities/route.ts
+
 import { NextResponse } from "next/server";
 
 import { ActivitySchema } from "@/lib/validation/common/activity";
