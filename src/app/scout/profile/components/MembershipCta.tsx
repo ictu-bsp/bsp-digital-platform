@@ -78,11 +78,12 @@ export default function MembershipCta({
         Membership
       </h3>
 
-      <button className="w-full rounded-xl bg-green-900 py-3 font-semibold text-white transition hover:bg-green-800">
-        <a href="/scout/membership/membership-registration/agreement" className="text-white no-underline">
-          Apply Membership
-        </a>
-      </button>
+      <a
+        href="/scout/membership"
+        className="block w-full rounded-xl bg-green-900 py-3 text-center font-semibold text-white transition hover:bg-green-800"
+      >
+        Go to Membership
+      </a>
 
       <p className="mt-4 text-center text-sm text-gray-600">
         Already a member?{" "}

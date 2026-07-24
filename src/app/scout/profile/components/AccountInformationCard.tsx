@@ -1,9 +1,9 @@
-//src/app/scout/profile/components/AccountInformationCard.tsx
+// src/app/scout/profile/components/AccountInformationCard.tsx
 
 interface AccountInformationCardProps {
   email: string;
   birthdate: Date | string;
-  gender: string;
+  sex: string;
   isVerifiedScout: boolean;
   bloodType?: string;
   address?: string;
@@ -16,7 +16,7 @@ interface AccountInformationCardProps {
 export default function AccountInformationCard({
   email,
   birthdate,
-  gender,
+  sex,
   isVerifiedScout,
   bloodType,
   address,
@@ -54,10 +54,11 @@ export default function AccountInformationCard({
         </div>
 
         <div>
-          <p className="text-sm text-gray-500">Gender</p>
-          <p className="font-semibold text-gray-900">{gender}</p>
+          <p className="text-sm text-gray-500">Sex</p>
+          <p className="font-semibold text-gray-900">{sex}</p>
         </div>
 
+        {/* ALLOW ONLY VERIFIED SCOUTS TO SEE CONTACT INFO & EMERGENCY CONTACT INFO */}
         {isVerifiedScout && (
           <>
             <div>
@@ -82,7 +83,8 @@ export default function AccountInformationCard({
                 {telephoneNumber || "-"}
               </p>
             </div>
-                        <div>
+
+            <div>
               <p className="text-sm text-gray-500">
                 Emergency Contact Name
               </p>

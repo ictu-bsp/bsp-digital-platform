@@ -1,10 +1,9 @@
-//src/services/admin.service.ts
+// src/services/admin.service.ts
 
 import { db } from "@/db";
-import { count, eq, inArray } from "drizzle-orm";
-import { desc } from "drizzle-orm";
+import { count, eq, inArray, desc } from "drizzle-orm";
 import { scoutApplications } from "@/db/schema";
-import { generateMembershipNumber } from "@/services/application.service";
+import { assignMembershipIdToScout } from "@/services/application.service";
 
 import {
   scouts,
@@ -33,7 +32,7 @@ export type PendingRegistrationRecord = {
   fullName: string;
   email: string;
   birthdate: Date;
-  gender: string;
+  sex: string;
 
   address: string | null;
   telephoneNumber: string | null;
@@ -314,7 +313,7 @@ export async function getPendingRegistrations(): Promise<PendingRegistrationReco
       lastName: users.lastName,
       email: users.email,
       birthdate: users.birthdate,
-      gender: users.gender,
+      sex: users.sex,
 
       council: councils.name,
 
@@ -389,7 +388,10 @@ export async function getPendingRegistrations(): Promise<PendingRegistrationReco
 
   // Pick one payment per registration: prefer the most recent "paid" one,
   // falling back to the most recent payment of any status if none paid.
-  const bestPaymentByRegId = new Map<string, { paymentStatus: string; paymentIntentId: string | null; createdAt: Date }>();
+  const bestPaymentByRegId = new Map<
+    string,
+    { paymentStatus: string; paymentIntentId: string | null; createdAt: Date }
+  >();
 
   for (const payment of relatedPayments) {
     const current = bestPaymentByRegId.get(payment.registrationId);
@@ -414,11 +416,6 @@ export async function getPendingRegistrations(): Promise<PendingRegistrationReco
   return pendingRecords
     .filter((record) => {
       // Only show registrations that have actually been paid for.
-      // A "pending" registration row is created as soon as the user
-      // finishes the Register step, before they've picked a payment
-      // method or paid anything — so without this filter, admins would
-      // see every abandoned/mid-payment attempt as if it were a
-      // completed application awaiting review.
       const bestPayment = bestPaymentByRegId.get(record.id);
       return bestPayment?.paymentStatus === "paid";
     })
@@ -434,7 +431,6 @@ export async function getPendingRegistrations(): Promise<PendingRegistrationReco
       }
 
       const bestPayment = bestPaymentByRegId.get(record.id);
-
       const application = latestApplicationByUserId.get(record.userId);
 
       return {
@@ -445,7 +441,7 @@ export async function getPendingRegistrations(): Promise<PendingRegistrationReco
         fullName: `${record.lastName}, ${record.firstName}`,
         email: record.email,
         birthdate: record.birthdate,
-        gender: record.gender,
+        sex: record.sex,
 
         address: application?.address ?? null,
         telephoneNumber: application?.telephoneNumber ?? null,
@@ -508,11 +504,12 @@ export async function verifyAndActivateRegistration(
     throw new Error("Registration not found.");
   }
 
-  // Find the scout (need membershipNumber too, for retainment check)
+  // Find the scout (including councilId to pass down to assignMembershipIdToScout)
   const [scout] = await db
     .select({
       id: scouts.id,
       userId: scouts.userId,
+      councilId: scouts.councilId,
       membershipNumber: scouts.membershipNumber,
     })
     .from(scouts)
@@ -540,11 +537,10 @@ export async function verifyAndActivateRegistration(
     })
     .where(eq(users.id, scout.userId));
 
-  // Mark the scout verified/active and assign a membership number,
-  // retaining any existing one (e.g. renewal approvals shouldn't
-  // issue a new number).
+  // Retain existing membership number OR generate a new structured ID
   const membershipNumber =
-    scout.membershipNumber ?? (await generateMembershipNumber());
+    scout.membershipNumber ??
+    (await assignMembershipIdToScout(scout.id, scout.councilId));
 
   await db
     .update(scouts)
@@ -597,7 +593,7 @@ export async function getRegistrationsAwaitingFinance(): Promise<PendingRegistra
       lastName: users.lastName,
       email: users.email,
       birthdate: users.birthdate,
-      gender: users.gender,
+      sex: users.sex,
 
       council: councils.name,
 
@@ -703,7 +699,7 @@ export async function getRegistrationsAwaitingFinance(): Promise<PendingRegistra
       fullName: `${record.lastName}, ${record.firstName}`,
       email: record.email,
       birthdate: record.birthdate,
-      gender: record.gender,
+      sex: record.sex,
 
       address: application?.address ?? null,
       telephoneNumber: application?.telephoneNumber ?? null,
@@ -758,9 +754,7 @@ export async function rejectRegistration(
     })
     .where(eq(registrations.id, registrationId));
 
-  // Mirror the rejection onto the scout's latest scoutApplications row,
-  // if one exists, so /scout/membership shows the rejected state
-  // instead of staying stuck on "PENDING" indefinitely.
+  // Mirror the rejection onto the scout's latest scoutApplications row
   if (existing?.scoutId) {
     const [scout] = await db
       .select({ userId: scouts.userId })

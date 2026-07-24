@@ -34,8 +34,9 @@ export async function signUpAction(
     lastName: formData.get("lastName"),
     suffix: formData.get("suffix"),
     birthdate: formData.get("birthdate"),
-    gender: formData.get("gender"),
+    sex: formData.get("sex"),
     email: formData.get("email"),
+    role: formData.get("role"),
   });
 
   if (!parsed.success) {

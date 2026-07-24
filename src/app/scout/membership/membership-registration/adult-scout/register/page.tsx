@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { CheckCircleIcon, ChevronDownIcon, LockClosedIcon } from "@heroicons/react/24/solid";
+import BackButton from "@/components-general/ui/BackButton";
 import { submitApplicationAction } from "@/app/actions/application";
 import { getCouncilsAction, getRegionsAction } from "@/app/actions/councils";
 import SearchableSelect from "../../components/SearchableSelect";
@@ -47,9 +48,9 @@ export default function AdultScoutRegisterPage() {
   const [lastName, setLastName] = useState(() => readSaved("registerLastName"));
   const [middleName, setMiddleName] = useState(() => readSaved("registerMiddleName"));
   const [nameExtension, setNameExtension] = useState(() => readSaved("registerNameExtension"));
-  const [birthday, setBirthday] = useState(() => readSaved("registerBirthday"));
+  const [birthdate, setBirthdate] = useState(() => readSaved("registerBirthdate"));
   const [mobileNumber, setMobileNumber] = useState(() => readSaved("registerMobileNumber"));
-  const [gender, setGender] = useState(() => readSaved("registerGender"));
+  const [sex, setSex] = useState(() => readSaved("registerSex"));
   const [civilStatus, setCivilStatus] = useState(() => readSaved("registerCivilStatus"));
   const [profession, setProfession] = useState(() => readSaved("registerProfession"));
   const [positionTitle, setPositionTitle] = useState(() => readSaved("registerPositionTitle"));
@@ -85,9 +86,9 @@ export default function AdultScoutRegisterPage() {
     localStorage.setItem("registerLastName", lastName);
     localStorage.setItem("registerMiddleName", middleName);
     localStorage.setItem("registerNameExtension", nameExtension);
-    localStorage.setItem("registerBirthday", birthday);
+    localStorage.setItem("registerBirthdate", birthdate);
     localStorage.setItem("registerMobileNumber", mobileNumber);
-    localStorage.setItem("registerGender", gender);
+    localStorage.setItem("registerSex", sex);
     localStorage.setItem("registerCivilStatus", civilStatus);
     localStorage.setItem("registerProfession", profession);
     localStorage.setItem("registerPositionTitle", positionTitle);
@@ -104,9 +105,9 @@ export default function AdultScoutRegisterPage() {
     lastName,
     middleName,
     nameExtension,
-    birthday,
+    birthdate,
     mobileNumber,
-    gender,
+    sex,
     civilStatus,
     profession,
     positionTitle,
@@ -193,9 +194,9 @@ export default function AdultScoutRegisterPage() {
       lastName,
       middleName,
       nameExtension,
-      birthday,
+      birthdate,
       mobileNumber,
-      gender,
+      sex,
       civilStatus,
       profession,
       positionTitle,
@@ -230,14 +231,9 @@ export default function AdultScoutRegisterPage() {
         onSubmit={onNext}
         className="w-full max-w-3xl rounded-2xl bg-white p-6 text-zinc-900 shadow-xl sm:p-14"
       >
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="mb-4 text-2xl text-zinc-700 sm:text-3xl"
-          aria-label="Go back"
-        >
-          &lt;
-        </button>
+        <div className="mb-4">
+          <BackButton onClick={() => router.back()} />
+        </div>
 
         <h1 className="mb-2 text-2xl font-bold text-green-800 sm:text-4xl">
           <Image
@@ -316,12 +312,12 @@ export default function AdultScoutRegisterPage() {
             <input
               type="date"
               placeholder="Birthday"
-              className={`${fieldShellClass(birthday !== "")} pl-4 pr-10`}
-              value={birthday}
-              onChange={(e) => setBirthday(e.target.value)}
+              className={`${fieldShellClass(birthdate !== "")} pl-4 pr-10`}
+              value={birthdate}
+              onChange={(e) => setBirthdate(e.target.value)}
               required
             />
-            {birthday !== "" && (
+            {birthdate !== "" && (
               <CheckCircleIcon className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-green-600" />
             )}
           </div>
@@ -345,19 +341,19 @@ export default function AdultScoutRegisterPage() {
         <div className="mb-4 grid gap-4 md:grid-cols-2">
           <div className="relative">
             <select
-              value={gender}
-              onChange={(e) => setGender(e.target.value)}
-              className={`${fieldShellClass(gender !== "")} appearance-none pl-4 pr-16`}
+              value={sex}
+              onChange={(e) => setSex(e.target.value)}
+              className={`${fieldShellClass(sex !== "")} appearance-none pl-4 pr-16`}
               required
             >
               <option value="" disabled className="text-zinc-400">
-                Gender
+                Sex
               </option>
               <option value="male" className="text-zinc-900">Male</option>
               <option value="female" className="text-zinc-900">Female</option>
               <option value="other" className="text-zinc-900">Other</option>
             </select>
-            {gender !== "" && (
+            {sex !== "" && (
               <CheckCircleIcon className="pointer-events-none absolute right-9 top-1/2 h-5 w-5 -translate-y-1/2 text-green-600" />
             )}
             <ChevronDownIcon className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />

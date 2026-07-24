@@ -3,7 +3,6 @@
 "use client";
 
 import { useState } from "react";
-
 import { updateProfileAction } from "@/app/actions/profile";
 import EditAvatarModal from "./EditAvatarModal";
 
@@ -22,7 +21,7 @@ interface EditProfileModalProps {
 
     email: string;
     birthdate: Date;
-    gender: string;
+    sex: string;
 
     avatarUrl?: string | null;
   };
@@ -38,7 +37,7 @@ interface EditProfileModalProps {
     suffix: string | null;
 
     birthdate: Date;
-    gender: string;
+    sex: string;
 
     avatarUrl?: string | null;
 
@@ -61,47 +60,25 @@ export default function EditProfileModal({
 
   const scout = membershipData?.scout;
   const isVerifiedScout = scout?.verificationStatus === "active";
+  const initialForm = {
+    firstName: user.firstName,
+    middleName: user.middleName ?? "",
+    lastName: user.lastName,
+    suffix: user.suffix ?? "",
+    birthdate: new Date(user.birthdate)
+      .toISOString()
+      .split("T")[0],
+    sex: user.sex,
+    bloodType: scout?.bloodType ?? "",
+    address: scout?.address ?? "",
+    telephoneNumber: scout?.telephoneNumber ?? "",
+    emergencyContactName: scout?.emergencyContactName ?? "",
+    emergencyContactRelationship: scout?.emergencyContactRelationship ?? "",
+    emergencyContactNumber: scout?.emergencyContactNumber ?? "",
+  };
+
   const [form, setForm] =
-    useState({
-
-      firstName:
-        user.firstName,
-
-      middleName:
-        user.middleName ?? "",
-
-      lastName:
-        user.lastName,
-
-      suffix:
-        user.suffix ?? "",
-
-      birthdate:
-        new Date(user.birthdate)
-          .toISOString()
-          .split("T")[0],
-
-      gender:
-        user.gender,
-
-      bloodType:
-        scout?.bloodType ?? "",
-
-      address:
-        scout?.address ?? "",
-
-      telephoneNumber:
-        scout?.telephoneNumber ?? "",
-
-      emergencyContactName:
-        scout?.emergencyContactName ?? "",
-
-      emergencyContactRelationship:
-        scout?.emergencyContactRelationship ?? "",
-
-      emergencyContactNumber:
-        scout?.emergencyContactNumber ?? "",
-    });
+    useState(initialForm);
 
   const [avatarUrl, setAvatarUrl] =
     useState<string | null>(
@@ -120,6 +97,10 @@ export default function EditProfileModal({
   const [error, setError] =
     useState("");
 
+  const hasChanges =
+    JSON.stringify(form) !==
+    JSON.stringify(initialForm);
+
   function updateField(
     field: keyof typeof form,
     value: string
@@ -129,14 +110,18 @@ export default function EditProfileModal({
       [field]: value,
     }));
   }
-    async function handleSave() {
+
+  async function handleSave() {
+    if (!hasChanges) {
+      setError("No changes to save.");
+      return;
+    }
 
     setLoading(true);
     setError("");
     setMessage("");
 
     try {
-
       const result =
         await updateProfileAction({
 
@@ -173,8 +158,8 @@ export default function EditProfileModal({
             form.birthdate
           ),
 
-        gender:
-          form.gender,
+        sex:
+          form.sex,
 
         avatarUrl,
 
@@ -199,38 +184,28 @@ export default function EditProfileModal({
       });
 
     } finally {
-
       setLoading(false);
-
     }
   }
 
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-
         <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-
           <h2 className="mb-6 text-center text-2xl font-bold text-green-900">
             Edit Profile
           </h2>
 
           <div className="mb-8 flex flex-col items-center">
-
             <div className="mb-4 h-28 w-28 overflow-hidden rounded-full bg-green-900 shadow">
-
               {avatarUrl ? (
-
                 <img
                   src={avatarUrl}
                   alt="User Avatar"
                   className="h-full w-full object-cover"
                 />
-
               ) : (
-
                 <div className="flex h-full items-center justify-center">
-
                   <svg
                     className="h-14 w-14 text-white"
                     fill="currentColor"
@@ -238,11 +213,8 @@ export default function EditProfileModal({
                   >
                     <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4 1.79-4 4-4 4 1.79 4 4-1.79 4-4 4Zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                   </svg>
-
                 </div>
-
               )}
-
             </div>
 
             <button
@@ -254,17 +226,15 @@ export default function EditProfileModal({
             >
               Change Avatar
             </button>
-
           </div>
-                    {[
+
+          {[
             ["First Name", "firstName"],
             ["Middle Name", "middleName"],
             ["Last Name", "lastName"],
             ["Suffix", "suffix"],
           ].map(([label, field]) => (
-
             <div key={field}>
-
               <label className="mb-1 block text-sm font-medium">
                 {label}
               </label>
@@ -283,9 +253,7 @@ export default function EditProfileModal({
                   )
                 }
               />
-
             </div>
-
           ))}
 
           <label className="mb-1 block text-sm font-medium">
@@ -305,15 +273,15 @@ export default function EditProfileModal({
           />
 
           <label className="mb-1 block text-sm font-medium">
-            Gender
+            Sex
           </label>
 
           <select
             className="mb-4 w-full rounded-lg border p-3"
-            value={form.gender}
+            value={form.sex}
             onChange={(e) =>
               updateField(
-                "gender",
+                "sex",
                 e.target.value
               )
             }
@@ -325,13 +293,9 @@ export default function EditProfileModal({
             <option value="Female">
               Female
             </option>
-
-            <option value="Other">
-              Other
-            </option>
-
           </select>
 
+          {/* ALLOW ONLY VERIFIED SCOUTS TO SEE/CHANGE CONTACT & EMERGENCY INFO */}
           {isVerifiedScout && (
             <>
               <hr className="my-6" />
@@ -344,7 +308,7 @@ export default function EditProfileModal({
               <input
                 className="mb-4 w-full rounded-lg border p-3"
                 value={form.bloodType}
-                onChange={(e) =>updateField("bloodType", e.target.value)}
+                onChange={(e) => updateField("bloodType", e.target.value)}
               />
               <label className="mb-1 block text-sm font-medium">
                 Address
@@ -353,7 +317,7 @@ export default function EditProfileModal({
                 rows={3}
                 className="mb-4 w-full rounded-lg border p-3"
                 value={form.address}
-                onChange={(e) =>updateField("address", e.target.value)}
+                onChange={(e) => updateField("address", e.target.value)}
               />
               <label className="mb-1 block text-sm font-medium">
                 Telephone Number
@@ -361,7 +325,7 @@ export default function EditProfileModal({
               <input
               className="mb-4 w-full rounded-lg border p-3"
               value={form.telephoneNumber}
-              onChange={(e) =>updateField("telephoneNumber", e.target.value)}
+              onChange={(e) => updateField("telephoneNumber", e.target.value)}
               />
               <hr className="my-6" />
               <h3 className="mb-4 text-lg font-bold text-green-900">
@@ -373,7 +337,7 @@ export default function EditProfileModal({
               <input
                 className="mb-4 w-full rounded-lg border p-3"
                 value={form.emergencyContactName}
-                onChange={(e) =>updateField("emergencyContactName",e.target.value)}
+                onChange={(e) => updateField("emergencyContactName", e.target.value)}
               />
               <label className="mb-1 block text-sm font-medium">
                 Relationship
@@ -381,7 +345,7 @@ export default function EditProfileModal({
               <input
                 className="mb-4 w-full rounded-lg border p-3"
                 value={form.emergencyContactRelationship}
-                onChange={(e) =>updateField("emergencyContactRelationship",e.target.value)}
+                onChange={(e) => updateField("emergencyContactRelationship", e.target.value)}
               />
               <label className="mb-1 block text-sm font-medium">
                 Contact Number
@@ -389,20 +353,23 @@ export default function EditProfileModal({
               <input
                 className="mb-6 w-full rounded-lg border p-3"
                 value={form.emergencyContactNumber}
-                onChange={(e) =>updateField("emergencyContactNumber",e.target.value)}
+                onChange={(e) => updateField("emergencyContactNumber", e.target.value)}
               />
             </>
           )}
+
           {error && (
             <p className="mb-3 text-center text-sm text-red-600">
               {error}
             </p>
           )}
+
           {message && (
             <p className="mb-3 text-center text-sm text-green-700">
               {message}
             </p>
           )}
+
           <div className="flex gap-3">
             <button
               type="button"
@@ -415,7 +382,7 @@ export default function EditProfileModal({
             <button
               type="button"
               onClick={handleSave}
-              disabled={loading}
+              disabled={loading || !hasChanges}
               className="flex-1 rounded-xl bg-green-900 py-3 font-semibold text-white hover:bg-green-800 disabled:opacity-50"
             >
               {loading
@@ -425,6 +392,7 @@ export default function EditProfileModal({
           </div>
         </div>
       </div>
+
       {showAvatarModal && (
         <EditAvatarModal
           currentAvatarUrl={

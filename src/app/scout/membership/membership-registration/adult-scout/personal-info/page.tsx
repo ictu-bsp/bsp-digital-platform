@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
+import BackButton from "@/components-general/ui/BackButton";
 import { useWizard } from "../../WizardContext";
 import RegistrationStepper from "../../components/RegistrationStepper";
 
@@ -50,14 +51,9 @@ export default function AdultScoutPersonalInfoPage() {
         onSubmit={onNext}
         className="w-full max-w-3xl rounded-2xl bg-white p-6 text-zinc-900 shadow-xl sm:p-14"
       >
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="mb-4 text-2xl text-zinc-700 sm:text-3xl"
-          aria-label="Go back"
-        >
-          &lt;
-        </button>
+        <div className="mb-4">
+          <BackButton onClick={() => router.back()} />
+        </div>
 
         <h1 className="mb-2 text-2xl font-bold text-green-800 sm:text-4xl">
           <Image

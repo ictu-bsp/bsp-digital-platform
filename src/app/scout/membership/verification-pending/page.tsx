@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import BackButton from "@/components-general/ui/BackButton";
 
 export default function VerificationPendingPage() {
   const router = useRouter();
@@ -10,23 +11,7 @@ export default function VerificationPendingPage() {
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-white via-[#f7fdf8] to-[#e7f6ea] md:p-6">
       <div className="flex min-h-screen w-full max-w-md flex-col bg-white px-6 pb-8 pt-4 md:min-h-[650px] md:rounded-2xl md:border md:border-gray-100 md:shadow-sm">
         <div className="mb-6">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full text-green-950 transition-colors hover:bg-gray-100"
-            aria-label="Go back"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={2}
-              stroke="currentColor"
-              className="h-6 w-6"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-            </svg>
-          </button>
+          <BackButton onClick={() => router.back()} />
 
           <h1 className="mt-2 text-4xl font-extrabold tracking-tight text-green-900">
             <Image

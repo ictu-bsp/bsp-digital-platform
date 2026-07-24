@@ -150,8 +150,8 @@ export default function RegistrationTable({
                 </p>
               </div>
               <div>
-                <label className="text-xs text-zinc-500">Gender</label>
-                <p className="border rounded px-3 py-2">{selected.gender}</p>
+                <label className="text-xs text-zinc-500">Sex</label>
+                <p className="border rounded px-3 py-2">{selected.sex}</p>
               </div>
 
               <div className="col-span-2">

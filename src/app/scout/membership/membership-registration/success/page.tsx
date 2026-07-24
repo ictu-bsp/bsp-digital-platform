@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import BackButton from "@/components-general/ui/BackButton";
 import jsPDF from "jspdf";
 
 function formatTransactionId(id: string | null) {
@@ -126,14 +127,9 @@ function SuccessPageContent() {
   return (
     <div className="flex flex-col items-center justify-center py-10 px-6 bg-zinc-50 min-h-screen">
       <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl p-14 text-zinc-900 flex flex-col min-h-[600px]">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          aria-label="Go back"
-          className="text-3xl text-zinc-800 mb-4 self-start"
-        >
-          ‹
-        </button>
+        <div className="mb-4 self-start">
+          <BackButton onClick={() => router.back()} />
+        </div>
 
         <h1 className="text-4xl font-bold text-emerald-800">eScout</h1>
         <h2 className="text-2xl font-semibold text-emerald-800 mb-8">

@@ -18,7 +18,7 @@ export async function seedUsers(
       lastName: "Administrator",
       suffix: null,
       birthdate: new Date("1990-01-01"),
-      gender: "Other",
+      sex: "Other",
       role: "SUPER_ADMIN",
       emailVerified: new Date(),
       avatarUrl: null,
@@ -31,7 +31,7 @@ export async function seedUsers(
       middleName: "Ramos",
       lastName: "Tugaoen",
       birthdate: new Date("2004-10-12"),
-      gender: "Male",
+      sex: "Male",
       role: "COUNCIL_ADMIN",
       avatarUrl:
         "/uploads/avatars/02685f3f-774c-4153-9409-6d988ecc126e.jpg",
@@ -45,7 +45,7 @@ export async function seedUsers(
       middleName: "Regis",
       lastName: "De Guzman",
       birthdate: new Date("2002-10-27"),
-      gender: "Male",
+      sex: "Male",
       role: "SCOUT",
       avatarUrl:
         "/uploads/avatars/07d26f6d-12e7-406c-9404-152fb02fd1e9.jpg",
@@ -59,7 +59,7 @@ export async function seedUsers(
       middleName: "Magnaye",
       lastName: "De Las Alas",
       birthdate: new Date("2003-06-02"),
-      gender: "Male",
+      sex: "Male",
       role: "VISITOR",
       avatarUrl:
         "/uploads/avatars/214899a4-13aa-40b0-84e9-e8f76688d047.jpg",
@@ -73,7 +73,7 @@ export async function seedUsers(
       lastName: "Santos",
       middleName: null,
       birthdate: new Date("2004-05-29"),
-      gender: "Male",
+      sex: "Male",
       role: "SCOUT",
       avatarUrl:
         "/uploads/avatars/748499266_1045264668022779_5816455208986934213_n.jpg",
@@ -82,6 +82,6 @@ export async function seedUsers(
   ];
 
   await db.insert(schema.users).values(users);
-
+//
   console.log(`✅ Seeded ${users.length} users.`);
 }
