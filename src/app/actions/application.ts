@@ -28,9 +28,9 @@ export interface SubmitApplicationActionInput {
   lastName?: string;
   middleName?: string;
   nameExtension?: string;
-  birthday?: string;
+  birthdate?: string;
   mobileNumber?: string;
-  gender?: string;
+  sex?: string;
   civilStatus?: string;
   profession?: string;
   positionTitle?: string;

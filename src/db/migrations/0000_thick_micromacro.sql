@@ -84,7 +84,8 @@ CREATE TABLE "announcements" (
 CREATE TABLE "councils" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" text NOT NULL,
-	"region_id" uuid,
+	"council_number" text NOT NULL,
+	"region_id" uuid NOT NULL,
 	CONSTRAINT "councils_name_unique" UNIQUE("name")
 );
 --> statement-breakpoint
@@ -96,36 +97,6 @@ CREATE TABLE "email_verifications" (
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "merit_badges" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"name" text NOT NULL,
-	"description" text,
-	"category" text,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "merit_badges_name_unique" UNIQUE("name")
-);
---> statement-breakpoint
-CREATE TABLE "payments" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"registration_id" uuid NOT NULL,
-	"payment_intent_id" text,
-	"payment_status" "payment_status" DEFAULT 'awaiting_payment' NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL
-);
---> statement-breakpoint
-CREATE TABLE "scout_registrations" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"scout_id" uuid NOT NULL,
-	"registration_years" integer DEFAULT 1 NOT NULL,
-	"start_date" date NOT NULL,
-	"end_date" date NOT NULL,
-	"status" "registration_status" DEFAULT 'pending' NOT NULL,
-	"remarks" text,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
-);
---> statement-breakpoint
 CREATE TABLE "roles" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" text NOT NULL,
@@ -133,6 +104,33 @@ CREATE TABLE "roles" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "roles_name_unique" UNIQUE("name")
+);
+--> statement-breakpoint
+CREATE TABLE "regions" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"name" text NOT NULL,
+	"region_number" text NOT NULL,
+	CONSTRAINT "regions_name_unique" UNIQUE("name"),
+	CONSTRAINT "regions_region_number_unique" UNIQUE("region_number")
+);
+--> statement-breakpoint
+CREATE TABLE "users" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"email" text NOT NULL,
+	"email_verified" timestamp,
+	"password_hash" text NOT NULL,
+	"first_name" text NOT NULL,
+	"middle_name" text,
+	"last_name" text NOT NULL,
+	"suffix" text,
+	"birthdate" date NOT NULL,
+	"sex" text NOT NULL,
+	"role" text DEFAULT 'VISITOR' NOT NULL,
+	"council_id" uuid,
+	"avatar_url" text,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "users_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
 CREATE TABLE "scouts" (
@@ -150,49 +148,6 @@ CREATE TABLE "scouts" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "scouts_user_id_unique" UNIQUE("user_id")
-);
---> statement-breakpoint
-CREATE TABLE "users" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"email" text NOT NULL,
-	"email_verified" timestamp,
-	"password_hash" text NOT NULL,
-	"first_name" text NOT NULL,
-	"middle_name" text,
-	"last_name" text NOT NULL,
-	"suffix" text,
-	"birthdate" date NOT NULL,
-	"gender" text NOT NULL,
-	"role" text DEFAULT 'VISITOR' NOT NULL,
-	"council_id" uuid,
-	"avatar_url" text,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "users_email_unique" UNIQUE("email")
-);
---> statement-breakpoint
-CREATE TABLE "sessions" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"user_id" uuid NOT NULL,
-	"admin_user_id" uuid,
-	"expires_at" timestamp NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL
-);
---> statement-breakpoint
-CREATE TABLE "pending_user_registrations" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"email" text NOT NULL,
-	"first_name" text NOT NULL,
-	"middle_name" text,
-	"last_name" text NOT NULL,
-	"suffix" text,
-	"birthdate" timestamp NOT NULL,
-	"gender" text NOT NULL,
-	"verification_code" text NOT NULL,
-	"verification_expires" timestamp NOT NULL,
-	"email_verified_at" timestamp,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "pending_user_registrations_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
 CREATE TABLE "scout_applications" (
@@ -220,10 +175,60 @@ CREATE TABLE "scout_applications" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "regions" (
+CREATE TABLE "scout_registrations" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"scout_id" uuid NOT NULL,
+	"council_id" uuid,
+	"registration_years" integer DEFAULT 1 NOT NULL,
+	"start_date" date NOT NULL,
+	"end_date" date NOT NULL,
+	"status" "registration_status" DEFAULT 'pending' NOT NULL,
+	"remarks" text,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "pending_user_registrations" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"email" text NOT NULL,
+	"first_name" text NOT NULL,
+	"middle_name" text,
+	"last_name" text NOT NULL,
+	"suffix" text,
+	"birthdate" timestamp NOT NULL,
+	"sex" text NOT NULL,
+	"role" text NOT NULL,
+	"verification_code" text NOT NULL,
+	"verification_expires" timestamp NOT NULL,
+	"email_verified_at" timestamp,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "pending_user_registrations_email_unique" UNIQUE("email")
+);
+--> statement-breakpoint
+CREATE TABLE "merit_badges" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" text NOT NULL,
-	CONSTRAINT "regions_name_unique" UNIQUE("name")
+	"description" text,
+	"category" text,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "merit_badges_name_unique" UNIQUE("name")
+);
+--> statement-breakpoint
+CREATE TABLE "payments" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"registration_id" uuid NOT NULL,
+	"payment_intent_id" text,
+	"payment_status" "payment_status" DEFAULT 'awaiting_payment' NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "sessions" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_id" uuid NOT NULL,
+	"admin_user_id" uuid,
+	"expires_at" timestamp NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 ALTER TABLE "activities" ADD CONSTRAINT "activities_council_id_councils_id_fk" FOREIGN KEY ("council_id") REFERENCES "public"."councils"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -239,14 +244,15 @@ ALTER TABLE "announcements" ADD CONSTRAINT "announcements_council_id_councils_id
 ALTER TABLE "announcements" ADD CONSTRAINT "announcements_author_id_users_id_fk" FOREIGN KEY ("author_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "councils" ADD CONSTRAINT "councils_region_id_regions_id_fk" FOREIGN KEY ("region_id") REFERENCES "public"."regions"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "email_verifications" ADD CONSTRAINT "email_verifications_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "payments" ADD CONSTRAINT "payments_registration_id_scout_registrations_id_fk" FOREIGN KEY ("registration_id") REFERENCES "public"."scout_registrations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "scout_registrations" ADD CONSTRAINT "scout_registrations_scout_id_scouts_id_fk" FOREIGN KEY ("scout_id") REFERENCES "public"."scouts"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "users" ADD CONSTRAINT "users_council_id_councils_id_fk" FOREIGN KEY ("council_id") REFERENCES "public"."councils"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "scouts" ADD CONSTRAINT "scouts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "scouts" ADD CONSTRAINT "scouts_council_id_councils_id_fk" FOREIGN KEY ("council_id") REFERENCES "public"."councils"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "scouts" ADD CONSTRAINT "scouts_approved_by_users_id_fk" FOREIGN KEY ("approved_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "users" ADD CONSTRAINT "users_council_id_councils_id_fk" FOREIGN KEY ("council_id") REFERENCES "public"."councils"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "sessions" ADD CONSTRAINT "sessions_admin_user_id_admin_users_id_fk" FOREIGN KEY ("admin_user_id") REFERENCES "public"."admin_users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "scout_applications" ADD CONSTRAINT "scout_applications_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "scout_applications" ADD CONSTRAINT "scout_applications_preferred_council_id_councils_id_fk" FOREIGN KEY ("preferred_council_id") REFERENCES "public"."councils"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "scout_applications" ADD CONSTRAINT "scout_applications_reviewed_by_users_id_fk" FOREIGN KEY ("reviewed_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "scout_applications" ADD CONSTRAINT "scout_applications_reviewed_by_users_id_fk" FOREIGN KEY ("reviewed_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "scout_registrations" ADD CONSTRAINT "scout_registrations_scout_id_scouts_id_fk" FOREIGN KEY ("scout_id") REFERENCES "public"."scouts"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "scout_registrations" ADD CONSTRAINT "scout_registrations_council_id_councils_id_fk" FOREIGN KEY ("council_id") REFERENCES "public"."councils"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "payments" ADD CONSTRAINT "payments_registration_id_scout_registrations_id_fk" FOREIGN KEY ("registration_id") REFERENCES "public"."scout_registrations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "sessions" ADD CONSTRAINT "sessions_admin_user_id_admin_users_id_fk" FOREIGN KEY ("admin_user_id") REFERENCES "public"."admin_users"("id") ON DELETE cascade ON UPDATE no action;

@@ -5,6 +5,7 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import PageLayout from "../../components/PageLayout";
 import { getCurrentUser } from "@/lib/auth/current-user";
+import { isAdult } from "@/lib/utils/age";
 import {
   getApplicationByUser,
   getMembershipCardData,
@@ -18,14 +19,17 @@ export default async function MembershipPage() {
     redirect("/login");
   }
 
-  const application = await getApplicationByUser(user.id);
-  
-  // FIX 1: Call getMembershipCardData without arguments
-  const cardData = await getMembershipCardData();
+  const canApplyAsAdult = isAdult(user.birthdate);
 
-  // FIX 2: Safe optional chaining on `cardData?.scout?.verificationStatus`
-  const hasActiveScout =
-    cardData !== null && cardData?.scout?.verificationStatus === "active";
+  // Retrieve applications and pick the most recent / single record
+  const applications = await getApplicationByUser(user.id);
+  const application = Array.isArray(applications) ? applications[0] : applications;
+
+  const cardData = await getMembershipCardData();
+  const scoutRecord = cardData?.scout ?? null;
+
+  const hasActiveScout = scoutRecord?.verificationStatus === "active";
+  const hasUnverifiedScout = Boolean(scoutRecord) && scoutRecord?.verificationStatus !== "active";
 
   // Approved -> this page's job is done, go straight to the real card.
   if (application?.status === "APPROVED" && hasActiveScout) {
@@ -44,6 +48,13 @@ export default async function MembershipPage() {
     hasRejectedApplication ||
     hasCancelledApplication ||
     isOrphanedApproval;
+
+  const continueScoutHref = canApplyAsAdult
+    ? "/scout/membership/membership-registration/adult-scout/agreement"
+    : "/scout/membership/membership-registration/agreement";
+
+  const youthApplicationHref = "/scout/membership/membership-registration/agreement";
+  const adultApplicationHref = "/scout/membership/membership-registration/adult-scout/agreement";
 
   return (
     <PageLayout userName={user.firstName} avatarUrl={user.avatarUrl ?? undefined}>
@@ -207,21 +218,32 @@ export default async function MembershipPage() {
                       </div>
                     )}
 
-                    <Link
-                      href="/scout/membership/membership-registration/agreement"
-                      className="block w-full rounded-full bg-green-900 py-3 font-bold text-white transition hover:bg-green-800"
-                    >
-                      {hasRejectedApplication || hasCancelledApplication
-                        ? "Apply Again"
-                        : "Apply Membership"}
-                    </Link>
+                    {hasUnverifiedScout && !hasPendingApplication && (
+                      <Link
+                        href={continueScoutHref}
+                        className="mb-3 block w-full rounded-full border border-green-900 bg-green-50 py-3 font-bold text-green-900 transition hover:bg-green-100"
+                      >
+                        Continue Scout Application
+                      </Link>
+                    )}
 
-                    <Link
-                      href="/scout/membership/membership-registration/adult-scout/agreement"
-                      className="mt-3 block w-full rounded-full border border-green-900 py-3 font-bold text-green-900 transition hover:bg-green-50"
-                    >
-                      Adult Scout Registration
-                    </Link>
+                    {!canApplyAsAdult && (
+                      <Link
+                        href={youthApplicationHref}
+                        className="block w-full rounded-full bg-green-900 py-3 font-bold text-white transition hover:bg-green-800"
+                      >
+                        Apply for scout membership
+                      </Link>
+                    )}
+
+                    {canApplyAsAdult && (
+                      <Link
+                        href={adultApplicationHref}
+                        className="block w-full rounded-full border border-green-900 py-3 font-bold text-green-900 transition hover:bg-green-50"
+                      >
+                        Apply for adult scout membership
+                      </Link>
+                    )}
 
                     <p className="mt-3 text-center text-sm text-gray-700">
                       Already a member?{" "}

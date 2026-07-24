@@ -1,4 +1,4 @@
-//src/db/seeds/councils.seed.ts
+// src/db/seeds/councils.seed.ts
 
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import * as schema from "../schema";
@@ -136,6 +136,7 @@ const councilsByRegion: Record<string, string[]> = {
     "South Cotabato Council",
     "Sultan Kudarat Council",
     "Tagum City Council",
+    "National Office",
   ],
   "Northeastern Mindanao Region Coordination Office": [
     "Agusan Council",
@@ -163,7 +164,7 @@ export async function seedCouncils(
 
   const regionIdByName = new Map(regionRows.map((r) => [r.name, r.id]));
 
-  const rowsToInsert: { name: string; regionId: string }[] = [];
+  const rowsToInsert: { name: string; regionId: string; councilNumber: string }[] = [];
 
   for (const [regionName, councilNames] of Object.entries(councilsByRegion)) {
     const regionId = regionIdByName.get(regionName);
@@ -174,14 +175,16 @@ export async function seedCouncils(
       );
     }
 
-    for (const councilName of councilNames) {
-      rowsToInsert.push({ name: councilName, regionId });
-    }
+    councilNames.forEach((councilName, index) => {
+      // Generate a 2-digit padded index for the council number (e.g., "01", "02")
+      const councilNumber = String(index + 1).padStart(2, "0");
+      rowsToInsert.push({ name: councilName, regionId, councilNumber });
+    });
   }
 
   await db.insert(schema.councils).values(rowsToInsert);
 
   console.log(
-    `✅ Seeded ${rowsToInsert.length} councils across ${regionRows.length} regions.`
+    `✅ Seeded ${rowsToInsert.length} councils with code numbers across ${regionRows.length} regions.`
   );
 }

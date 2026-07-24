@@ -236,14 +236,9 @@ export default function RegisterPage() {
         onSubmit={onNext}
         className="w-full max-w-3xl bg-white rounded-2xl shadow-xl p-14 text-zinc-900 flex flex-col gap-5"
       >
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="text-3xl text-zinc-700 mb-1 self-start"
-          aria-label="Go back"
-        >
-          &lt;
-        </button>
+        <div className="mb-1 self-start">
+          <BackButton onClick={() => router.back()} />
+        </div>
 
         <h1 className="text-4xl font-bold text-green-800 mb-0">
           <span className="sr-only">eScout</span>

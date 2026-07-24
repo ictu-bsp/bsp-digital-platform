@@ -60,47 +60,25 @@ export default function EditProfileModal({
 
   const scout = membershipData?.scout;
   const isVerifiedScout = scout?.verificationStatus === "active";
+  const initialForm = {
+    firstName: user.firstName,
+    middleName: user.middleName ?? "",
+    lastName: user.lastName,
+    suffix: user.suffix ?? "",
+    birthdate: new Date(user.birthdate)
+      .toISOString()
+      .split("T")[0],
+    sex: user.sex,
+    bloodType: scout?.bloodType ?? "",
+    address: scout?.address ?? "",
+    telephoneNumber: scout?.telephoneNumber ?? "",
+    emergencyContactName: scout?.emergencyContactName ?? "",
+    emergencyContactRelationship: scout?.emergencyContactRelationship ?? "",
+    emergencyContactNumber: scout?.emergencyContactNumber ?? "",
+  };
+
   const [form, setForm] =
-    useState({
-
-      firstName:
-        user.firstName,
-
-      middleName:
-        user.middleName ?? "",
-
-      lastName:
-        user.lastName,
-
-      suffix:
-        user.suffix ?? "",
-
-      birthdate:
-        new Date(user.birthdate)
-          .toISOString()
-          .split("T")[0],
-
-      sex:
-        user.sex,
-
-      bloodType:
-        scout?.bloodType ?? "",
-
-      address:
-        scout?.address ?? "",
-
-      telephoneNumber:
-        scout?.telephoneNumber ?? "",
-
-      emergencyContactName:
-        scout?.emergencyContactName ?? "",
-
-      emergencyContactRelationship:
-        scout?.emergencyContactRelationship ?? "",
-
-      emergencyContactNumber:
-        scout?.emergencyContactNumber ?? "",
-    });
+    useState(initialForm);
 
   const [avatarUrl, setAvatarUrl] =
     useState<string | null>(
@@ -119,6 +97,10 @@ export default function EditProfileModal({
   const [error, setError] =
     useState("");
 
+  const hasChanges =
+    JSON.stringify(form) !==
+    JSON.stringify(initialForm);
+
   function updateField(
     field: keyof typeof form,
     value: string
@@ -130,6 +112,11 @@ export default function EditProfileModal({
   }
 
   async function handleSave() {
+    if (!hasChanges) {
+      setError("No changes to save.");
+      return;
+    }
+
     setLoading(true);
     setError("");
     setMessage("");
@@ -395,7 +382,7 @@ export default function EditProfileModal({
             <button
               type="button"
               onClick={handleSave}
-              disabled={loading}
+              disabled={loading || !hasChanges}
               className="flex-1 rounded-xl bg-green-900 py-3 font-semibold text-white hover:bg-green-800 disabled:opacity-50"
             >
               {loading

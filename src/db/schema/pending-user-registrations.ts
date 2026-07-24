@@ -1,3 +1,5 @@
+//src/db/schema/pending-user-registrations.ts
+
 import {
   pgTable,
   uuid,
@@ -35,9 +37,13 @@ export const pendingUserRegistrations = pgTable(
       }
     ).notNull(),
 
-    gender: text(
-      "gender"
+    sex: text(
+      "sex"
     ).notNull(),
+
+    role: text("role")
+      .$type<"VISITOR" | "SCOUT">()
+      .notNull(),
 
     verificationCode: text(
       "verification_code"

@@ -5,6 +5,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import BackButton from "@/components-general/ui/BackButton";
 
 export default function AgreementPage() {
   const router = useRouter();
@@ -60,14 +61,9 @@ export default function AgreementPage() {
   return (
     <div className="flex flex-col items-center justify-center py-6 px-4 sm:py-10 sm:px-6 bg-zinc-50 min-h-screen">
       <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl p-6 sm:p-14 text-zinc-900">
-        <button
-          type="button"
-          onClick={() => router.push("/scout/membership")}
-          className="text-2xl sm:text-3xl text-zinc-700 mb-4"
-          aria-label="Go back"
-        >
-          &lt;
-        </button>
+        <div className="mb-4">
+          <BackButton onClick={() => router.push("/scout/membership")} />
+        </div>
 
 
         <h1 className="text-2xl sm:text-4xl font-bold text-green-800 mb-2">
@@ -166,7 +162,7 @@ export default function AgreementPage() {
 
           <p>
             <strong>3. Information We Collect.</strong>{" "}
-            {`Identity information (full name, sex/gender, civil status, date of birth); contact information (email address, mobile number); scouting information (scouting position, advancement rank, tenure in Scouting, region, council, sponsoring institution); membership records (registration status, years of registration, approval history); and payment information (selected payment method and resulting transaction reference). BSP does not collect or store full card numbers, CVC codes, or other sensitive payment credentials — these are submitted directly to PayMongo.`}
+            {`Identity information (full name, sex, civil status, date of birth); contact information (email address, mobile number); scouting information (scouting position, advancement rank, tenure in Scouting, region, council, sponsoring institution); membership records (registration status, years of registration, approval history); and payment information (selected payment method and resulting transaction reference). BSP does not collect or store full card numbers, CVC codes, or other sensitive payment credentials — these are submitted directly to PayMongo.`}
           </p>
 
           <p>
@@ -255,9 +251,8 @@ export default function AgreementPage() {
             required
           />
           <span>
-            As the parent/guardian (if the applicant is under 18) or as the
-            applicant themselves (if 18 or older), I give consent for this
-            individual to register as a member of the Boy Scouts of the
+            I am the parent or legal guardian of the applicant, and I consent
+            for the applicant to register as a member of the Boy Scouts of the
             Philippines and to participate in its activities.
           </span>
         </label>

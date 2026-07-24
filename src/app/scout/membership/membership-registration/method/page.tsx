@@ -3,6 +3,7 @@
 "use client";
 
 import ConfirmationModal from "@/components-general/ui/ConfirmationModal";
+import BackButton from "@/components-general/ui/BackButton";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -161,14 +162,9 @@ export default function MethodPage() {
       <div className="flex flex-col items-center justify-center py-10 px-6 bg-zinc-50 min-h-screen">
         <div className="w-full max-w-3xl rounded-2xl bg-white p-14 text-zinc-900 shadow-xl">
 
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="mb-1 self-start text-3xl text-zinc-700"
-            aria-label="Go back"
-          >
-            &lt;
-          </button>
+          <div className="mb-1 self-start">
+            <BackButton onClick={() => router.back()} />
+          </div>
 
           <h1 className="mb-0 text-4xl font-bold text-green-800">
             <Image

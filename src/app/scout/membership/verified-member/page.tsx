@@ -74,7 +74,7 @@ export default async function VerifiedMemberPage() {
     validUntil: formatDate(registration?.endDate),
     status: scout.verificationStatus === "active" ? "VALID" : "PENDING",
     dob: formatDate(user.birthdate),
-    sex: user.gender ?? "N/A",
+    sex: user.sex ?? "N/A",
     // FIX 4: Access emergency & personal data from scout/application directly
     bloodType: scout.bloodType || application?.bloodType || "N/A",
     sponsoringInst: formatLabel(

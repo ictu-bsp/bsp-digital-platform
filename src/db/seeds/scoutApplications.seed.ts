@@ -47,15 +47,15 @@ export async function seedScoutApplications(
 
     // Scout Information
     scoutingPosition: "Scout",
-    advancementRank: "Kid Scout",
-    tenure: 1,
+    advancementRank: "Boy Scout",
+    tenure: 5,
 
     // Location
     region: "National Capital Region",
 
     // Membership
     communityBased: false,
-    sponsoringInstitution: "Adventist School",
+    sponsoringInstitution: "School",
     requestedRegistrationYears: 1,
 
     // Personal Information
