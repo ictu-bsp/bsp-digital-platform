@@ -16,6 +16,7 @@ import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import BackButton from "@/components-general/ui/BackButton";
 import { useWizard } from "../WizardContext";
 import RegistrationStepper from "../components/RegistrationStepper";
+import AddressSelect from "../components/AddressSelect";
 
 const fieldShellClass = (filled: boolean) =>
   `w-full rounded-lg py-3 text-lg border transition-colors ${
@@ -55,6 +56,16 @@ export default function PersonalInfoPage() {
     setBloodType,
     address,
     setAddress,
+    region,
+    setRegion,
+    province,
+    setProvince,
+    cityMunicipality,
+    setCityMunicipality,
+    barangay,
+    setBarangay,
+    streetAddress,
+    setStreetAddress,
     telephone,
     setTelephone,
     emergencyContactName,
@@ -96,7 +107,11 @@ export default function PersonalInfoPage() {
 
   const onNext = (event: React.FormEvent) => {
     event.preventDefault();
-    // Fields already live in WizardContext via the setters above —
+    if (barangay === "" || cityMunicipality === "" || region === "") {
+      alert("Please complete your address (Region, City/Municipality, and Barangay).");
+      return;
+    }
+    // Fields already live in WizardContext via the setters above â€”
     // nothing to persist here. register/page.tsx reads them straight
     // from the same context at final submit.
     router.push("/scout/membership/membership-registration/register");
@@ -153,16 +168,33 @@ export default function PersonalInfoPage() {
         </div>
 
         {/* Address */}
-        <div className="relative">
-          <input
-            placeholder="Address"
-            className={`${fieldShellClass(address !== "")} pl-4 pr-10`}
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            required
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-zinc-600">Address</label>
+          <AddressSelect
+            value={{ region, province, cityMunicipality, barangay, streetAddress }}
+            onChange={(parts) => {
+              setRegion(parts.region);
+              setProvince(parts.province);
+              setCityMunicipality(parts.cityMunicipality);
+              setBarangay(parts.barangay);
+              setStreetAddress(parts.streetAddress);
+
+              const composed = [
+                parts.streetAddress,
+                parts.barangay,
+                parts.cityMunicipality,
+                parts.province,
+                parts.region,
+              ]
+                .filter(Boolean)
+                .join(", ");
+              setAddress(composed);
+            }}
           />
-          {address !== "" && (
-            <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+          {barangay !== "" && streetAddress === "" && (
+            <p className="text-xs text-amber-600">
+              Add a street/house number for a complete address.
+            </p>
           )}
         </div>
 

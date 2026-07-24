@@ -1,4 +1,4 @@
-// src/app/admin/layout.tsx
+// src/app/admin/(dashboard)/layout.tsx
 
 import Link from "next/link";
 import { redirect } from "next/navigation";

@@ -8,6 +8,13 @@
       "when": 1784858498919,
       "tag": "0000_thick_micromacro",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784791424529,
+      "tag": "0002_cold_pyro",
+      "breakpoints": true
     }
   ]
 }

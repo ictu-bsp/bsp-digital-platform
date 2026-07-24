@@ -16,6 +16,7 @@ export const verificationStatusEnum = pgEnum("verification_status", [
 
 export const registrationStatusEnum = pgEnum("registration_status", [
   "pending",
+  "membership_approved",
   "active",
   "expired",
   "cancelled",

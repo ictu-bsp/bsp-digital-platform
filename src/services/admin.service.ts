@@ -13,6 +13,9 @@ import {
   roles,
   registrations,
   payments,
+  regions,
+  activities,
+  activityRegistrations,
 } from "@/db/schema";
 
 import type {
@@ -461,7 +464,34 @@ export async function getPendingRegistrations(): Promise<PendingRegistrationReco
     });
 }
 
-export async function approveRegistration(registrationId: string) {
+export async function approveMembershipReview(
+  registrationId: string
+) {
+  const [registration] = await db
+    .select({ id: registrations.id })
+    .from(registrations)
+    .where(eq(registrations.id, registrationId));
+
+  if (!registration) {
+    throw new Error("Registration not found.");
+  }
+
+  // Membership stage only: mark reviewed, hand off to Finance.
+  // Does NOT activate the registration, promote the user, or
+  // issue a membership number — that happens in
+  // verifyAndActivateRegistration() once Finance verifies payment.
+  await db
+    .update(registrations)
+    .set({
+      status: "membership_approved",
+      updatedAt: new Date(),
+    })
+    .where(eq(registrations.id, registrationId));
+}
+
+export async function verifyAndActivateRegistration(
+  registrationId: string
+) {
   // Find the registration
   const [registration] = await db
     .select({
@@ -523,7 +553,7 @@ export async function approveRegistration(registrationId: string) {
     })
     .where(eq(scouts.id, scout.id));
 
-  // Mirror the approval onto the scout's latest scoutApplications row
+  // Mirror the approval onto the scout's latest scoutApplications row.
   const [latestApplication] = await db
     .select({ id: scoutApplications.id })
     .from(scoutApplications)
@@ -540,7 +570,156 @@ export async function approveRegistration(registrationId: string) {
         updatedAt: new Date(),
       })
       .where(eq(scoutApplications.id, latestApplication.id));
+  } else {
+    // Previously this silently did nothing, leaving scout_applications
+    // out of sync with no trace. Log loudly so it's visible instead of
+    // hidden — a scout being finance-activated should always have an
+    // application row backing it.
+    console.error(
+      `[verifyAndActivateRegistration] No scoutApplications row found for userId ${scout.userId} (registrationId ${registrationId}). Scout was activated but scout_applications was not updated.`
+    );
   }
+}
+
+export async function getRegistrationsAwaitingFinance(): Promise<PendingRegistrationRecord[]> {
+  const records = await db
+    .select({
+      id: registrations.id,
+      scoutId: registrations.scoutId,
+      scoutIdNumber: scouts.membershipNumber,
+      userId: scouts.userId,
+
+      firstName: users.firstName,
+      lastName: users.lastName,
+      email: users.email,
+      birthdate: users.birthdate,
+      sex: users.sex,
+
+      council: councils.name,
+
+      registrationYears: registrations.registrationYears,
+      startDate: registrations.startDate,
+      endDate: registrations.endDate,
+      status: registrations.status,
+      remarks: registrations.remarks,
+      createdAt: registrations.createdAt,
+    })
+    .from(registrations)
+    .innerJoin(scouts, eq(registrations.scoutId, scouts.id))
+    .innerJoin(users, eq(scouts.userId, users.id))
+    .innerJoin(councils, eq(scouts.councilId, councils.id))
+    .where(eq(registrations.status, "membership_approved"));
+
+  const activeRegs = await db
+    .select({ scoutId: registrations.scoutId })
+    .from(registrations)
+    .where(eq(registrations.status, "active"));
+
+  const activeScoutIds = new Set(activeRegs.map((r) => r.scoutId));
+
+  const userIds = records.map((r) => r.userId);
+
+  const relatedApplications = userIds.length
+    ? await db
+        .select({
+          userId: scoutApplications.userId,
+          address: scoutApplications.address,
+          telephoneNumber: scoutApplications.telephoneNumber,
+          createdAt: scoutApplications.createdAt,
+        })
+        .from(scoutApplications)
+        .where(inArray(scoutApplications.userId, userIds))
+    : [];
+
+  const latestApplicationByUserId = new Map<
+    string,
+    { address: string | null; telephoneNumber: string | null; createdAt: Date }
+  >();
+
+  for (const application of relatedApplications) {
+    const current = latestApplicationByUserId.get(application.userId);
+    if (!current || application.createdAt > current.createdAt) {
+      latestApplicationByUserId.set(application.userId, application);
+    }
+  }
+
+  const regIds = records.map((r) => r.id);
+
+  const relatedPayments = regIds.length
+    ? await db
+        .select({
+          registrationId: payments.registrationId,
+          paymentStatus: payments.paymentStatus,
+          paymentIntentId: payments.paymentIntentId,
+          createdAt: payments.createdAt,
+        })
+        .from(payments)
+        .where(inArray(payments.registrationId, regIds))
+    : [];
+
+  const bestPaymentByRegId = new Map<string, { paymentStatus: string; paymentIntentId: string | null; createdAt: Date }>();
+
+  for (const payment of relatedPayments) {
+    const current = bestPaymentByRegId.get(payment.registrationId);
+
+    if (!current) {
+      bestPaymentByRegId.set(payment.registrationId, payment);
+      continue;
+    }
+
+    const currentIsPaid = current.paymentStatus === "paid";
+    const candidateIsPaid = payment.paymentStatus === "paid";
+
+    if (candidateIsPaid && !currentIsPaid) {
+      bestPaymentByRegId.set(payment.registrationId, payment);
+    } else if (candidateIsPaid === currentIsPaid && payment.createdAt > current.createdAt) {
+      bestPaymentByRegId.set(payment.registrationId, payment);
+    }
+  }
+
+  return records.map((record) => {
+    let extraDetails: PendingRegistrationRecord["extraDetails"] = {};
+
+    if (record.remarks) {
+      try {
+        extraDetails = JSON.parse(record.remarks);
+      } catch {
+        extraDetails = {};
+      }
+    }
+
+    const bestPayment = bestPaymentByRegId.get(record.id);
+    const application = latestApplicationByUserId.get(record.userId);
+
+    return {
+      id: record.id,
+      scoutId: record.scoutId,
+      scoutIdNumber: record.scoutIdNumber,
+
+      fullName: `${record.lastName}, ${record.firstName}`,
+      email: record.email,
+      birthdate: record.birthdate,
+      sex: record.sex,
+
+      address: application?.address ?? null,
+      telephoneNumber: application?.telephoneNumber ?? null,
+
+      council: record.council,
+      registrationYears: record.registrationYears,
+      startDate: record.startDate,
+      endDate: record.endDate,
+      status: record.status,
+
+      isExistingScout: activeScoutIds.has(record.scoutId),
+
+      paymentStatus: bestPayment?.paymentStatus ?? null,
+      paymentIntentId: bestPayment?.paymentIntentId ?? null,
+
+      extraDetails,
+
+      createdAt: record.createdAt,
+    };
+  });
 }
 
 export async function rejectRegistration(
@@ -616,4 +795,119 @@ export async function removeAdministrator(
   administratorId: string
 ) {
   throw new Error("Not implemented yet.");
+}
+
+// -------------------------------------------------
+// Reports
+// -------------------------------------------------
+
+const REGISTRATION_FEE_PER_YEAR = 50; // TODO: confirm against register/page.tsx's FEE_PER_YEAR (currently 100 there — mismatch flagged for Reuben)
+
+export async function getRegistrationStatusBreakdown() {
+  const rows = await db
+    .select({
+      status: registrations.status,
+      value: count(),
+    })
+    .from(registrations)
+    .groupBy(registrations.status);
+
+  return rows;
+}
+
+export async function getPaymentTotals() {
+  const statusCounts = await db
+    .select({
+      status: payments.paymentStatus,
+      value: count(),
+    })
+    .from(payments)
+    .groupBy(payments.paymentStatus);
+
+  // Estimated pesos collected: only counts payments with status "paid",
+  // joined back to their registration's registrationYears, multiplied by
+  // the flat per-year fee. This is an ESTIMATE, not a stored actual
+  // amount — payments table has no amount column.
+  const paidWithYears = await db
+    .select({
+      registrationYears: registrations.registrationYears,
+    })
+    .from(payments)
+    .innerJoin(registrations, eq(payments.registrationId, registrations.id))
+    .where(eq(payments.paymentStatus, "paid"));
+
+  const estimatedTotalCollected = paidWithYears.reduce(
+    (sum, row) => sum + row.registrationYears * REGISTRATION_FEE_PER_YEAR,
+    0
+  );
+
+  return {
+    statusCounts,
+    estimatedTotalCollected,
+    feePerYearUsed: REGISTRATION_FEE_PER_YEAR,
+  };
+}
+
+export async function getCouncilRegionBreakdown() {
+  const councilCounts = await db
+    .select({
+      council: councils.name,
+      value: count(),
+    })
+    .from(scouts)
+    .innerJoin(councils, eq(scouts.councilId, councils.id))
+    .groupBy(councils.name);
+
+  // Left join regions since councils.regionId is nullable — councils
+  // without a region assigned yet fall into an "Unassigned" bucket.
+  const regionCounts = await db
+    .select({
+      region: regions.name,
+      value: count(),
+    })
+    .from(scouts)
+    .innerJoin(councils, eq(scouts.councilId, councils.id))
+    .leftJoin(regions, eq(councils.regionId, regions.id))
+    .groupBy(regions.name);
+
+  const normalizedRegionCounts = regionCounts.map((row) => ({
+    region: row.region ?? "Unassigned",
+    value: row.value,
+  }));
+
+  return {
+    councilCounts,
+    regionCounts: normalizedRegionCounts,
+  };
+}
+
+export async function getScoutRankBreakdown() {
+  const rows = await db
+    .select({
+      rank: scouts.rank,
+      value: count(),
+    })
+    .from(scouts)
+    .groupBy(scouts.rank);
+
+  return rows;
+}
+
+export async function getActivityParticipationStats() {
+  const rows = await db
+    .select({
+      activityId: activities.id,
+      title: activities.title,
+      startDate: activities.startDate,
+      value: count(activityRegistrations.id),
+    })
+    .from(activities)
+    .leftJoin(
+      activityRegistrations,
+      eq(activityRegistrations.activityId, activities.id)
+    )
+    .groupBy(activities.id, activities.title, activities.startDate)
+    .orderBy(desc(activities.startDate));
+
+  return rows;
 }
