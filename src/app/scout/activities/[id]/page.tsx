@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import Header from "@/app/scout/components/Header";
 import BottomNav from "@/app/scout/components/BottomNav";
 import JoinButton from "@/app/(public)/components/JoinButton";
+import LeaveButton from "@/app/(public)/components/LeaveButton";
 import ActivityMetaBadges from "@/app/scout/activities/components/ActivityMetaBadges";
 
 import { getCurrentUser } from "@/lib/auth/current-user";
@@ -69,6 +70,7 @@ export default async function ActivityDetailPage({
   );
 
   const registeredCount = await getRegisteredCount(activity.id);
+  const isFull = activity.maxParticipants != null && registeredCount >= activity.maxParticipants;
 
   const formatDate = (date: Date) =>
     date.toLocaleString("en-PH", {
@@ -144,16 +146,26 @@ export default async function ActivityDetailPage({
             </div>
 
             <div className="pt-2">
-              <JoinButton
-                activityId={activity.id}
-                registrationDeadline={activity.registrationDeadline}
-                alreadyJoined={alreadyJoined}
-              />
+              {alreadyJoined ? (
+                <LeaveButton activityId={activity.id} />
+                  ) : isFull ? (
+                    <button
+                      disabled
+                      className="w-full rounded-xl bg-slate-300 px-4 py-3 text-base font-semibold text-slate-600 cursor-not-allowed"
+                    >
+                      Activity Full
+                    </button>
+                  ) : (
+                    <JoinButton
+                      activityId={activity.id}
+                      registrationDeadline={activity.registrationDeadline}
+                      alreadyJoined={alreadyJoined}
+                    />
+                  )}
+              </div>
             </div>
           </div>
-        </div>
-
-        <BottomNav />
+        <BottomNav/>
       </div>
     </main>
   );

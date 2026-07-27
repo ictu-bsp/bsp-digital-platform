@@ -12,6 +12,7 @@ import {
   getScoutByUserId,
   isScoutRegistered,
   registerScoutForActivity,
+  unregisterScoutFromActivity,
   getRegisteredCount,
 } from "@/services/activity-registration.service";
 import { meetsRankRequirement } from "@/lib/utils/rank";
@@ -183,5 +184,64 @@ export async function joinActivityAction(activityId: string) {
   } catch (error) {
     console.error(error);
     return { success: false, error: "Failed to join activity." };
+  }
+}
+
+export async function leaveActivityAction(activityId: string) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user) {
+      return {
+        success: false,
+        error: "You must be logged in.",
+      };
+    }
+
+    const scout = await getScoutByUserId(user.id);
+
+    if (!scout) {
+      return {
+        success: false,
+        error: "No scout profile found.",
+      };
+    }
+
+    const activity = await getActivityById(activityId);
+
+    if (!activity) {
+      return {
+        success: false,
+        error: "Activity not found.",
+      };
+    }
+
+    const alreadyRegistered = await isScoutRegistered(
+      scout.id,
+      activityId
+    );
+
+    if (!alreadyRegistered) {
+      return {
+        success: false,
+        error: "You are not registered for this activity.",
+      };
+    }
+
+    await unregisterScoutFromActivity(
+      scout.id,
+      activityId
+    );
+
+    return {
+      success: true,
+      error: null,
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      success: false,
+      error: "Failed to leave activity.",
+    };
   }
 }
