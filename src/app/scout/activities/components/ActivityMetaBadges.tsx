@@ -5,6 +5,7 @@ import {
   MapPinIcon,
   CurrencyDollarIcon,
   DocumentTextIcon,
+  UserGroupIcon,
 } from "@heroicons/react/24/outline";
 
 type Props = {
@@ -13,6 +14,8 @@ type Props = {
   location: string;
   cost?: string;
   registrationDeadline?: string;
+  registeredCount?: number;
+  maxParticipants?: number | null;
 };
 
 export default function ActivityMetaBadges({
@@ -21,6 +24,8 @@ export default function ActivityMetaBadges({
   location,
   cost = "Free",
   registrationDeadline,
+  registeredCount,
+  maxParticipants,
 }: Props) {
   const deadlineDate = registrationDeadline
     ? new Date(registrationDeadline)
@@ -83,6 +88,19 @@ export default function ActivityMetaBadges({
           <span>{registrationLabel}</span>
         </div>
       </div>
+
+      {registeredCount != null && (
+        <div className="rounded-2xl bg-blue-800 px-4 py-3 text-sm font-medium text-white">
+          <div className="flex items-center gap-2">
+            <UserGroupIcon className="h-4 w-4" />
+            <span>
+              {maxParticipants != null
+                ? `${registeredCount}/${maxParticipants} joined`
+                : `${registeredCount} joined`}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

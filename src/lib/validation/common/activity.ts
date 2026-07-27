@@ -22,6 +22,10 @@ export const ActivitySchema = z.object({
 
   maxParticipants: z.number().optional(),
 
+  minimumRank: z
+    .enum(["KID", "KAB", "BOY", "SENIOR", "ROVER"])
+    .optional(),
+
   registrationFee: z.number().optional(),
 
   isPublished: z.boolean().default(true),

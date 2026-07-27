@@ -2,7 +2,7 @@
 
 import { users } from "./users";
 import { councils } from "./councils";
-import { activityCategoryEnum } from "./enums";
+import { activityCategoryEnum, scoutRankEnum } from "./enums";
 import { boolean, integer, pgTable, text, timestamp, uuid, } from "drizzle-orm/pg-core";
 
 export const activities = pgTable("activities", {
@@ -34,6 +34,12 @@ export const activities = pgTable("activities", {
 
   // Capacity
   maxParticipants: integer("max_participants"),
+
+  // Eligibility
+  // Lowest scout rank allowed to join this activity. Null/unset = open to
+  // every rank. Ranks are ordered KID < KAB < BOY < SENIOR < ROVER, so a
+  // scout qualifies if their rank is this rank or higher on that ladder.
+  minimumRank: scoutRankEnum("minimum_rank"),
 
   // Fee
   // Stored in pesos as an integer (whole pesos only, no centavos) to match

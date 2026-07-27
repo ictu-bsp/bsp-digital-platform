@@ -36,7 +36,6 @@ const fieldShellClass = (filled: boolean, locked?: boolean) =>
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [isAdultScoutFlow, setIsAdultScoutFlow] = useState(false);
 
   const {
     bloodType,
@@ -63,11 +62,6 @@ export default function RegisterPage() {
   const amount = FEE_PER_YEAR * (Number(membershipValidity) || 0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
-
-  // Detect adult scout flow on mount
-  useEffect(() => {
-    setIsAdultScoutFlow(localStorage.getItem("membershipFlow") === "adult_scout");
-  }, []);
 
   // Hydrate form values safely after initial client mount
   useEffect(() => {
@@ -254,10 +248,9 @@ export default function RegisterPage() {
         <h2 className="text-2xl font-semibold mb-4">Register Membership</h2>
 
         <RegistrationStepper
-          currentStep={isAdultScoutFlow ? 4 : 3}
-          totalSteps={isAdultScoutFlow ? 5 : 4}
+          currentStep={3}
+          totalSteps={4}
           currentLabel="Scout Information"
-          splitAfterStep={isAdultScoutFlow ? 2 : undefined}
         />
 
         {/* Scouting Position */}
