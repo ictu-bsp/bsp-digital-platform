@@ -16,6 +16,7 @@ import {
 import { meetsRankRequirement, RANK_LABELS } from "@/lib/utils/rank";
 import { joinActivityAction } from "@/app/actions/activities";
 
+
 interface Props {
   params: Promise<{
     id: string;

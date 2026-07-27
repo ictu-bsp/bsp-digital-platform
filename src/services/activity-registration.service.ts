@@ -37,6 +37,20 @@ export async function registerScoutForActivity(
   });
 }
 
+export async function unregisterScoutFromActivity(
+  scoutId: string,
+  activityId: string
+) {
+  return db
+    .delete(activityRegistrations)
+    .where(
+      and(
+        eq(activityRegistrations.scoutId, scoutId),
+        eq(activityRegistrations.activityId, activityId)
+      )
+    );
+}
+
 export async function getRegisteredActivities(
   scoutId: string
 ) {
