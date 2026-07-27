@@ -14,8 +14,7 @@ import {
   getRegisteredCount,
 } from "@/services/activity-registration.service";
 import { meetsRankRequirement, RANK_LABELS } from "@/lib/utils/rank";
-import { joinActivityAction } from "@/app/actions/activities";
-
+import ConfirmJoinForm from "./ConfirmJoinForm";
 
 interface Props {
   params: Promise<{
@@ -23,9 +22,7 @@ interface Props {
   }>;
 }
 
-export default async function JoinActivityPage({
-  params,
-}: Props) {
+export default async function JoinActivityPage({ params }: Props) {
   const user = await getCurrentUser();
 
   if (!user) {
@@ -62,20 +59,6 @@ export default async function JoinActivityPage({
     registeredCount >= activity.maxParticipants;
 
   const isEligible = meetsRankRequirement(scout.rank, activity.minimumRank);
-
-  // Bound server action for the confirm button below.
-  async function confirmJoin() {
-    "use server";
-    const result = await joinActivityAction(activityId);
-    if (result.success) {
-      redirect(`/scout/activities/${activityId}`);
-    }
-    // On failure, send them back to the detail page -- the join button
-    // there will simply be available again, and the underlying issue
-    // (deadline/capacity/rank) will already be visible on this page if
-    // they try again.
-    redirect(`/scout/activities/${activityId}`);
-  }
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-white via-[#f7fdf8] to-[#e7f6ea] text-slate-900">
@@ -157,14 +140,11 @@ export default async function JoinActivityPage({
                 . Confirm below to register.
               </p>
 
-              <form action={confirmJoin} className="mt-4">
-                <button
-                  type="submit"
-                  className="w-full rounded-xl bg-emerald-700 px-4 py-3 text-center text-base font-semibold text-white transition hover:bg-emerald-800"
-                >
-                  Confirm Join
-                </button>
-              </form>
+              {/* Client Component Form */}
+              <ConfirmJoinForm
+                activityId={activityId}
+                activityTitle={activity.title}
+              />
             </div>
           )}
         </div>

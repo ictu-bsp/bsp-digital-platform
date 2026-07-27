@@ -10,8 +10,6 @@ import { getCurrentSession } from "@/lib/auth/session";
 
 import type { AdminRole } from "@/lib/auth/admin-menu";
 
-
-
 export default async function AdminLayout({
   children,
 }: {
@@ -29,6 +27,7 @@ export default async function AdminLayout({
     redirect("/login");
   }
 
+  // Layer 1 Check: Ensure standard account has admin privileges
   if (
     session.user.role !== "COUNCIL_ADMIN" &&
     session.user.role !== "SUPER_ADMIN"
@@ -36,8 +35,9 @@ export default async function AdminLayout({
     redirect("/scout");
   }
 
+  // Layer 2 Check: Ensure secondary officer login has been completed
   if (!session.adminUser) {
-    redirect("/admin/(login)");
+    redirect("/admin/login"); // Fixed route path (removed parentheses)
   }
 
   const officerRole = session.adminUser.role;
