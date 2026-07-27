@@ -3,7 +3,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { logout } from "@/app/actions/auth";
 
 import BottomNav from "../components/BottomNav";
 import UserInfoCard from "./components/UserInfoCard";
@@ -40,7 +40,6 @@ export default function ProfileClient({
   user,
   membershipData,
 }: ProfileClientProps) {
-  const router = useRouter();
 
   const [profile, setProfile] = useState({
     ...user,
@@ -58,7 +57,9 @@ export default function ProfileClient({
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
   const [showConfirmSave, setShowConfirmSave] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false); // Added for logout modal
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showLogoutSuccess, setShowLogoutSuccess] = useState(false);
   const [pendingProfile, setPendingProfile] = useState<any>(null);
 
   const isVerifiedScout =
@@ -81,8 +82,20 @@ export default function ProfileClient({
     .filter(Boolean)
     .join(" ");
 
+  // 1. Triggered by Header Logout button -> Opens confirmation dialog
   function handleLogout() {
-    router.push("/login");
+    setShowLogoutConfirm(true);
+  }
+
+  // 2. Triggered when user confirms logout in dialog -> Opens success overlay
+  function confirmLogout() {
+    setShowLogoutConfirm(false);
+    setShowLogoutSuccess(true);
+  }
+
+  // 3. Triggered after success overlay finishes -> Executes server logout
+  async function handleLogoutComplete() {
+    await logout();
   }
 
   function handleEditSuccess(updatedProfile: any) {
@@ -171,6 +184,7 @@ export default function ProfileClient({
             />
           )}
 
+          {/* Confirm Save Changes Modal */}
           {showConfirmSave && (
             <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
               <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
@@ -203,14 +217,58 @@ export default function ProfileClient({
               </div>
             </div>
           )}
+
+          {/* Logout Confirmation Modal */}
+          {showLogoutConfirm && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+              <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+                <h2 className="text-xl font-bold text-red-700">
+                  Log Out
+                </h2>
+
+                <p className="mt-3 text-sm leading-relaxed text-gray-600">
+                  Are you sure you want to log out of your account?
+                </p>
+
+                <div className="mt-6 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowLogoutConfirm(false)}
+                    className="flex-1 rounded-xl border py-3 font-semibold text-gray-700 hover:bg-gray-100"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={confirmLogout}
+                    className="flex-1 rounded-xl bg-red-600 py-3 font-semibold text-white hover:bg-red-700"
+                  >
+                    Log Out
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 
+      {/* Profile Updated Overlay */}
       <SuccessOverlay
         open={showSuccess}
         title="Profile Updated"
         subtitle="Your account information has been updated successfully."
+        duration={2500}
         onComplete={() => {setShowSuccess(false);}}
+      />
+
+      {/* Logged Out Overlay */}
+      <SuccessOverlay
+        open={showLogoutSuccess}
+        title="Logged Out"
+        subtitle="You have been safely signed out."
+        duration={3000}
+        onComplete={handleLogoutComplete}
       />
     </>
   );

@@ -214,6 +214,7 @@ export default function LoginPage() {
         open={showSuccess}
         title="Log In Successful"
         subtitle={`Welcome, ${welcomeName}!`}
+        duration={3000}
       />
     </>
   );

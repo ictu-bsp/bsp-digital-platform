@@ -17,7 +17,11 @@ import {
   getRegisteredCount,
 } from "@/services/activity-registration.service";
 
-import type { PageProps } from "@/types/activity-details";
+interface PageProps {
+  params: Promise<{
+    id: string;
+  }>;
+}
 
 export default async function ActivityDetailPage({
   params,
@@ -70,7 +74,9 @@ export default async function ActivityDetailPage({
   );
 
   const registeredCount = await getRegisteredCount(activity.id);
-  const isFull = activity.maxParticipants != null && registeredCount >= activity.maxParticipants;
+  const isFull =
+    activity.maxParticipants != null &&
+    registeredCount >= activity.maxParticipants;
 
   const formatDate = (date: Date) =>
     date.toLocaleString("en-PH", {
@@ -148,24 +154,24 @@ export default async function ActivityDetailPage({
             <div className="pt-2">
               {alreadyJoined ? (
                 <LeaveButton activityId={activity.id} />
-                  ) : isFull ? (
-                    <button
-                      disabled
-                      className="w-full rounded-xl bg-slate-300 px-4 py-3 text-base font-semibold text-slate-600 cursor-not-allowed"
-                    >
-                      Activity Full
-                    </button>
-                  ) : (
-                    <JoinButton
-                      activityId={activity.id}
-                      registrationDeadline={activity.registrationDeadline}
-                      alreadyJoined={alreadyJoined}
-                    />
-                  )}
-              </div>
+              ) : isFull ? (
+                <button
+                  disabled
+                  className="w-full cursor-not-allowed rounded-xl bg-slate-300 px-4 py-3 text-base font-semibold text-slate-600"
+                >
+                  Activity Full
+                </button>
+              ) : (
+                <JoinButton
+                  activityId={activity.id}
+                  registrationDeadline={activity.registrationDeadline}
+                  alreadyJoined={alreadyJoined}
+                />
+              )}
             </div>
           </div>
-        <BottomNav/>
+        </div>
+        <BottomNav />
       </div>
     </main>
   );

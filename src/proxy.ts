@@ -6,29 +6,19 @@ const PUBLIC_ROUTES = [
   "/",
   "/login",
   "/signup",
+  "/admin/login", // Required so users can reach the 2nd layer form
   "/scout/membership/membership-registration/webhook",
 ];
 
-export function proxy(
-  request: NextRequest
-) {
-  const pathname =
-    request.nextUrl.pathname;
+export function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  const session = request.cookies.get("bsp_session");
 
-  const session =
-    request.cookies.get("bsp_session");
+  const isPublic = PUBLIC_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(route + "/")
+  );
 
-  const isPublic =
-    PUBLIC_ROUTES.some(
-      (route) =>
-        pathname === route ||
-        pathname.startsWith(route + "/")
-    );
-
-  //
-  // Visitors attempting to access protected pages
-  //
-// hello
+  // 1. Visitors attempting to access protected pages without any session
   if (!session && !isPublic) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json(
@@ -36,40 +26,30 @@ export function proxy(
         { status: 401 }
       );
     }
-    return NextResponse.redirect(
-      new URL("/login", request.url)
-    );
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  //
-  // Logged-in users should never revisit Login or Signup.
-  // Everyone enters the application through /scout,
-  // which determines whether they're a Visitor,
-  // Scout, Council Admin, or Super Admin.
-  //
-
+  // 2. Logged-in users attempting to access primary auth pages (/login, /signup)
   if (
     session &&
-    (
-      pathname === "/login" ||
-      pathname.startsWith("/signup")
-    )
+    (pathname === "/login" || pathname.startsWith("/signup"))
   ) {
-    return NextResponse.redirect(
-      new URL("/scout", request.url)
-    );
+    return NextResponse.redirect(new URL("/scout", request.url));
   }
 
-  //
-  // Officer authentication is intentionally NOT handled here.
-  //
-  // Middleware only checks whether a BSP account is logged in.
-  // AdminLayout performs the second-stage officer authentication
-  // by checking session.adminUser and redirecting to
-  // /admin/login when necessary.
-  //
+  const response = NextResponse.next();
 
-  return NextResponse.next();
+  // Disable back/forward browser caching (BFCache) on protected routes
+  if (!isPublic) {
+    response.headers.set(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
+    );
+    response.headers.set("Pragma", "no-cache");
+    response.headers.set("Expires", "0");
+  }
+
+  return response;
 }
 
 export const config = {
