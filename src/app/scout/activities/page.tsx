@@ -5,7 +5,7 @@ import { getCurrentUser } from "@/lib/auth/current-user";
 import type { Activity, FeaturedBanner } from "@/types/activities";
 import { getPublishedActivities } from "@/services/activity.service";
 import ScoutingActivitiesScreen from "./components/ScoutingActivitiesScreen";
-import { getScoutByUserId, getRegisteredActivities, } from "@/services/activity-registration.service";
+import { getScoutByUserId, getRegisteredActivities, getRegisteredCounts, } from "@/services/activity-registration.service";
 
 export default async function ActivitiesPage() {
   const user = await getCurrentUser();
@@ -30,6 +30,10 @@ export default async function ActivitiesPage() {
   const scout = await getScoutByUserId(user.id);
 
   const registeredActivities = scout ? await getRegisteredActivities(scout.id): [];
+
+  const registrationCounts = await getRegisteredCounts(
+    dbActivities.map((a) => a.id)
+  );
 
   const bannerColors = [
   "#daf5e7",
@@ -88,6 +92,12 @@ export default async function ActivitiesPage() {
       !activity.registrationDeadline ||
       activity.registrationDeadline > now,
 
+    maxParticipants: activity.maxParticipants,
+
+    registeredCount: registrationCounts[activity.id] ?? 0,
+
+    minimumRank: activity.minimumRank,
+
     location: activity.location,
 
     category: activity.category,
@@ -118,6 +128,12 @@ export default async function ActivitiesPage() {
       registrationOpen:
         !activity.registrationDeadline ||
         activity.registrationDeadline > now,
+
+      maxParticipants: activity.maxParticipants,
+
+      registeredCount: registrationCounts[activity.id] ?? 0,
+
+      minimumRank: activity.minimumRank,
 
       location: activity.location,
 

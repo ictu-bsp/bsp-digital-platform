@@ -5,6 +5,8 @@ export type ActivityCategory =
   | "REGIONAL"
   | "NATIONAL";
 
+export type ScoutRank = "KID" | "KAB" | "BOY" | "SENIOR" | "ROVER";
+
 export interface Activity {
   id: string;
 
@@ -18,6 +20,13 @@ export interface Activity {
 
   // Registration
   registrationOpen: boolean;
+
+  // Capacity
+  maxParticipants?: number | null;
+  registeredCount: number;
+
+  // Eligibility
+  minimumRank?: ScoutRank | null;
 
   // Location
   location: string;

@@ -13,6 +13,7 @@ import { getActivityById } from "@/services/activity.service";
 import {
   getScoutByUserId,
   isScoutRegistered,
+  getRegisteredCount,
 } from "@/services/activity-registration.service";
 
 import type { PageProps } from "@/types/activity-details";
@@ -66,6 +67,8 @@ export default async function ActivityDetailPage({
     scout.id,
     activity.id
   );
+
+  const registeredCount = await getRegisteredCount(activity.id);
 
   const formatDate = (date: Date) =>
     date.toLocaleString("en-PH", {
@@ -121,6 +124,8 @@ export default async function ActivityDetailPage({
                   registrationDeadline={
                     activity.registrationDeadline?.toISOString()
                   }
+                  registeredCount={registeredCount}
+                  maxParticipants={activity.maxParticipants}
                 />
               </div>
 

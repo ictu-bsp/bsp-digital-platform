@@ -1,0 +1,1 @@
+ALTER TABLE "activities" ADD COLUMN "minimum_rank" "scout_rank";

@@ -54,7 +54,6 @@ function IconChip({
 
 export default function MethodPage() {
   const router = useRouter();
-  const [isAdultScoutFlow, setIsAdultScoutFlow] = useState(false);
 
   const [amount, setAmount] = useState<string | null>(null);
 

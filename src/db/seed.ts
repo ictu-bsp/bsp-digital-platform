@@ -11,6 +11,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { seedCouncils } from "./seeds/councils.seed";
 import { seedAdminUsers} from "./seeds/adminUsers.seed";
 import { seedActivities } from "./seeds/activities.seed";
+import { seedActivityRegistrations } from "./seeds/activityRegistrations.seed";
 import { seedScoutApplications } from "./seeds/scoutApplications.seed";
 
 dotenv.config({ path: ".env.local" });
@@ -47,6 +48,7 @@ async function main() {
   await seedScouts(db);
   await seedScoutApplications(db);
   await seedActivities(db);
+  await seedActivityRegistrations(db);
 
   console.log("🎉 Database seeded successfully.");
 

@@ -45,11 +45,6 @@ const RELATIONSHIP_OPTIONS = [
 
 export default function PersonalInfoPage() {
   const router = useRouter();
-  const [isAdultScoutFlow, setIsAdultScoutFlow] = useState(false);
-
-  useEffect(() => {
-    setIsAdultScoutFlow(localStorage.getItem("membershipFlow") === "adult_scout");
-  }, []);
 
   const {
     bloodType,
@@ -139,10 +134,9 @@ export default function PersonalInfoPage() {
         <h2 className="text-2xl font-semibold mb-4">Register Membership</h2>
 
         <RegistrationStepper
-          currentStep={isAdultScoutFlow ? 3 : 2}
-          totalSteps={isAdultScoutFlow ? 5 : 4}
+          currentStep={2}
+          totalSteps={4}
           currentLabel="Personal Info"
-          splitAfterStep={isAdultScoutFlow ? 2 : undefined}
         />
 
         {/* Blood Type */}

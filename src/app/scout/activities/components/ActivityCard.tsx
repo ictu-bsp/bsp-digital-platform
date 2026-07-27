@@ -5,6 +5,7 @@ import Image from "next/image";
 import {
   CalendarDaysIcon,
   MapPinIcon,
+  UserGroupIcon,
 } from "@heroicons/react/24/outline";
 
 import type { ActivityCardProps } from "@/types/activities";
@@ -41,6 +42,13 @@ export default function ActivityCard({
               {activity.location}
             </span>
           )}
+
+          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+            <UserGroupIcon className="h-3.5 w-3.5" />
+            {activity.maxParticipants != null
+              ? `${activity.registeredCount}/${activity.maxParticipants} joined`
+              : `${activity.registeredCount} joined`}
+          </span>
         </div>
       </div>
 
