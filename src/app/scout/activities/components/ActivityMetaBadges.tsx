@@ -22,9 +22,30 @@ export default function ActivityMetaBadges({
   cost = "Free",
   registrationDeadline,
 }: Props) {
-  const closed =
-    registrationDeadline &&
-    new Date(registrationDeadline) < new Date();
+  const deadlineDate = registrationDeadline
+    ? new Date(registrationDeadline)
+    : null;
+
+  const closed = deadlineDate != null && deadlineDate < new Date();
+
+  const formattedDeadline = deadlineDate
+    ? deadlineDate.toLocaleString("en-PH", {
+        dateStyle: "long",
+        timeStyle: "short",
+      })
+    : null;
+
+  // - No deadline set -> generic "Registration Open"
+  // - Deadline in the future -> "Registration Open until <date>"
+  // - Deadline has passed -> "Registration Closed since <date>"
+  const registrationLabel = (() => {
+    if (!formattedDeadline) {
+      return closed ? "Registration Closed" : "Registration Open";
+    }
+    return closed
+      ? `Registration Closed since ${formattedDeadline}`
+      : `Registration Open until ${formattedDeadline}`;
+  })();
 
   return (
     <div className="space-y-3">
@@ -58,10 +79,8 @@ export default function ActivityMetaBadges({
         }`}
       >
         <div className="flex items-center gap-2">
-          <DocumentTextIcon className="h-4 w-4" />
-          <span>
-            {closed ? "Registration Closed" : "Registration Open"}
-          </span>
+          <DocumentTextIcon className="h-4 w-4 shrink-0" />
+          <span>{registrationLabel}</span>
         </div>
       </div>
     </div>

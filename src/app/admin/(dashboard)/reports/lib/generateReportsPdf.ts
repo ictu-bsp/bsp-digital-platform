@@ -33,6 +33,24 @@ type RevenueByTenureRow = {
   estimatedRevenue: number;
 };
 
+type EnrolleeDetailRow = {
+  scoutId: string;
+  membershipNumber: string | null;
+  firstName: string;
+  middleName: string | null;
+  lastName: string;
+  email: string;
+  councilName: string;
+  regionName: string | null;
+  registrationYears: number;
+  registrationStatus: string;
+  paymentStatus: string;
+  estimatedAmountPaid: number;
+  activitiesEnrolled: string[];
+};
+
+
+
 type ActivitySummaryRow = {
   activityId: string;
   title: string;
@@ -52,6 +70,7 @@ export type AllReports = {
   registrationsOverTime: OverTimeRow[];
   revenueByTenure: RevenueByTenureRow[];
   activitiesSummary: ActivitySummaryRow[];
+  enrolleeDetails: EnrolleeDetailRow[];
 };
 
 const GREEN: [number, number, number] = [22, 101, 52]; // matches Tailwind green-800
@@ -205,6 +224,36 @@ const NOTE_MAX_WIDTH = 515;
     theme: "grid",
     headStyles: { fillColor: GREEN },
     styles: { fontSize: 9 },
+  });
+  afterTable();
+
+  // ---- 7. Enrollee Details ----
+  doc.addPage();
+  cursorY = 50;
+  addSectionTitle("7. Enrollee Details");
+  autoTable(doc, {
+    startY: cursorY,
+    margin: { left: marginX, right: marginX },
+    head: [["Name", "Council / Region", "Registration", "Payment", "Amount", "Activities"]],
+    body: reports.enrolleeDetails.map((e) => [
+      `${e.firstName} ${e.middleName ? e.middleName + " " : ""}${e.lastName}`,
+      `${e.councilName} / ${e.regionName ?? "Unassigned"}`,
+      `${e.registrationYears === 1 ? "Single-Year" : `Multi-Year (${e.registrationYears}y)`} — ${e.registrationStatus}`,
+      e.paymentStatus,
+      `PHP ${e.estimatedAmountPaid.toLocaleString()}`,
+      e.activitiesEnrolled.length > 0 ? e.activitiesEnrolled.join(", ") : "—",
+    ]),
+    theme: "grid",
+    headStyles: { fillColor: GREEN },
+    styles: { fontSize: 7, cellWidth: "wrap" },
+    columnStyles: {
+      0: { cellWidth: 90 },
+      1: { cellWidth: 90 },
+      2: { cellWidth: 90 },
+      3: { cellWidth: 50 },
+      4: { cellWidth: 60 },
+      5: { cellWidth: 135 },
+    },
   });
 
   doc.save(`bsp-admin-reports-${new Date().toISOString().slice(0, 10)}.pdf`);

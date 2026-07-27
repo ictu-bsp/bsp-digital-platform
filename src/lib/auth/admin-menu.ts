@@ -42,6 +42,13 @@ export const ADMIN_MENU: AdminMenuItem[] = [
       "REGISTRAR",
     ],
   },
+
+{
+    label: "Activities",
+    href: "/admin/activities",
+    roles: ["CHIEF_EXECUTIVE", "REGISTRAR", "ACTIVITIES_OFFICER"],
+  },
+
   {
     label: "Officers", // create/manage admin (officer) accounts
     href: "/admin/officers",

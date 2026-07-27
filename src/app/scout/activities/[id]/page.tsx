@@ -113,7 +113,11 @@ export default async function ActivityDetailPage({
                       : undefined
                   }
                   location={activity.location}
-                  cost="Free"
+                  cost={
+                    activity.registrationFee
+                      ? `₱${activity.registrationFee}`
+                      : "Free"
+                  }
                   registrationDeadline={
                     activity.registrationDeadline?.toISOString()
                   }

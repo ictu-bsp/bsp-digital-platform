@@ -1,3 +1,5 @@
+// src/services/activity-registration.service.ts
+
 import { db } from "@/db";
 import { and, eq } from "drizzle-orm";
 import { scouts } from "@/db/schema/scouts";

@@ -15,6 +15,13 @@
       "when": 1784791424529,
       "tag": "0002_cold_pyro",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784979500000,
+      "tag": "0003_add_registration_fee",
+      "breakpoints": true
     }
   ]
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import PageLayout from "../../../components/PageLayout";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { QRCodeCanvas } from "qrcode.react";
 import html2canvas from "html2canvas-pro";
@@ -33,6 +33,51 @@ type CardVariant = "live" | "capture";
 // Standard CR80 ID Card dimensions (mm & pixels at ~300 DPI equivalent)
 const CAPTURE_WIDTH = 1012; // 85.6mm at 300 DPI equivalent
 const CAPTURE_HEIGHT = 638; // 53.98mm at 300 DPI equivalent
+
+
+function ShrinkToFit({
+  text,
+  maxFontSize,
+  minFontSize,
+  className,
+}: {
+  text: string;
+  maxFontSize: number;
+  minFontSize?: number;
+  className?: string;
+}) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [fontSize, setFontSize] = useState(maxFontSize);
+  const floor = minFontSize ?? maxFontSize * 0.55;
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    let size = maxFontSize;
+    el.style.fontSize = `${size}px`;
+
+    // Step down in 0.5px increments until the text fits on one line,
+    // or we hit the minimum readable size.
+    while (el.scrollWidth > el.clientWidth && size > floor) {
+      size -= 0.5;
+      el.style.fontSize = `${size}px`;
+    }
+
+    setFontSize(size);
+  }, [text, maxFontSize, floor]);
+
+  return (
+    <span
+      ref={ref}
+      style={{ fontSize }}
+      className={`${className ?? ""} block overflow-hidden whitespace-nowrap`}
+    >
+      {text}
+    </span>
+  );
+}
+
 
 function CardFront({
   userData,
@@ -288,9 +333,11 @@ function CardBack({
           </div>
 
           <div className="flex flex-col">
-            <span className="font-semibold text-blue-900 border-b border-blue-900/40 pb-0.5 block truncate leading-none">
-              {userData.address}
-            </span>
+            <ShrinkToFit
+              text={userData.address}
+              maxFontSize={fs.data}
+              className="font-semibold text-blue-900 border-b border-blue-900/40 pb-0.5 leading-none"
+            />
             <span
               style={{ fontSize: fs.label }}
               className="text-blue-900/60 uppercase font-bold tracking-tighter pt-0.5 block"

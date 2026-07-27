@@ -5,6 +5,39 @@ import { useRouter, useSearchParams } from "next/navigation";
 import BackButton from "@/components-general/ui/BackButton";
 import jsPDF from "jspdf";
 
+
+async function loadWatermarkAsPngDataUrl(
+  svgUrl: string,
+  size = 600
+): Promise<string> {
+  const svgText = await (await fetch(svgUrl)).text();
+  const svgBlob = new Blob([svgText], { type: "image/svg+xml" });
+  const objectUrl = URL.createObjectURL(svgBlob);
+
+  try {
+    const img = document.createElement("img");
+    img.crossOrigin = "anonymous";
+
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error("Failed to load watermark SVG"));
+      img.src = objectUrl;
+    });
+
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas context unavailable");
+
+    ctx.drawImage(img, 0, 0, size, size);
+    return canvas.toDataURL("image/png");
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
+
 function formatTransactionId(id: string | null) {
   if (!id) return "—";
   // group into 4s for readability, e.g. pay_L6bawB3A -> 8907 2365 8711 style
@@ -20,7 +53,7 @@ function formatToday() {
   });
 }
 
-function generateReceiptPDF({
+async function generateReceiptPDF({
   transactionId,
   amount,
   methodLabel,
@@ -32,8 +65,30 @@ function generateReceiptPDF({
   const doc = new jsPDF({ unit: "pt", format: "a4" });
 
   const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
   const marginX = 56;
   let y = 70;
+
+  // Watermark — faint BSP logo centered behind the receipt content.
+  // Drawn first so all text below paints cleanly on top of it.
+  try {
+    const watermarkDataUrl = await loadWatermarkAsPngDataUrl(
+      "/bsp-logo-with-bkg.svg",
+      600
+    );
+    const wmSize = 320; // pt, roughly a third of the A4 page width
+    const wmX = (pageWidth - wmSize) / 2;
+    const wmY = (pageHeight - wmSize) / 2;
+
+    doc.saveGraphicsState();
+    doc.setGState(new (doc as any).GState({ opacity: 0.07 }));
+    doc.addImage(watermarkDataUrl, "PNG", wmX, wmY, wmSize, wmSize);
+    doc.restoreGraphicsState();
+  } catch (err) {
+    // Non-fatal — if the watermark can't load for any reason, the receipt
+    // should still generate without it rather than blocking the download.
+    console.error("Receipt watermark failed to load:", err);
+  }
 
   // Header
   doc.setFont("helvetica", "bold");
@@ -207,9 +262,9 @@ function SuccessPageContent() {
         {isSuccess && (
           <button
             type="button"
-            onClick={() =>
-              generateReceiptPDF({ transactionId, amount, methodLabel })
-            }
+            onClick={() => {
+              void generateReceiptPDF({ transactionId, amount, methodLabel });
+            }}
             className="rounded-lg py-3 px-4 mt-6 w-full border-2 border-emerald-800 text-emerald-800 text-lg font-medium hover:bg-emerald-50 transition-colors"
           >
             Download Receipt

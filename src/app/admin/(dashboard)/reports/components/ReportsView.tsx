@@ -1,4 +1,4 @@
-// src/app/admin/reports/components/ReportsView.tsx
+// src/app/admin/dashbaord/reports/components/ReportsView.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -33,6 +33,26 @@ type RevenueByTenureRow = {
   estimatedRevenue: number;
 };
 
+
+
+
+
+type EnrolleeDetailRow = {
+  scoutId: string;
+  membershipNumber: string | null;
+  firstName: string;
+  middleName: string | null;
+  lastName: string;
+  email: string;
+  councilName: string;
+  regionName: string | null;
+  registrationYears: number;
+  registrationStatus: string;
+  paymentStatus: string;
+  estimatedAmountPaid: number;
+  activitiesEnrolled: string[];
+};
+
 type ActivitySummaryRow = {
   activityId: string;
   title: string;
@@ -52,6 +72,7 @@ type AllReports = {
   registrationsOverTime: OverTimeRow[];
   revenueByTenure: RevenueByTenureRow[];
   activitiesSummary: ActivitySummaryRow[];
+  enrolleeDetails: EnrolleeDetailRow[];
 };
 
 type Enrollee = {
@@ -239,61 +260,64 @@ export default function ReportsView() {
         </StatCard>
       </div>
 
-      {/* Drill-down panel for selected activity's enrollees */}
+      {/* Drill-down modal for selected activity's enrollees */}
       {selectedActivity && (
-        <div className="bg-white rounded-2xl shadow p-6 text-zinc-900">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-green-800">
-              Enrolled Scouts — {selectedActivity.title}
-            </h3>
-            <button
-              type="button"
-              onClick={() => setSelectedActivity(null)}
-              className="text-sm text-zinc-500 underline"
-            >
-              Close
-            </button>
-          </div>
-
-          {enrolleesLoading && <p className="text-zinc-500">Loading enrollees...</p>}
-
-          {!enrolleesLoading && enrollees.length === 0 && (
-            <p className="text-sm text-zinc-500">No scouts enrolled in this activity.</p>
-          )}
-
-          {!enrolleesLoading && enrollees.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead>
-                  <tr className="border-b border-zinc-200 text-zinc-500">
-                    <th className="py-2 pr-4">Name</th>
-                    <th className="py-2 pr-4">Membership #</th>
-                    <th className="py-2 pr-4">Rank</th>
-                    <th className="py-2 pr-4">Status</th>
-                    <th className="py-2 pr-4">Email</th>
-                    <th className="py-2 pr-4">Registered At</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {enrollees.map((e) => (
-                    <tr key={e.registrationId} className="border-b border-zinc-100">
-                      <td className="py-2 pr-4">
-                        {e.firstName} {e.middleName ? `${e.middleName} ` : ""}
-                        {e.lastName}
-                      </td>
-                      <td className="py-2 pr-4">{e.membershipNumber ?? "—"}</td>
-                      <td className="py-2 pr-4">{e.rank}</td>
-                      <td className="py-2 pr-4">{e.scoutStatus}</td>
-                      <td className="py-2 pr-4">{e.email}</td>
-                      <td className="py-2 pr-4">
-                        {new Date(e.registeredAt).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[85vh] overflow-y-auto p-8 text-zinc-900">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-green-800">
+                Enrolled Scouts — {selectedActivity.title}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setSelectedActivity(null)}
+                className="text-red-600 border border-red-600 rounded-full w-7 h-7 flex items-center justify-center text-sm"
+                aria-label="Close"
+              >
+                ✕
+              </button>
             </div>
-          )}
+
+            {enrolleesLoading && <p className="text-zinc-500">Loading enrollees...</p>}
+
+            {!enrolleesLoading && enrollees.length === 0 && (
+              <p className="text-sm text-zinc-500">No scouts enrolled in this activity.</p>
+            )}
+
+            {!enrolleesLoading && enrollees.length > 0 && (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                  <thead>
+                    <tr className="border-b border-zinc-200 text-zinc-500">
+                      <th className="py-2 pr-4">Name</th>
+                      <th className="py-2 pr-4">Membership #</th>
+                      <th className="py-2 pr-4">Rank</th>
+                      <th className="py-2 pr-4">Status</th>
+                      <th className="py-2 pr-4">Email</th>
+                      <th className="py-2 pr-4">Registered At</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {enrollees.map((e) => (
+                      <tr key={e.registrationId} className="border-b border-zinc-100">
+                        <td className="py-2 pr-4">
+                          {e.firstName} {e.middleName ? `${e.middleName} ` : ""}
+                          {e.lastName}
+                        </td>
+                        <td className="py-2 pr-4">{e.membershipNumber ?? "—"}</td>
+                        <td className="py-2 pr-4">{e.rank}</td>
+                        <td className="py-2 pr-4">{e.scoutStatus}</td>
+                        <td className="py-2 pr-4">{e.email}</td>
+                        <td className="py-2 pr-4">
+                          {new Date(e.registeredAt).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

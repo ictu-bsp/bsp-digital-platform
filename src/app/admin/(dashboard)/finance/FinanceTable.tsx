@@ -115,8 +115,19 @@ export default function FinanceTable({
               </div>
 
               <div>
-                <label className="text-xs text-zinc-500">Registration Years</label>
-                <p className="border rounded px-3 py-2">{selected.registrationYears}</p>
+                <label className="text-xs text-zinc-500">Registration Type</label>
+                <p className="border rounded px-3 py-2">
+                  {selected.registrationYears === 1
+                    ? "Single-Year"
+                    : `Multi-Year (${selected.registrationYears} yrs)`}
+                </p>
+              </div>
+
+              <div>
+                <label className="text-xs text-zinc-500">Amount to Pay</label>
+                <p className="border rounded px-3 py-2 font-medium">
+                  ₱{selected.amount.toLocaleString()}
+                </p>
               </div>
 
               <div className="col-span-2">
