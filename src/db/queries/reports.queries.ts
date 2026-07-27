@@ -13,7 +13,7 @@
 // ₱50/year.
 
 import { db } from "@/db";
-import { sql, eq, and } from "drizzle-orm";
+import { sql, eq, and, inArray } from "drizzle-orm";
 import {
   scoutApplications,
   payments,
@@ -46,28 +46,72 @@ export async function getRegistrationSummary() {
 }
 
 // ---------------------------------------------------------------------------
-// 2. Payment Collections — payments joined to registrations, grouped by
-//    paymentStatus. Amount is an ESTIMATE (registrationYears * 50).
+// 2. Payment Collections — one payment picked per registration (prefer the
+//    most recent "paid" row, else the most recent row overall) to avoid
+//    double-counting a registration that has multiple payment attempts
+//    (e.g. an old "awaiting_payment" retry row plus the final "paid" row).
+//    Amount is an ESTIMATE (registrationYears * 50).
 // ---------------------------------------------------------------------------
 export async function getPaymentCollectionsSummary() {
-  const rows = await db
+  const rawRows = await db
     .select({
+      registrationId: payments.registrationId,
       paymentStatus: payments.paymentStatus,
-      count: sql<number>`count(*)`.mapWith(Number),
-      estimatedAmount: sql<number>`coalesce(sum(${registrations.registrationYears} * ${FEE_PER_YEAR}), 0)`.mapWith(
-        Number
-      ),
+      createdAt: payments.createdAt,
+      registrationYears: registrations.registrationYears,
     })
     .from(payments)
-    .innerJoin(registrations, eq(payments.registrationId, registrations.id))
-    .groupBy(payments.paymentStatus);
+    .innerJoin(registrations, eq(payments.registrationId, registrations.id));
 
-  const totalEstimatedAmount = rows.reduce((sum, r) => sum + r.estimatedAmount, 0);
+  // Dedupe: keep exactly one payment row per registrationId.
+  const winnerByRegistration = new Map<string, (typeof rawRows)[number]>();
+
+  for (const row of rawRows) {
+    const existing = winnerByRegistration.get(row.registrationId);
+    if (!existing) {
+      winnerByRegistration.set(row.registrationId, row);
+      continue;
+    }
+
+    const rowIsPaid = row.paymentStatus === "paid";
+    const existingIsPaid = existing.paymentStatus === "paid";
+
+    if (rowIsPaid && !existingIsPaid) {
+      // Prefer a "paid" row over a non-paid row.
+      winnerByRegistration.set(row.registrationId, row);
+    } else if (rowIsPaid === existingIsPaid) {
+      // Same "paid-ness" — prefer the more recent createdAt.
+      if (new Date(row.createdAt).getTime() > new Date(existing.createdAt).getTime()) {
+        winnerByRegistration.set(row.registrationId, row);
+      }
+    }
+    // else: existing is already "paid" and row isn't — keep existing.
+  }
+
+  const winners = Array.from(winnerByRegistration.values());
+
+  // Now group the deduped winners by paymentStatus.
+  const grouped = new Map<string, { count: number; estimatedAmount: number }>();
+
+  for (const row of winners) {
+    const bucket = grouped.get(row.paymentStatus) ?? { count: 0, estimatedAmount: 0 };
+    bucket.count += 1;
+    bucket.estimatedAmount += row.registrationYears * FEE_PER_YEAR;
+    grouped.set(row.paymentStatus, bucket);
+  }
+
+  const byStatus = Array.from(grouped.entries()).map(([paymentStatus, v]) => ({
+    paymentStatus,
+    count: v.count,
+    estimatedAmount: v.estimatedAmount,
+  }));
+
+  const totalEstimatedAmount = byStatus.reduce((sum, r) => sum + r.estimatedAmount, 0);
 
   return {
-    byStatus: rows,
+    byStatus,
     totalEstimatedAmount,
-    note: "Amounts are estimates (registrationYears x PHP 50/year). Payment method breakdown is not available — the payments table does not store a method column.",
+    note: "Amounts are estimates (registrationYears x PHP 50/year), one payment counted per registration. Payment method breakdown is not available — the payments table does not store a method column.",
   };
 }
 
@@ -182,7 +226,6 @@ export async function getActivityEnrollees(activityId: string) {
       middleName: users.middleName,
       lastName: users.lastName,
       email: users.email,
-      gender: users.gender,
       birthdate: users.birthdate,
     })
     .from(activityRegistrations)
@@ -193,6 +236,108 @@ export async function getActivityEnrollees(activityId: string) {
 
   return rows;
 }
+
+
+// ---------------------------------------------------------------------------
+// 7. Enrollee Details — one row per scout registration: who they are,
+//    what they paid (estimated), and what activities they enrolled in.
+//    Fetches payments and activity enrollments separately (not via
+//    leftJoin) to avoid row-duplication, same pattern as getPaymentCollectionsSummary().
+// ---------------------------------------------------------------------------
+export async function getEnrolleeDetailsReport() {
+  const baseRows = await db
+    .select({
+      registrationId: registrations.id,
+      scoutId: scouts.id,
+      membershipNumber: scouts.membershipNumber,
+      firstName: users.firstName,
+      middleName: users.middleName,
+      lastName: users.lastName,
+      email: users.email,
+      councilName: councils.name,
+      regionName: regions.name,
+      registrationYears: registrations.registrationYears,
+      registrationStatus: registrations.status,
+    })
+    .from(registrations)
+    .innerJoin(scouts, eq(registrations.scoutId, scouts.id))
+    .innerJoin(users, eq(scouts.userId, users.id))
+    .innerJoin(councils, eq(registrations.councilId, councils.id))
+    .leftJoin(regions, eq(councils.regionId, regions.id))
+    .orderBy(users.lastName);
+
+  const registrationIds = baseRows.map((r) => r.registrationId);
+  const scoutIds = baseRows.map((r) => r.scoutId);
+
+  // One payment per registration — prefer most recent "paid", else most recent overall.
+  const rawPayments = registrationIds.length
+    ? await db
+        .select({
+          registrationId: payments.registrationId,
+          paymentStatus: payments.paymentStatus,
+          createdAt: payments.createdAt,
+        })
+        .from(payments)
+        .where(inArray(payments.registrationId, registrationIds))
+    : [];
+
+  const bestPaymentByReg = new Map<string, { paymentStatus: string; createdAt: Date }>();
+  for (const row of rawPayments) {
+    const existing = bestPaymentByReg.get(row.registrationId);
+    if (!existing) {
+      bestPaymentByReg.set(row.registrationId, row);
+      continue;
+    }
+    const rowPaid = row.paymentStatus === "paid";
+    const existingPaid = existing.paymentStatus === "paid";
+    if (rowPaid && !existingPaid) {
+      bestPaymentByReg.set(row.registrationId, row);
+    } else if (rowPaid === existingPaid && new Date(row.createdAt) > new Date(existing.createdAt)) {
+      bestPaymentByReg.set(row.registrationId, row);
+    }
+  }
+
+  // All activities a scout enrolled in, grouped by scoutId.
+  const rawActivityRegs = scoutIds.length
+    ? await db
+        .select({
+          scoutId: activityRegistrations.scoutId,
+          title: activities.title,
+        })
+        .from(activityRegistrations)
+        .innerJoin(activities, eq(activityRegistrations.activityId, activities.id))
+        .where(inArray(activityRegistrations.scoutId, scoutIds))
+    : [];
+
+  const activitiesByScout = new Map<string, string[]>();
+  for (const row of rawActivityRegs) {
+    const list = activitiesByScout.get(row.scoutId) ?? [];
+    list.push(row.title);
+    activitiesByScout.set(row.scoutId, list);
+  }
+
+  return baseRows.map((row) => {
+    const bestPayment = bestPaymentByReg.get(row.registrationId);
+    const isPaid = bestPayment?.paymentStatus === "paid";
+
+    return {
+      scoutId: row.scoutId,
+      membershipNumber: row.membershipNumber,
+      firstName: row.firstName,
+      middleName: row.middleName,
+      lastName: row.lastName,
+      email: row.email,
+      councilName: row.councilName,
+      regionName: row.regionName,
+      registrationYears: row.registrationYears,
+      registrationStatus: row.registrationStatus,
+      paymentStatus: bestPayment?.paymentStatus ?? "no_payment",
+      estimatedAmountPaid: isPaid ? row.registrationYears * FEE_PER_YEAR : 0,
+      activitiesEnrolled: activitiesByScout.get(row.scoutId) ?? [],
+    };
+  });
+}
+
 
 // ---------------------------------------------------------------------------
 // Convenience: fetch all 6 reports at once for the main reports page
@@ -205,6 +350,7 @@ export async function getAllReports() {
     registrationsOverTime,
     revenueByTenure,
     activitiesSummary,
+    enrolleeDetails,
   ] = await Promise.all([
     getRegistrationSummary(),
     getPaymentCollectionsSummary(),
@@ -212,6 +358,7 @@ export async function getAllReports() {
     getRegistrationsOverTime(),
     getRevenueByTenure(),
     getActivitiesSummary(),
+    getEnrolleeDetailsReport(),
   ]);
 
   return {
@@ -221,5 +368,6 @@ export async function getAllReports() {
     registrationsOverTime,
     revenueByTenure,
     activitiesSummary,
+    enrolleeDetails,
   };
 }

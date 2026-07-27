@@ -4,6 +4,7 @@ import { scouts, users, councils } from "@/db/schema";
 import { registrations } from "@/db/schema/scout-registrations";
 import { payments } from "@/db/schema/payments";
 import { scoutApplications } from "@/db/schema/scoutApplications";
+import { activityRegistrations } from "@/db/schema/activity-registrations";
 
 export async function getScoutByUserId(userId: string) {
   const [scout] = await db
@@ -81,6 +82,10 @@ export async function deleteScoutPermanently(scoutId: string) {
       .select({ userId: scouts.userId })
       .from(scouts)
       .where(eq(scouts.id, scoutId));
+
+    await tx
+      .delete(activityRegistrations)
+      .where(eq(activityRegistrations.scoutId, scoutId));
 
     const scoutRegistrations = await tx
       .select({ id: registrations.id })

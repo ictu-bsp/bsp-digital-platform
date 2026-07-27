@@ -33,6 +33,24 @@ type RevenueByTenureRow = {
   estimatedRevenue: number;
 };
 
+type EnrolleeDetailRow = {
+  scoutId: string;
+  membershipNumber: string | null;
+  firstName: string;
+  middleName: string | null;
+  lastName: string;
+  email: string;
+  councilName: string;
+  regionName: string | null;
+  registrationYears: number;
+  registrationStatus: string;
+  paymentStatus: string;
+  estimatedAmountPaid: number;
+  activitiesEnrolled: string[];
+};
+
+
+
 type ActivitySummaryRow = {
   activityId: string;
   title: string;
@@ -52,6 +70,7 @@ export type AllReports = {
   registrationsOverTime: OverTimeRow[];
   revenueByTenure: RevenueByTenureRow[];
   activitiesSummary: ActivitySummaryRow[];
+  enrolleeDetails: EnrolleeDetailRow[];
 };
 
 const GREEN: [number, number, number] = [22, 101, 52]; // matches Tailwind green-800
@@ -72,6 +91,24 @@ export function generateReportsPdf(reports: AllReports) {
   const afterTable = () => {
     // jspdf-autotable attaches finalY to the doc instance after each call
     cursorY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 24;
+  };
+
+const NOTE_MAX_WIDTH = 515;
+  const NOTE_LINE_HEIGHT = 10;
+
+  // Draws an italic footnote in the gap under a table, then returns the
+  // Y position the next section should start at — accounting for how many
+  // lines the note actually wrapped to (fixes overlap with the next
+  // section's title when a note is long enough to wrap to 2+ lines).
+  const addNoteAndAdvance = (text: string, startY: number): number => {
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(140, 140, 140);
+    const noteY = startY - 14;
+    const wrappedLines = doc.splitTextToSize(text, NOTE_MAX_WIDTH);
+    doc.text(wrappedLines, marginX, noteY);
+    const noteBottom = noteY + wrappedLines.length * NOTE_LINE_HEIGHT;
+    return Math.max(startY, noteBottom + 12);
   };
 
   // ---- Header ----
@@ -118,10 +155,7 @@ export function generateReportsPdf(reports: AllReports) {
     styles: { fontSize: 9 },
   });
   afterTable();
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "italic");
-  doc.setTextColor(140, 140, 140);
-  doc.text(reports.paymentCollections.note, marginX, cursorY - 14, { maxWidth: 515 });
+  cursorY = addNoteAndAdvance(reports.paymentCollections.note, cursorY);
 
   // ---- 3. Registrations by Region/Council ----
   addSectionTitle("3. Registrations by Region/Council");
@@ -169,13 +203,9 @@ export function generateReportsPdf(reports: AllReports) {
     styles: { fontSize: 9 },
   });
   afterTable();
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "italic");
-  doc.setTextColor(140, 140, 140);
-  doc.text(
+  cursorY = addNoteAndAdvance(
     "Revenue is estimated at PHP 50/year and counts paid registrations only.",
-    marginX,
-    cursorY - 14
+    cursorY
   );
 
   // ---- 6. Activities & Enrollment ----
@@ -194,6 +224,36 @@ export function generateReportsPdf(reports: AllReports) {
     theme: "grid",
     headStyles: { fillColor: GREEN },
     styles: { fontSize: 9 },
+  });
+  afterTable();
+
+  // ---- 7. Enrollee Details ----
+  doc.addPage();
+  cursorY = 50;
+  addSectionTitle("7. Enrollee Details");
+  autoTable(doc, {
+    startY: cursorY,
+    margin: { left: marginX, right: marginX },
+    head: [["Name", "Council / Region", "Registration", "Payment", "Amount", "Activities"]],
+    body: reports.enrolleeDetails.map((e) => [
+      `${e.firstName} ${e.middleName ? e.middleName + " " : ""}${e.lastName}`,
+      `${e.councilName} / ${e.regionName ?? "Unassigned"}`,
+      `${e.registrationYears === 1 ? "Single-Year" : `Multi-Year (${e.registrationYears}y)`} — ${e.registrationStatus}`,
+      e.paymentStatus,
+      `PHP ${e.estimatedAmountPaid.toLocaleString()}`,
+      e.activitiesEnrolled.length > 0 ? e.activitiesEnrolled.join(", ") : "—",
+    ]),
+    theme: "grid",
+    headStyles: { fillColor: GREEN },
+    styles: { fontSize: 7, cellWidth: "wrap" },
+    columnStyles: {
+      0: { cellWidth: 90 },
+      1: { cellWidth: 90 },
+      2: { cellWidth: 90 },
+      3: { cellWidth: 50 },
+      4: { cellWidth: 60 },
+      5: { cellWidth: 135 },
+    },
   });
 
   doc.save(`bsp-admin-reports-${new Date().toISOString().slice(0, 10)}.pdf`);

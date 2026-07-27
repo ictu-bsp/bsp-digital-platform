@@ -1,0 +1,1 @@
+ALTER TABLE "activities" ADD COLUMN "registration_fee" integer;

@@ -19,7 +19,7 @@ interface Props {
 }
 
 export default async function JoinActivityPage({
-  params,
+  params, 
 }: Props) {
   const user = await getCurrentUser();
 

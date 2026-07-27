@@ -22,6 +22,8 @@ export const ActivitySchema = z.object({
 
   maxParticipants: z.number().optional(),
 
+  registrationFee: z.number().optional(),
+
   isPublished: z.boolean().default(true),
 
   imageUrl: z.string().optional(),

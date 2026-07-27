@@ -19,6 +19,7 @@ import {
   getCouncilRegionBreakdown,
   getScoutRankBreakdown,
   getActivityParticipationStats,
+  getSexBreakdown,
 } from '@/services/admin.service';
 
 // Dashboard
@@ -295,6 +296,22 @@ export async function fetchActivityParticipationStats() {
     return {
       success: false,
       error: 'Failed to load activity participation stats.',
+    };
+  }
+}
+
+export async function fetchSexBreakdown() {
+  try {
+    const data = await getSexBreakdown();
+    return {
+      success: true,
+      data,
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      success: false,
+      error: 'Failed to load sex breakdown.',
     };
   }
 }

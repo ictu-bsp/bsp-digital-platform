@@ -35,6 +35,12 @@ export const activities = pgTable("activities", {
   // Capacity
   maxParticipants: integer("max_participants"),
 
+  // Fee
+  // Stored in pesos as an integer (whole pesos only, no centavos) to match
+  // the pattern already used for FEE_PER_YEAR in register/page.tsx.
+  // Nullable + defaults handled in the app layer: null/0 = free activity.
+  registrationFee: integer("registration_fee"),
+
   // Visibility
   isPublished: boolean("is_published")
     .default(true)

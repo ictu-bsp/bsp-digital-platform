@@ -34,6 +34,7 @@ export function ScoutRosterTable({ initialRoster }: Props) {
   const [roster, setRoster] = useState<RosterRow[]>(initialRoster);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   const handleToggle = async (scoutId: string, currentlyActive: boolean) => {
     setPendingId(scoutId);
@@ -73,23 +74,55 @@ export function ScoutRosterTable({ initialRoster }: Props) {
     setRoster((prev) => prev.filter((row) => row.scoutId !== scoutId));
   };
 
+  const filteredRoster = roster.filter((row) => {
+    const query = search.trim().toLowerCase();
+    if (!query) return true;
+    const fullName = `${row.firstName ?? ""} ${row.lastName ?? ""}`.toLowerCase();
+    return (
+      fullName.includes(query) ||
+      (row.email ?? "").toLowerCase().includes(query) ||
+      (row.councilName ?? "").toLowerCase().includes(query) ||
+      (row.membershipNumber ?? "").toLowerCase().includes(query) ||
+      row.rank.toLowerCase().includes(query)
+    );
+  });
+
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-md p-4 bg-white">
-      <table className="w-full text-left text-sm text-gray-500">
+    <div className="flex flex-col gap-3">
+      <input
+        type="text"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Search by name, email, council, membership no., or scout type..."
+        className="w-full max-w-sm border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-green-800"
+      />
+
+      <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-md p-4 bg-white">
+        <table className="w-full text-left text-sm text-gray-500">
         <thead className="bg-green-800 text-xs text-white uppercase font-semibold">
           <tr>
             <th className="px-4 py-3">Scout Name</th>
             <th className="px-4 py-3">Email Address</th>
             <th className="px-4 py-3">Council</th>
             <th className="px-4 py-3">Membership No.</th>
-            <th className="px-4 py-3">App Status</th>
-            <th className="px-4 py-3">Membership</th>
+            <th className="px-4 py-3">Scout Type</th>
+            <th className="px-4 py-3">Status</th>
             <th className="px-4 py-3">Action</th>
           </tr>
         </thead>
 
         <tbody className="divide-y divide-gray-100">
-          {roster.map((row) => (
+          {filteredRoster.length === 0 && (
+            <tr>
+              <td colSpan={7} className="px-4 py-6 text-center text-gray-400">
+                {roster.length === 0
+                  ? "No scouts have registered yet."
+                  : "No scouts match your search."}
+              </td>
+            </tr>
+          )}
+
+          {filteredRoster.map((row) => (
             <tr key={row.scoutId} className="hover:bg-gray-50 transition-colors">
               <td className="px-4 py-3 font-medium text-gray-900">
                 {row.lastName}, {row.firstName}
@@ -103,17 +136,23 @@ export function ScoutRosterTable({ initialRoster }: Props) {
                 {row.membershipNumber ?? "—"}
               </td>
 
-              <td className="px-4 py-3">{row.status}</td>
+              <td className="px-4 py-3">{row.rank || "—"}</td>
 
               <td className="px-4 py-3">
                 <span
                   className={`text-xs font-bold px-2 py-1 rounded ${
-                    row.isActive
+                    !row.isActive
+                      ? "bg-red-100 text-red-700"
+                      : row.status === "ACTIVE"
                       ? "bg-green-100 text-green-700"
-                      : "bg-red-100 text-red-700"
+                      : row.status === "PENDING"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : row.status === "SUSPENDED"
+                      ? "bg-orange-100 text-orange-700"
+                      : "bg-zinc-100 text-zinc-600"
                   }`}
                 >
-                  {row.isActive ? "Active" : "Revoked"}
+                  {!row.isActive ? "Revoked" : row.status}
                 </span>
               </td>
 
@@ -149,7 +188,8 @@ export function ScoutRosterTable({ initialRoster }: Props) {
             </tr>
           ))}
         </tbody>
-      </table>
+        </table>
+      </div>
     </div>
   );
 }

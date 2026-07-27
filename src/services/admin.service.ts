@@ -16,6 +16,7 @@ import {
   regions,
   activities,
   activityRegistrations,
+  adminUsers,
 } from "@/db/schema";
 
 import type {
@@ -40,6 +41,7 @@ export type PendingRegistrationRecord = {
   council: string;
 
   registrationYears: number;
+  amount: number; // Estimated total (registrationYears * REGISTRATION_FEE_PER_YEAR) — payments table has no stored amount column
   startDate: string;
   endDate: string;
   status: string;
@@ -351,6 +353,11 @@ export async function getPendingRegistrations(): Promise<PendingRegistrationReco
           userId: scoutApplications.userId,
           address: scoutApplications.address,
           telephoneNumber: scoutApplications.telephoneNumber,
+          scoutingPosition: scoutApplications.scoutingPosition,
+          advancementRank: scoutApplications.advancementRank,
+          tenure: scoutApplications.tenure,
+          region: scoutApplications.region,
+          sponsoringInstitution: scoutApplications.sponsoringInstitution,
           createdAt: scoutApplications.createdAt,
         })
         .from(scoutApplications)
@@ -359,7 +366,16 @@ export async function getPendingRegistrations(): Promise<PendingRegistrationReco
 
   const latestApplicationByUserId = new Map<
     string,
-    { address: string | null; telephoneNumber: string | null; createdAt: Date }
+    {
+      address: string | null;
+      telephoneNumber: string | null;
+      scoutingPosition: string | null;
+      advancementRank: string | null;
+      tenure: number | null;
+      region: string | null;
+      sponsoringInstitution: string | null;
+      createdAt: Date;
+    }
   >();
 
   for (const application of relatedApplications) {
@@ -420,18 +436,19 @@ export async function getPendingRegistrations(): Promise<PendingRegistrationReco
       return bestPayment?.paymentStatus === "paid";
     })
     .map((record) => {
-      let extraDetails: PendingRegistrationRecord["extraDetails"] = {};
-
-      if (record.remarks) {
-        try {
-          extraDetails = JSON.parse(record.remarks);
-        } catch {
-          extraDetails = {};
-        }
-      }
-
       const bestPayment = bestPaymentByRegId.get(record.id);
       const application = latestApplicationByUserId.get(record.userId);
+
+      const extraDetails: PendingRegistrationRecord["extraDetails"] = {
+        scoutingPosition: application?.scoutingPosition ?? undefined,
+        advancementRank: application?.advancementRank ?? undefined,
+        tenure:
+          application?.tenure !== null && application?.tenure !== undefined
+            ? String(application.tenure)
+            : undefined,
+        region: application?.region ?? undefined,
+        sponsoringInstitution: application?.sponsoringInstitution ?? undefined,
+      };
 
       return {
         id: record.id,
@@ -448,10 +465,10 @@ export async function getPendingRegistrations(): Promise<PendingRegistrationReco
 
         council: record.council,
         registrationYears: record.registrationYears,
+        amount: record.registrationYears * REGISTRATION_FEE_PER_YEAR,
         startDate: record.startDate,
         endDate: record.endDate,
         status: record.status,
-
         isExistingScout: activeScoutIds.has(record.scoutId),
 
         paymentStatus: bestPayment?.paymentStatus ?? null,
@@ -625,6 +642,11 @@ export async function getRegistrationsAwaitingFinance(): Promise<PendingRegistra
           userId: scoutApplications.userId,
           address: scoutApplications.address,
           telephoneNumber: scoutApplications.telephoneNumber,
+          scoutingPosition: scoutApplications.scoutingPosition,
+          advancementRank: scoutApplications.advancementRank,
+          tenure: scoutApplications.tenure,
+          region: scoutApplications.region,
+          sponsoringInstitution: scoutApplications.sponsoringInstitution,
           createdAt: scoutApplications.createdAt,
         })
         .from(scoutApplications)
@@ -633,7 +655,16 @@ export async function getRegistrationsAwaitingFinance(): Promise<PendingRegistra
 
   const latestApplicationByUserId = new Map<
     string,
-    { address: string | null; telephoneNumber: string | null; createdAt: Date }
+    {
+      address: string | null;
+      telephoneNumber: string | null;
+      scoutingPosition: string;
+      advancementRank: string;
+      tenure: number;
+      region: string;
+      sponsoringInstitution: string | null;
+      createdAt: Date;
+    }
   >();
 
   for (const application of relatedApplications) {
@@ -678,18 +709,19 @@ export async function getRegistrationsAwaitingFinance(): Promise<PendingRegistra
   }
 
   return records.map((record) => {
-    let extraDetails: PendingRegistrationRecord["extraDetails"] = {};
-
-    if (record.remarks) {
-      try {
-        extraDetails = JSON.parse(record.remarks);
-      } catch {
-        extraDetails = {};
-      }
-    }
-
     const bestPayment = bestPaymentByRegId.get(record.id);
     const application = latestApplicationByUserId.get(record.userId);
+
+    const extraDetails: PendingRegistrationRecord["extraDetails"] = {
+      scoutingPosition: application?.scoutingPosition,
+      advancementRank: application?.advancementRank,
+      tenure:
+        application?.tenure !== undefined
+          ? String(application.tenure)
+          : undefined,
+      region: application?.region,
+      sponsoringInstitution: application?.sponsoringInstitution ?? undefined,
+    };
 
     return {
       id: record.id,
@@ -706,6 +738,7 @@ export async function getRegistrationsAwaitingFinance(): Promise<PendingRegistra
 
       council: record.council,
       registrationYears: record.registrationYears,
+      amount: record.registrationYears * REGISTRATION_FEE_PER_YEAR,
       startDate: record.startDate,
       endDate: record.endDate,
       status: record.status,
@@ -893,6 +926,22 @@ export async function getScoutRankBreakdown() {
   return rows;
 }
 
+export async function getSexBreakdown() {
+
+
+
+  const rows = await db
+    .select({
+      sex: users.sex,
+      value: count(),
+    })
+    .from(scouts)
+    .innerJoin(users, eq(scouts.userId, users.id))
+    .groupBy(users.sex);
+
+  return rows;
+}
+
 export async function getActivityParticipationStats() {
   const rows = await db
     .select({
@@ -910,4 +959,42 @@ export async function getActivityParticipationStats() {
     .orderBy(desc(activities.startDate));
 
   return rows;
+}
+
+
+// -------------------------------------------------
+// Officers (adminUsers table — the real, live admin accounts
+// table used by src/app/api/admin/login/route.ts). Not to be
+// confused with the older `administrators`/`roles` tables used
+// above in getAdministrators()/getAdministratorById() — those
+// are a separate, stale path.
+// -------------------------------------------------
+
+export type AdminUserRecord = {
+  id: string;
+  username: string;
+  fullName: string;
+  role: string;
+  active: boolean;
+  council: string;
+  lastLoginAt: Date | null;
+  createdAt: Date;
+};
+
+export async function getAdminUsers(): Promise<AdminUserRecord[]> {
+  const records = await db
+    .select({
+      id: adminUsers.id,
+      username: adminUsers.username,
+      fullName: adminUsers.fullName,
+      role: adminUsers.role,
+      active: adminUsers.active,
+      council: councils.name,
+      lastLoginAt: adminUsers.lastLoginAt,
+      createdAt: adminUsers.createdAt,
+    })
+    .from(adminUsers)
+    .innerJoin(councils, eq(adminUsers.councilId, councils.id));
+
+  return records;
 }
