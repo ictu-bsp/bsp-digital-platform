@@ -1,173 +1,93 @@
 // src/app/scout/activities/[id]/page.tsx
-
 import Link from "next/link";
+import Image from "next/image";
 import { redirect } from "next/navigation";
-
 import Header from "@/app/scout/components/Header";
 import BottomNav from "@/app/scout/components/BottomNav";
 import JoinButton from "@/app/scout/activities/components/JoinButton";
 import LeaveButton from "@/app/scout/activities/components/LeaveButton";
 import ActivityMetaBadges from "@/app/scout/activities/components/ActivityMetaBadges";
-
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { getActivityById } from "@/services/activity.service";
-import {
-  getScoutByUserId,
-  isScoutRegistered,
-  getRegisteredCount,
-} from "@/services/activity-registration.service";
-
+import { getScoutByUserId, isScoutRegistered, getRegisteredCount }
+  from "@/services/activity-registration.service";
 interface PageProps {
-  params: Promise<{
-    id: string;
-  }>;
+  params: Promise<{ id: string }>;
 }
-
-export default async function ActivityDetailPage({
-  params,
-}: PageProps) {
+// Displays detailed information about a specific scouting activity and handles registration status
+export default async function ActivityDetailPage({ params }: PageProps) {
   const user = await getCurrentUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
+  if (!user) redirect("/login");
   const { id } = await params;
-
-  // Get activity first
   const activity = await getActivityById(id);
-
-  // Activity doesn't exist
   if (!activity) {
     return (
       <main className="min-h-screen bg-gradient-to-b from-white via-[#f7fdf8] to-[#e7f6ea] text-slate-900">
         <div className="mx-auto flex min-h-screen max-w-md flex-col">
-          <Header
-            userName={user.firstName}
-            avatarUrl={user.avatarUrl ?? undefined}
-          />
-
+          <Header userName={user.firstName} avatarUrl={user.avatarUrl ?? undefined} />
           <div className="flex-1 px-4 py-6">
-            <p className="text-sm text-slate-600">
-              Activity not found.
-            </p>
+            <p className="text-sm text-slate-600">Activity not found.</p>
           </div>
-
           <BottomNav />
         </div>
       </main>
     );
   }
-
-  // Get scout profile
   const scout = await getScoutByUserId(user.id);
-
-  // User isn't a scout yet
-  if (!scout) {
-    redirect("/scout/membership");
-  }
-
-  // Safe to check registration now
-  const alreadyJoined = await isScoutRegistered(
-    scout.id,
-    activity.id
-  );
-
+  if (!scout) redirect("/scout/membership");
+  const alreadyJoined = await isScoutRegistered(scout.id, activity.id);
   const registeredCount = await getRegisteredCount(activity.id);
-  const isFull =
-    activity.maxParticipants != null &&
-    registeredCount >= activity.maxParticipants;
-
-  const formatDate = (date: Date) =>
-    date.toLocaleString("en-PH", {
-      dateStyle: "long",
-      timeStyle: "short",
-    });
-
+  const isFull = activity.maxParticipants != null && registeredCount >= activity.maxParticipants;
+  // Formats a date object into a localized date and time string
+  const formatDate = (date: Date) => date.toLocaleString("en-PH", { dateStyle: "long", timeStyle: "short" });
   return (
     <main className="min-h-screen bg-gradient-to-b from-white via-[#f7fdf8] to-[#e7f6ea] text-slate-900">
       <div className="mx-auto flex min-h-screen max-w-md flex-col">
-        <Header
-          userName={user.firstName}
-          avatarUrl={user.avatarUrl ?? undefined}
-        />
-
+        <Header userName={user.firstName} avatarUrl={user.avatarUrl ?? undefined} />
         <div className="flex-1 overflow-y-auto pb-28">
           <div className="space-y-5 px-4 py-4">
-            <Link
-              href="/scout/activities"
-              className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-2 text-sm font-semibold text-emerald-800 shadow-sm"
-            >
-              <span aria-hidden="true">←</span>
-              Back to activities
+            <Link href="/scout/activities"
+              className="inline-flex items-center gap-2 rounded-full border border-emerald-200
+              bg-white px-3 py-2 text-sm font-semibold text-emerald-800 shadow-sm">
+                <span aria-hidden="true">←</span>Back to activities
             </Link>
-
             <p className="text-sm font-semibold uppercase tracking-[0.3em] text-green-700">
               Scouting Activities
             </p>
-
-            <h1 className="text-2xl font-bold leading-tight text-green-900">
-              {activity.title}
-            </h1>
-
+            <h1 className="text-2xl font-bold leading-tight text-green-900">{activity.title}</h1>
             <div className="flex flex-col gap-6 lg:flex-row">
               <div className="flex-1 space-y-4">
-                <p className="text-sm leading-7 text-slate-700">
-                  {activity.description}
-                </p>
-
+                <p className="text-sm leading-7 text-slate-700">{activity.description}</p>
                 <ActivityMetaBadges
                   startDate={formatDate(activity.startDate)}
-                  endDate={
-                    activity.endDate
-                      ? formatDate(activity.endDate)
-                      : undefined
-                  }
-                  location={activity.location}
-                  cost={
-                    activity.registrationFee
-                      ? `₱${activity.registrationFee}`
-                      : "Free"
-                  }
-                  registrationDeadline={
-                    activity.registrationDeadline?.toISOString()
-                  }
-                  registeredCount={registeredCount}
-                  maxParticipants={activity.maxParticipants}
-                />
+                  endDate={activity.endDate ? formatDate(activity.endDate) : undefined} 
+                  location={activity.location} 
+                  cost={activity.registrationFee ? `₱${activity.registrationFee}` : "Free"} 
+                  registrationDeadline={activity.registrationDeadline?.toISOString()} 
+                  registeredCount={registeredCount} maxParticipants={activity.maxParticipants} />
               </div>
-
               <div className="flex items-center justify-center">
-                <div className="flex h-32 w-32 items-center justify-center rounded-xl border-[10px] border-emerald-200 bg-emerald-100 shadow-inner">
-                  <img
-                    src={
-                      activity.imageUrl ??
-                      "/placeholder-banner-1.svg"
-                    }
-                    alt={activity.title}
-                    className="h-20 w-20 rounded-xl object-cover"
-                  />
+                <div className="flex h-32 w-32 items-center justify-center rounded-xl border-[10px]
+                  border-emerald-200 bg-emerald-100 shadow-inner">
+                  <Image 
+                  src={activity.imageUrl ?? "/placeholder-banner-1.svg"} 
+                  alt={activity.title} width={80} height={80} 
+                  className="h-20 w-20 rounded-xl object-cover" />
                 </div>
               </div>
             </div>
-
             <div className="pt-2">
-              {alreadyJoined ? (
-                <LeaveButton activityId={activity.id} />
-              ) : isFull ? (
-                <button
-                  disabled
-                  className="w-full cursor-not-allowed rounded-xl bg-slate-300 px-4 py-3 text-base font-semibold text-slate-600"
-                >
+              {alreadyJoined ? 
+              <LeaveButton activityId={activity.id} /> : isFull ? 
+              <button disabled
+                className="w-full cursor-not-allowed rounded-xl bg-slate-300 px-4 py-3 text-base 
+                font-semibold text-slate-600">
                   Activity Full
-                </button>
-              ) : (
-                <JoinButton
-                  activityId={activity.id}
-                  registrationDeadline={activity.registrationDeadline}
-                  alreadyJoined={alreadyJoined}
-                />
-              )}
+              </button> : 
+                <JoinButton 
+                  activityId={activity.id} 
+                  registrationDeadline={activity.registrationDeadline} 
+                  alreadyJoined={alreadyJoined} />}
             </div>
           </div>
         </div>

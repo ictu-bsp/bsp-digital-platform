@@ -1,9 +1,25 @@
+import { redirect } from "next/navigation";
 import { getAdminUsers } from "@/services/admin.service";
+import { getSessionCookie } from "@/lib/auth/cookies";
+import { getCurrentSession } from "@/lib/auth/session";
+import { resolveAdminScope } from "@/lib/utils/admin-scope";
 import Link from "next/link";
 import SystemUsersTable from "./components/SystemUsersTable";
 
 export default async function SystemUsersPage() {
-  const users = await getAdminUsers();
+  const sessionId = await getSessionCookie();
+  if (!sessionId) redirect("/login");
+
+  const session = await getCurrentSession(sessionId);
+  if (!session) redirect("/login");
+
+  const scope = resolveAdminScope(session.user);
+  if (!scope) redirect("/admin/login");
+
+  // Council/regional/national admins only ever see their own tier's
+  // system users here -- SUPER_ADMIN (the true system account) sees
+  // everyone, everywhere.
+  const users = await getAdminUsers(scope);
 
   return (
     <div className="p-8">
@@ -11,7 +27,9 @@ export default async function SystemUsersPage() {
         <div>
           <h1 className="text-2xl font-bold text-emerald-800">Manage System Users</h1>
           <p className="text-zinc-500 mt-1">
-            View all system user accounts across councils.
+            {scope.tier === "SUPER"
+              ? "View all system user accounts across every council and region."
+              : "View and manage system user accounts for your own tier."}
           </p>
         </div>
 

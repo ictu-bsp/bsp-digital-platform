@@ -1,7 +1,5 @@
 //src/app/(public)/signup/verify/page.tsx
-
 "use client";
-
 import { useState, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -10,55 +8,46 @@ import {
   verifyEmailAction,
   resendVerificationAction,
 } from "@/app/actions/auth";
-
+// Render inner verification form UI utilizing search params state.
 function VerificationFormInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-
   const email =
     searchParams.get("email") ?? "";
-
   const [
     verificationCode,
     setVerificationCode,
   ] = useState("");
-
   const [loading, setLoading] =
     useState(false);
-
   const [error, setError] =
     useState("");
-
   const [
     showConfirmDialog,
     setShowConfirmDialog,
   ] = useState(false);
-
   const [
     showSuccessDialog,
     setShowSuccessDialog,
   ] = useState(false);
-
+// Handle initial verification form submission to trigger confirmation dialog.
   const handleSubmit = (
     e: React.FormEvent<HTMLFormElement>
   ) => {
     e.preventDefault();
     setShowConfirmDialog(true);
   };
-
+// Dispatch verification code to server action and manage modal confirmation dialog state.
   const submitVerification = async () => {
     setShowConfirmDialog(false);
     setLoading(true);
     setError("");
-
     const result =
       await verifyEmailAction(
         email,
         verificationCode
       );
-
     setLoading(false);
-
     if (!result.success) {
       setError(
         result.message ??
@@ -66,26 +55,23 @@ function VerificationFormInner() {
       );
       return;
     }
-
     setShowSuccessDialog(true);
   };
-
+// Dismiss success modal and redirect user to the password creation route.
   const continueToPassword = () => {
     setShowSuccessDialog(false);
-
     router.push(
       `/signup/create-password?email=${encodeURIComponent(
         email
       )}`
     );
   };
-
+// Request a new email verification code using the resend server action.
   const handleResendCode = async () => {
     const result =
       await resendVerificationAction(
         email
       );
-
     if (result.success) {
       alert(
         "A new verification code has been sent."
@@ -97,9 +83,8 @@ function VerificationFormInner() {
       );
     }
   };
-
   return (
-        <>
+    <>
       <p className="text-sm leading-relaxed text-gray-500">
         We've sent a verification code to{" "}
         <span className="font-bold text-gray-800">
@@ -108,7 +93,6 @@ function VerificationFormInner() {
         . Enter the 6-digit code below to continue creating your
         account.
       </p>
-
       <form
         onSubmit={handleSubmit}
         className="mt-6 flex flex-1 flex-col justify-between"
@@ -128,13 +112,11 @@ function VerificationFormInner() {
             }
             className="w-full rounded-lg border border-gray-300 p-3.5 text-base outline-none transition-all placeholder:text-gray-400 focus:border-green-900 focus:ring-1 focus:ring-green-900"
           />
-
           {error && (
             <p className="text-sm text-red-600">
               {error}
             </p>
           )}
-
           <button
             type="button"
             onClick={handleResendCode}
@@ -143,13 +125,11 @@ function VerificationFormInner() {
             Resend code
           </button>
         </div>
-
         <div className="mt-auto space-y-3 pt-8 text-center">
           <div className="space-y-1">
             <p className="text-sm text-gray-400">
               Not your email?
             </p>
-
             <Link
               href="/signup"
               className="inline-block text-sm font-bold text-green-800 hover:text-green-950 hover:underline"
@@ -157,7 +137,6 @@ function VerificationFormInner() {
               Click to edit your email
             </Link>
           </div>
-
           <button
             type="submit"
             disabled={loading}
@@ -169,17 +148,15 @@ function VerificationFormInner() {
           </button>
         </div>
       </form>
-            {showConfirmDialog && (
+      {showConfirmDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
             <h2 className="text-xl font-bold text-green-900">
               Verify Email
             </h2>
-
             <p className="mt-3 text-sm leading-relaxed text-gray-600">
               Are you sure you want to verify this email address?
             </p>
-
             <div className="mt-6 flex justify-end gap-3">
               <button
                 type="button"
@@ -191,7 +168,6 @@ function VerificationFormInner() {
               >
                 Cancel
               </button>
-
               <button
                 type="button"
                 onClick={submitVerification}
@@ -206,18 +182,15 @@ function VerificationFormInner() {
           </div>
         </div>
       )}
-
       {showSuccessDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
             <h2 className="text-xl font-bold text-green-900">
               Email Verified
             </h2>
-
             <p className="mt-3 text-sm leading-relaxed text-gray-600">
               Your email has been verified successfully.
             </p>
-
             <div className="mt-6 flex justify-end">
               <button
                 type="button"
@@ -233,7 +206,7 @@ function VerificationFormInner() {
     </>
   );
 }
-
+// Render the primary email verification page wrapper with Suspense integration.
 export default function EmailVerificationPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-white md:bg-gray-50 md:p-6">
@@ -259,7 +232,6 @@ export default function EmailVerificationPage() {
               />
             </svg>
           </Link>
-
           <h1 className="mt-2 text-4xl font-extrabold tracking-tight text-green-900">
             <Image
               src="/escout-logo.svg"
@@ -269,12 +241,10 @@ export default function EmailVerificationPage() {
               className="h-auto w-[115px] object-contain"
             />
           </h1>
-
           <h2 className="mt-1 text-xl font-bold text-green-900">
             Email Verification
           </h2>
         </div>
-
         <Suspense
           fallback={
             <p className="text-sm text-gray-400">

@@ -1,118 +1,79 @@
-﻿"use client";
-// src/app/admin/(dashboard)/system-users/components/SystemUsersTable.tsx
-
+﻿// src/app/admin/(dashboard)/system-users/components/SystemUsersTable.tsx
+"use " + "client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AdminUserRecord } from "@/services/admin.service";
 import EditSystemUserModal from "./EditSystemUserModal";
-
-const ROLE_LABELS: Record<string, string> = {
-  CHIEF_EXECUTIVE: "Local Council Admin",
-  MEMBERSHIP_OFFICER: "Membership Officer",
-  ACTIVITIES_OFFICER: "Activities Officer",
-  FINANCE_OFFICER: "Finance Officer",
-  REGISTRAR: "Registrar",
-  REPORTS_OFFICER: "Reports Officer",
-};
-
+const ROLE_LABELS: Record<string, string> = { CHIEF_EXECUTIVE: "Local Council Admin",
+  MEMBERSHIP_OFFICER: "Membership Officer", ACTIVITIES_OFFICER: "Activities Officer",
+  FINANCE_OFFICER: "Finance Officer", REGISTRAR: "Registrar",
+  REPORTS_OFFICER: "Reports Officer" };
+// Formats a date value or string into a formatted locale date string or returns "Never"
 function formatDate(value: Date | string | null) {
   if (!value) return "Never";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "Never";
-  return date.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  return date.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
 }
-
+// Formats a date value or string into a formatted locale date string or returns a dash
 function formatDateOrDash(value: Date | string | null) {
   if (!value) return "—";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  return date.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
 }
-
+// Renders a styled badge displaying "Yes" or "No" based on a boolean condition
 function YesNoBadge({ value }: { value: boolean }) {
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-        value ? "bg-emerald-50 text-emerald-700" : "bg-zinc-100 text-zinc-500"
-      }`}
-    >
-      {value ? "Yes" : "No"}
-    </span>
-  );
+  return <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold
+          ${value ? "bg-emerald-50 text-emerald-700" : "bg-zinc-100 text-zinc-500"}`}>{value ? "Yes" : "No"}
+         </span>;
 }
-
-export default function SystemUsersTable({
-  users,
-}: {
-  users: AdminUserRecord[];
-}) {
+// Renders a searchable data table displaying all system users and administrative actions
+export default function SystemUsersTable({ users }: { users: AdminUserRecord[] }) {
   const router = useRouter();
   const [editingUser, setEditingUser] = useState<AdminUserRecord | null>(null);
   const [deactivatingId, setDeactivatingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-
+  // Filters the list of system users based on user search input
   const filteredUsers = users.filter((user) => {
     if (!search.trim()) return true;
     const q = search.trim().toLowerCase();
     const roleLabel = ROLE_LABELS[user.role] ?? user.role;
-    return (
-      user.username?.toLowerCase().includes(q) ||
-      roleLabel.toLowerCase().includes(q) ||
-      user.firstName?.toLowerCase().includes(q) ||
-      user.lastName?.toLowerCase().includes(q) ||
-      user.council?.toLowerCase().includes(q) ||
-      user.email?.toLowerCase().includes(q)
-    );
+    return user.username?.toLowerCase().includes(q) || roleLabel.toLowerCase().includes(q)
+    || user.firstName?.toLowerCase().includes(q) || user.lastName?.toLowerCase().includes(q)
+    || user.council?.toLowerCase().includes(q) || user.email?.toLowerCase().includes(q);
   });
-
+  // Handles closing the edit modal and refreshing page data after a successful save
   const onSaved = () => {
     setEditingUser(null);
     router.refresh();
   };
-
+  // Handles deactivating a system user account after confirmation
   const onDeactivate = async (userId: string) => {
     const confirmed = window.confirm(
-      "Are you sure you want to deactivate this system user? This will disable their account."
-    );
+      "Are you sure you want to deactivate this system user? This will disable their account.");
     if (!confirmed) return;
-
     setDeactivatingId(userId);
-
     try {
-      const res = await fetch(`/api/admin/system-users/${userId}`, {
-        method: "DELETE",
-      });
-
+      const res = await fetch(`/admin/api/system-users/${userId}`, { method: "DELETE" });
       if (!res.ok) {
         const data = await res.json();
         alert(data.message ?? "Unable to deactivate system user.");
         return;
       }
-
       router.refresh();
     } finally {
       setDeactivatingId(null);
     }
   };
-
   return (
     <>
       <div className="mb-4">
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by login, role, name, council, or email..."
-          className="w-full max-w-md rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-700 focus:border-emerald-700"
-        />
+        <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+        placeholder="Search by login, role, name, council, or email..."
+        className="w-full max-w-md rounded-lg border border-zinc-300 px-4 py-2 text-sm
+        text-zinc-800 placeholder:text-zinc-400 focus:outline-none focus:ring-2
+        focus:ring-emerald-700 focus:border-emerald-700" />
       </div>
       <div className="rounded-xl border border-zinc-200 bg-white overflow-x-auto">
         <table className="w-full text-sm text-left whitespace-nowrap">
@@ -146,20 +107,12 @@ export default function SystemUsersTable({
               <tr key={user.id} className="text-zinc-800">
                 <td className="px-5 py-5 sticky left-0 bg-white">
                   <div className="flex gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setEditingUser(user)}
-                      className="text-emerald-700 hover:underline font-medium"
-                    >
-                      Edit
-                    </button>
+                    <button type="button" onClick={() => setEditingUser(user)}
+                    className="text-emerald-700 hover:underline font-medium">Edit</button>
                     {!user.deletedAt && (
-                      <button
-                        type="button"
-                        disabled={deactivatingId === user.id}
-                        onClick={() => onDeactivate(user.id)}
-                        className="text-red-600 hover:underline font-medium disabled:opacity-50"
-                      >
+                      <button type="button" disabled={deactivatingId === user.id}
+                      onClick={() =>onDeactivate(user.id)}
+                      className="text-red-600 hover:underline font-medium disabled:opacity-50">
                         {deactivatingId === user.id ? "Deactivating..." : "Deactivate"}
                       </button>
                     )}
@@ -171,80 +124,45 @@ export default function SystemUsersTable({
                 <td className="px-5 py-5">{user.lastName ?? "—"}</td>
                 <td className="px-5 py-5">{user.council}</td>
                 <td className="px-5 py-5">
-                  <span
-                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                      user.active
-                        ? "bg-emerald-50 text-emerald-700"
-                        : "bg-zinc-100 text-zinc-500"
-                    }`}
-                  >
-                    {user.active ? "Active" : "Disabled"}
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs
+                    font-semibold ${user.active ? "bg-emerald-50 text-emerald-700" :
+                    "bg-zinc-100 text-zinc-500"}`}>{user.active ? "Active" : "Disabled"}
                   </span>
                 </td>
-                <td className="px-5 py-5 text-zinc-500">
-                  {formatDateOrDash(user.passwordExpiration)}
-                </td>
+                <td className="px-5 py-5 text-zinc-500">{formatDateOrDash(user.passwordExpiration)}</td>
                 <td className="px-5 py-5">{user.accountLockThreshold ?? "—"}</td>
                 <td className="px-5 py-5">{user.incorrectPasswordAttempts}</td>
                 <td className="px-5 py-5 text-zinc-500">{user.email ?? "—"}</td>
                 <td className="px-5 py-5 text-zinc-500">{user.alternateEmail ?? "—"}</td>
                 <td className="px-5 py-5 text-zinc-500">
-                  {user.profilePicture ? (
-                    <a
-                      href={user.profilePicture}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-emerald-700 hover:underline"
-                    >
-                      View
-                    </a>
-                  ) : (
-                    "—"
-                  )}
+                  {user.profilePicture ?
+                  <a href={user.profilePicture} target="_blank" rel="noopener noreferrer"
+                  className="text-emerald-700 hover:underline">
+                    View
+                  </a> : "—"}
                 </td>
-                <td className="px-5 py-5">
-                  <YesNoBadge value={user.firstTimeUser} />
-                </td>
-                <td className="px-5 py-5">
-                  <YesNoBadge value={user.canChangePassword} />
-                </td>
-                <td className="px-5 py-5">
-                  <YesNoBadge value={user.turnOffEmailNotif} />
-                </td>
-                <td className="px-5 py-5">
-                  <YesNoBadge value={user.locked} />
-                </td>
+                <td className="px-5 py-5"><YesNoBadge value={user.firstTimeUser} /></td>
+                <td className="px-5 py-5"><YesNoBadge value={user.canChangePassword} /></td>
+                <td className="px-5 py-5"><YesNoBadge value={user.turnOffEmailNotif} /></td>
+                <td className="px-5 py-5"><YesNoBadge value={user.locked} /></td>
                 <td className="px-5 py-5 text-zinc-500">{user.addedByName ?? "—"}</td>
                 <td className="px-5 py-5 text-zinc-500">{formatDate(user.createdAt)}</td>
                 <td className="px-5 py-5 text-zinc-500">{formatDate(user.lastLoginAt)}</td>
-                <td className="px-5 py-5 text-zinc-500">
-                  {formatDateOrDash(user.deletedAt)}
-                </td>
+                <td className="px-5 py-5 text-zinc-500">{formatDateOrDash(user.deletedAt)}</td>
               </tr>
             ))}
-
             {filteredUsers.length === 0 && (
               <tr>
-                <td colSpan={20} className="px-5 py-8 text-center text-zinc-400">
-                  {users.length === 0
-                    ? "No system user accounts found."
-                    : "No users match your search."}
+                <td colSpan={21} className="px-5 py-8 text-center text-zinc-400">
+                  {users.length === 0 ? "No system user accounts found." : "No users match your search."}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
-
-      {editingUser && (
-        <EditSystemUserModal
-          user={editingUser}
-          onClose={() => setEditingUser(null)}
-          onSaved={onSaved}
-        />
-      )}
+      {editingUser && <EditSystemUserModal user={editingUser} onClose={() =>
+        setEditingUser(null)} onSaved={onSaved} />}
     </>
   );
 }
-
-
