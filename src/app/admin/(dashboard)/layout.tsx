@@ -1,50 +1,27 @@
 // src/app/admin/(dashboard)/layout.tsx
-
-import Link from "next/link";
 import { redirect } from "next/navigation";
-
 import AdminSidebar from "@/app/admin/(dashboard)/components/AdminSidebar";
-
 import { getSessionCookie } from "@/lib/auth/cookies";
 import { getCurrentSession } from "@/lib/auth/session";
-
 import type { AdminRole } from "@/lib/auth/admin-menu";
-
-export default async function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+// Verifies user authentication and admin privilege layers before rendering the admin dashboard layout
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const sessionId = await getSessionCookie();
-
-  if (!sessionId) {
-    redirect("/login");
-  }
-
+  if (!sessionId) redirect("/login");
   const session = await getCurrentSession(sessionId);
-
-  if (!session) {
-    redirect("/login");
-  }
-
-  // Layer 1 Check: Ensure standard account has admin privileges
+  if (!session) redirect("/login");
   if (
     session.user.role !== "COUNCIL_ADMIN" &&
+    session.user.role !== "REGIONAL_ADMIN" &&
+    session.user.role !== "NATIONAL_ADMIN" &&
     session.user.role !== "SUPER_ADMIN"
-  ) {
-    redirect("/scout");
-  }
-
-  // Layer 2 Check: Ensure secondary officer login has been completed
-  if (!session.adminUser) {
-    redirect("/admin/login"); // Fixed route path (removed parentheses)
-  }
-
+  ) redirect("/scout");
+  if (!session.adminUser) redirect("/admin/login");
   const officerRole = session.adminUser.role;
-
+  const initials = (session.adminUser.fullName ?? "").split(" ").map((n) => n[0]).join("").slice(0, 2);
+  const roleLabel = officerRole === "CHIEF_EXECUTIVE" ? "Local Council Admin" : officerRole.replaceAll("_", " ");
   return (
     <div className="min-h-screen bg-zinc-100 p-4">
-      {/* Top Bar */}
       <div className="mb-4 flex items-center justify-between">
         <div className="rounded-full bg-white px-5 py-2 shadow-sm">
           <span className="text-xl font-bold text-green-800">
@@ -54,32 +31,16 @@ export default async function AdminLayout({
             </span>
           </span>
         </div>
-
         <div className="flex items-center gap-3 rounded-full bg-white px-4 py-2 shadow-sm">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-green-800 text-xs font-bold text-white">
-            {session.adminUser.fullName
-              .split(" ")
-              .map((n) => n[0])
-              .join("")
-              .slice(0, 2)}
-          </span>
-
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-green-800
+          text-xs font-bold text-white">{initials}</span>
           <div>
-            <p className="text-sm font-semibold text-zinc-800">
-              {session.adminUser.fullName}
-            </p>
-
-            <p className="text-xs text-zinc-500">
-              {officerRole === "CHIEF_EXECUTIVE"
-                ? "Local Council Admin"
-                : officerRole.replaceAll("_", " ")}
-            </p>
+            <p className="text-sm font-semibold text-zinc-800">{session.adminUser.fullName}</p>
+            <p className="text-xs text-zinc-500">{roleLabel}</p>
           </div>
         </div>
       </div>
-
       <div className="flex gap-4">
-        {/* Sidebar */}
         <AdminSidebar role={officerRole as AdminRole} />
         <main className="flex-1 min-w-0">{children}</main>
       </div>

@@ -1,42 +1,31 @@
-// src/app/admin/dashbaord/reports/components/ReportsView.tsx
+// src/app/admin/dashboard/reports/components/ReportsView.tsx
 "use client";
-
 import { useEffect, useState } from "react";
 import StatCard from "./StatCard";
 import { generateReportsPdf } from "../lib/generateReportsPdf";
-
 type RegistrationSummary = {
   byStatus: { status: string; count: number }[];
   total: number;
 };
-
 type PaymentCollections = {
   byStatus: { paymentStatus: string; count: number; estimatedAmount: number }[];
   totalEstimatedAmount: number;
   note: string;
 };
-
 type RegionCouncilRow = {
   regionName: string | null;
   councilName: string;
   count: number;
 };
-
 type OverTimeRow = {
   month: string;
   count: number;
 };
-
 type RevenueByTenureRow = {
   registrationYears: number;
   count: number;
   estimatedRevenue: number;
 };
-
-
-
-
-
 type EnrolleeDetailRow = {
   scoutId: string;
   membershipNumber: string | null;
@@ -52,7 +41,6 @@ type EnrolleeDetailRow = {
   estimatedAmountPaid: number;
   activitiesEnrolled: string[];
 };
-
 type ActivitySummaryRow = {
   activityId: string;
   title: string;
@@ -64,7 +52,6 @@ type ActivitySummaryRow = {
   isPublished: boolean;
   enrolledCount: number;
 };
-
 type AllReports = {
   registrationSummary: RegistrationSummary;
   paymentCollections: PaymentCollections;
@@ -74,7 +61,6 @@ type AllReports = {
   activitiesSummary: ActivitySummaryRow[];
   enrolleeDetails: EnrolleeDetailRow[];
 };
-
 type Enrollee = {
   registrationId: string;
   registeredAt: string;
@@ -90,21 +76,20 @@ type Enrollee = {
   gender: string;
   birthdate: string;
 };
-
+// Render dashboard reports view containing registration summaries, metrics, and activity enrollee details.
 export default function ReportsView() {
   const [reports, setReports] = useState<AllReports | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const [selectedActivity, setSelectedActivity] = useState<ActivitySummaryRow | null>(null);
   const [enrollees, setEnrollees] = useState<Enrollee[]>([]);
   const [enrolleesLoading, setEnrolleesLoading] = useState(false);
   const [pdfGenerating, setPdfGenerating] = useState(false);
-
   useEffect(() => {
+    // Fetch initial report summaries from API endpoint.
     async function loadReports() {
       try {
-        const res = await fetch("/api/admin/reports");
+        const res = await fetch("/admin/api/reports");
         if (!res.ok) {
           throw new Error(`Failed to load reports (status ${res.status})`);
         }
@@ -119,13 +104,13 @@ export default function ReportsView() {
     }
     loadReports();
   }, []);
-
+  // Fetch detailed list of enrollees for a specific activity.
   const onViewEnrollees = async (activity: ActivitySummaryRow) => {
     setSelectedActivity(activity);
     setEnrolleesLoading(true);
     setEnrollees([]);
     try {
-      const res = await fetch(`/api/admin/reports/activities/${activity.activityId}`);
+      const res = await fetch(`/admin/api/reports/activities/${activity.activityId}`);
       if (!res.ok) {
         throw new Error(`Failed to load enrollees (status ${res.status})`);
       }
@@ -137,11 +122,9 @@ export default function ReportsView() {
       setEnrolleesLoading(false);
     }
   };
-
   if (loading) {
     return <p className="text-zinc-500 py-10 text-center">Loading reports...</p>;
   }
-
   if (error || !reports) {
     return (
       <p className="text-red-600 py-10 text-center">
@@ -149,94 +132,46 @@ export default function ReportsView() {
       </p>
     );
   }
-
   return (
     <div className="flex flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-green-800">Admin Reports</h1>
-        <button
-          type="button"
-          onClick={() => {
-            if (!reports) return;
-            setPdfGenerating(true);
-            try {
-              generateReportsPdf(reports);
-            } catch (err) {
-              console.error("Failed to generate PDF:", err);
-            } finally {
-              setPdfGenerating(false);
-            }
-          }}
-          disabled={pdfGenerating}
-          className="rounded-lg bg-green-800 hover:bg-green-900 transition-colors text-white text-sm font-medium py-2 px-4 disabled:opacity-40"
-        >
+        <button type="button" onClick={() => { if (!reports) return; setPdfGenerating(true); 
+          try { generateReportsPdf(reports); } 
+          catch (err) { console.error("Failed to generate PDF:", err); } 
+          finally { setPdfGenerating(false); } }} disabled={pdfGenerating} 
+          className="rounded-lg bg-green-800 hover:bg-green-900 transition-colors
+          text-white text-sm font-medium py-2 px-4 disabled:opacity-40">
           {pdfGenerating ? "Generating PDF..." : "Download All as PDF"}
         </button>
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* 1. Registration Summary */}
-        <StatCard
-          title="Registration Summary"
-          value={reports.registrationSummary.total}
-          valueLabel="Total Applications"
-          breakdown={reports.registrationSummary.byStatus.map((r) => ({
-            label: r.status,
-            value: r.count,
-          }))}
-          breakdownLabel="By Status"
-        />
-
-        {/* 2. Payment Collections */}
-        <StatCard
-          title="Payment Collections"
-          value={`₱${reports.paymentCollections.totalEstimatedAmount.toLocaleString()}`}
-          valueLabel="Estimated Total Collected"
-          breakdown={reports.paymentCollections.byStatus.map((r) => ({
-            label: r.paymentStatus,
-            value: `${r.count} (₱${r.estimatedAmount.toLocaleString()})`,
-          }))}
-          breakdownLabel="By Payment Status"
-          note={reports.paymentCollections.note}
-        />
-
-        {/* 3. Registrations by Region/Council */}
-        <StatCard
-          title="Registrations by Region/Council"
-          breakdown={reports.registrationsByRegionCouncil.map((r) => ({
-            label: `${r.regionName ?? "Unassigned Region"} — ${r.councilName}`,
-            value: r.count,
-          }))}
-        />
-
-        {/* 4. Registrations Over Time */}
-        <StatCard
-          title="Registrations Over Time"
-          breakdown={reports.registrationsOverTime.map((r) => ({
-            label: r.month,
-            value: r.count,
-          }))}
-          breakdownLabel="By Month"
-        />
-
-        {/* 5. Membership Fee Revenue by Tenure */}
-        <StatCard
-          title="Revenue by Tenure"
-          breakdown={reports.revenueByTenure.map((r) => ({
-            label: `${r.registrationYears} year${r.registrationYears > 1 ? "s" : ""}`,
-            value: `₱${r.estimatedRevenue.toLocaleString()} (${r.count} paid)`,
-          }))}
-          note="Revenue is estimated at PHP 50/year and counts paid registrations only."
-        />
-
-        {/* 6. Activities & Enrollment */}
+        <StatCard title="Registration Summary" value={reports.registrationSummary.total}
+        valueLabel="Total Applications" breakdown={reports.registrationSummary.byStatus.map((
+          r) => ({ label: r.status, value: r.count }))} breakdownLabel="By Status" />
+        <StatCard title="Payment Collections" value={`₱${reports.paymentCollections.
+          totalEstimatedAmount.toLocaleString()}`} valueLabel="Estimated Total Collected"
+          breakdown={reports.paymentCollections.byStatus.map((r) =>
+          ({ label: r.paymentStatus, value: `${r.count} (₱${r.estimatedAmount
+          .toLocaleString()})` }))} breakdownLabel="By Payment Status"
+          note={reports.paymentCollections.note} />
+        <StatCard title="Registrations by Region/Council" breakdown={
+          reports.registrationsByRegionCouncil.map((r) => 
+          ({ label: `${r.regionName ?? "Unassigned Region"} — 
+          ${r.councilName}`, value: r.count }))} />
+        <StatCard title="Registrations Over Time" breakdown={
+          reports.registrationsOverTime.map((r) => 
+          ({ label: r.month, value: r.count }))} breakdownLabel="By Month" />
+        <StatCard title="Revenue by Tenure" breakdown=
+        {reports.revenueByTenure.map((r) => 
+        ({ label: `${r.registrationYears} year${r.registrationYears > 1 ? "s" : ""}`
+        , value: `₱${r.estimatedRevenue.toLocaleString()} (${r.count} paid)` }))}
+        note="Revenue is estimated at PHP 50/year and counts paid registrations only." />
         <StatCard title="Activities & Enrollment">
           <ul className="flex flex-col gap-2">
             {reports.activitiesSummary.map((activity) => (
-              <li
-                key={activity.activityId}
-                className="flex items-center justify-between text-sm border-b border-zinc-100 pb-2 last:border-0"
-              >
+              <li key={activity.activityId} className="flex items-center justify-between
+              text-sm border-b border-zinc-100 pb-2 last:border-0">
                 <div>
                   <p className="font-medium text-zinc-900">{activity.title}</p>
                   <p className="text-xs text-zinc-500">
@@ -244,13 +179,9 @@ export default function ReportsView() {
                     {activity.maxParticipants ? ` / ${activity.maxParticipants} max` : ""}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => onViewEnrollees(activity)}
-                  className="text-green-800 text-xs font-medium underline shrink-0 ml-2"
-                >
-                  View Enrollees
-                </button>
+                <button type="button" onClick={() => onViewEnrollees(activity)}
+                className="text-green-800 text-xs font-medium underline shrink-0 ml-2">
+                  View Enrollees</button>
               </li>
             ))}
             {reports.activitiesSummary.length === 0 && (
@@ -259,31 +190,24 @@ export default function ReportsView() {
           </ul>
         </StatCard>
       </div>
-
-      {/* Drill-down modal for selected activity's enrollees */}
       {selectedActivity && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[85vh] overflow-y-auto p-8 text-zinc-900">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[85vh]
+          overflow-y-auto p-8 text-zinc-900">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-green-800">
                 Enrolled Scouts — {selectedActivity.title}
               </h3>
-              <button
-                type="button"
-                onClick={() => setSelectedActivity(null)}
-                className="text-red-600 border border-red-600 rounded-full w-7 h-7 flex items-center justify-center text-sm"
-                aria-label="Close"
-              >
+              <button type="button" onClick={() => setSelectedActivity(null)}
+              className="text-red-600 border border-red-600 rounded-full
+              w-7 h-7 flex items-center justify-center text-sm" aria-label="Close">
                 ✕
               </button>
             </div>
-
             {enrolleesLoading && <p className="text-zinc-500">Loading enrollees...</p>}
-
             {!enrolleesLoading && enrollees.length === 0 && (
               <p className="text-sm text-zinc-500">No scouts enrolled in this activity.</p>
             )}
-
             {!enrolleesLoading && enrollees.length > 0 && (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">

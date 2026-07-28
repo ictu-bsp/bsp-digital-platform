@@ -1,17 +1,16 @@
 //src/app/(public)/signup/page.tsx
-
 "use client";
-
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import BackButton from "@/components-general/ui/BackButton";
 import { signUpAction } from "@/app/actions/auth";
-
+// Render the primary sign-up page for collecting new user account registration details.
 export default function SignUpPage() {
+// Initialize Next.js router for page redirects.
   const router = useRouter();
-
+// Manage state for form input values including profile details and middle name toggle.
   const [formData, setFormData] = useState({
     firstName: "",
     middleName: "",
@@ -22,27 +21,24 @@ export default function SignUpPage() {
     email: "",
     noMiddleName: false,
   });
-
+// Manage field-level and root validation error messages.
   const [errors, setErrors] = useState<Record<string, string[]>>({});
+// Track form submission state to manage UI loading indicators.
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Confirmation dialog state
+// Confirmation dialog state.
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-
-  // Role selection: asked up front, before the person can fill in the form
+// Role selection: asked up front, before the person can fill in the form.
   const [role, setRole] = useState<"VISITOR" | "SCOUT" | null>(null);
   const [showRoleDialog, setShowRoleDialog] = useState(true);
-
+// Handle updates to input elements, clearing associated validation errors and resetting middle name if toggled off.
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value, type } = e.target;
-
     const fieldValue =
       type === "checkbox"
         ? (e.target as HTMLInputElement).checked
         : value;
-
     setFormData((prev) => ({
       ...prev,
       [name]: fieldValue,
@@ -50,7 +46,6 @@ export default function SignUpPage() {
         ? { middleName: "" }
         : {}),
     }));
-
     if (errors[name]) {
       setErrors((prev) => {
         const next = { ...prev };
@@ -59,28 +54,23 @@ export default function SignUpPage() {
       });
     }
   };
-
+// Validate role selection and trigger confirmation dialog on initial form submission.
   const handleSubmit = (
     e: React.FormEvent<HTMLFormElement>
   ) => {
     e.preventDefault();
-
     if (!role) {
       setShowRoleDialog(true);
       return;
     }
-
     setShowConfirmDialog(true);
   };
-
+// Dispatch form payload to the signUpAction server action and handle response or redirect.
   const submitRegistration = async () => {
     setShowConfirmDialog(false);
-
     setIsSubmitting(true);
     setErrors({});
-
     const data = new FormData();
-
     data.append("firstName", formData.firstName);
     data.append("middleName", formData.middleName);
     data.append("lastName", formData.lastName);
@@ -89,14 +79,11 @@ export default function SignUpPage() {
     data.append("sex", formData.sex);
     data.append("email", formData.email);
     data.append("role", role ?? "");
-
     const result = await signUpAction(
       { success: false },
       data
     );
-
     setIsSubmitting(false);
-
     if (!result.success) {
       setErrors(
         result.errors ??
@@ -104,22 +91,19 @@ export default function SignUpPage() {
       );
       return;
     }
-
     router.push(
       `/signup/verify?email=${encodeURIComponent(
         formData.email
       )}`
     );
   };
-
   return (
-        <>
+    <>
       <main className="flex min-h-screen items-center justify-center bg-white md:bg-gray-50 md:p-6">
         <div className="w-full max-w-md bg-white px-6 pb-8 pt-4 md:rounded-2xl md:border md:border-gray-100 md:shadow-sm">
-          {/* Top Navigation & Brand Header */}
+{/* Top Navigation & Brand Header */}
           <div className="mb-6">
             <BackButton onClick={() => router.push("/")} />
-
             <h1 className="mt-2 text-4xl font-extrabold tracking-tight text-green-900">
               <Image
                 src="/escout-logo.svg"
@@ -129,16 +113,13 @@ export default function SignUpPage() {
                 className="h-auto w-[115px] object-contain"
               />
             </h1>
-
             <h2 className="mt-1 text-xl font-bold text-green-900">
               Create New Account
             </h2>
-
             <p className="mt-2 text-sm text-gray-500">
               Enter your information to receive a verification code.
               You'll create your password after verifying your email.
             </p>
-
             {role && (
               <div className="mt-3 flex items-center justify-between rounded-lg bg-green-50 px-3 py-2 text-sm text-green-900">
                 <span>
@@ -159,7 +140,6 @@ export default function SignUpPage() {
               </div>
             )}
           </div>
-
           <form
             onSubmit={handleSubmit}
             className="space-y-4"
@@ -169,8 +149,7 @@ export default function SignUpPage() {
                 {errors.root[0]}
               </div>
             )}
-
-            {/* Row 1: Last Name & Suffix Split */}
+{/* Row 1: Last Name & Suffix Split */}
             <div>
               <div className="flex gap-3">
                 <div className="w-[70%]">
@@ -188,7 +167,6 @@ export default function SignUpPage() {
                     }`}
                   />
                 </div>
-
                 <div className="w-[30%]">
                   <select
                     name="suffix"
@@ -212,15 +190,13 @@ export default function SignUpPage() {
                   </select>
                 </div>
               </div>
-
               {errors.lastName && (
                 <p className="mt-1 pl-1 text-xs text-red-600">
                   {errors.lastName[0]}
                 </p>
               )}
             </div>
-
-            {/* First Name */}
+{/* First Name */}
             <div>
               <input
                 type="text"
@@ -235,15 +211,13 @@ export default function SignUpPage() {
                     : "border-gray-300 focus:border-green-900 focus:ring-green-900"
                 }`}
               />
-
               {errors.firstName && (
                 <p className="mt-1 pl-1 text-xs text-red-600">
                   {errors.firstName[0]}
                 </p>
               )}
             </div>
-
-            {/* Middle Name */}
+{/* Middle Name */}
             <div>
               <input
                 type="text"
@@ -258,14 +232,12 @@ export default function SignUpPage() {
                     : "border-gray-300 focus:border-green-900 focus:ring-green-900"
                 }`}
               />
-
               {errors.middleName && (
                 <p className="mt-1 pl-1 text-xs text-red-600">
                   {errors.middleName[0]}
                 </p>
               )}
             </div>
-
             <div className="flex items-center gap-2 pl-1">
               <input
                 type="checkbox"
@@ -275,7 +247,6 @@ export default function SignUpPage() {
                 onChange={handleInputChange}
                 className="h-4 w-4 rounded border-gray-300 accent-green-900 focus:ring-green-900"
               />
-
               <label
                 htmlFor="noMiddleName"
                 className="select-none text-sm text-gray-500"
@@ -283,7 +254,7 @@ export default function SignUpPage() {
                 I have no middle name
               </label>
             </div>
-                        {/* Birthdate & Sex Split */}
+{/* Birthdate & Sex Split */}
             <div>
               <div className="flex gap-3">
                 <div className="w-[65%]">
@@ -306,7 +277,6 @@ export default function SignUpPage() {
                     }`}
                   />
                 </div>
-
                 <div className="w-[35%]">
                   <select
                     name="sex"
@@ -331,13 +301,11 @@ export default function SignUpPage() {
                   </select>
                 </div>
               </div>
-
               {errors.birthdate && (
                 <p className="mt-1 pl-1 text-xs text-red-600">
                   {errors.birthdate[0]}
                 </p>
               )}
-
               {errors.sex &&
                 !errors.birthdate && (
                   <p className="mt-1 pl-1 text-xs text-red-600">
@@ -345,8 +313,7 @@ export default function SignUpPage() {
                   </p>
                 )}
             </div>
-
-            {/* Email Address */}
+{/* Email Address */}
             <div>
               <input
                 type="email"
@@ -361,14 +328,12 @@ export default function SignUpPage() {
                     : "border-gray-300 focus:border-green-900 focus:ring-green-900"
                 }`}
               />
-
               {errors.email && (
                 <p className="mt-1 pl-1 text-xs text-red-600">
                   {errors.email[0]}
                 </p>
               )}
             </div>
-
             <div className="px-4 py-2 text-center text-xs leading-normal text-gray-600">
               By tapping Sign up, you agree with the{" "}
               <Link
@@ -385,7 +350,6 @@ export default function SignUpPage() {
                 Privacy Notice
               </Link>
             </div>
-
             <div className="space-y-4 pt-4">
               <button
                 type="submit"
@@ -396,16 +360,13 @@ export default function SignUpPage() {
                   ? "Sending Verification Code..."
                   : "Continue"}
               </button>
-
               <div className="text-center text-sm text-gray-400">
                 or
               </div>
-
               <div className="space-y-3 text-center">
                 <p className="text-sm text-gray-500">
                   Already have an eScout account?
                 </p>
-
                 <Link
                   href="/login"
                   className="block w-full rounded-lg border border-green-900 bg-white py-3.5 text-center font-bold text-green-900 transition-colors hover:bg-green-50 focus:outline-none focus:ring-4 focus:ring-green-100"
@@ -417,18 +378,15 @@ export default function SignUpPage() {
           </form>
         </div>
       </main>
-
       {showRoleDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
             <h2 className="text-xl font-bold text-green-900">
               Welcome to eScout
             </h2>
-
             <p className="mt-3 text-sm leading-relaxed text-gray-600">
               Before we get started, tell us a bit about yourself.
             </p>
-
             <div className="mt-6 space-y-3">
               <button
                 type="button"
@@ -445,7 +403,6 @@ export default function SignUpPage() {
                   I don't have a Scout membership yet and want to join.
                 </span>
               </button>
-
               <button
                 type="button"
                 onClick={() => {
@@ -465,18 +422,15 @@ export default function SignUpPage() {
           </div>
         </div>
       )}
-
-            {showConfirmDialog && (
+      {showConfirmDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
             <h2 className="text-xl font-bold text-green-900">
               Confirm Registration
             </h2>
-
             <p className="mt-3 text-sm leading-relaxed text-gray-600">
               Are you sure you want to create this account?
             </p>
-
             <div className="mt-6 flex justify-end gap-3">
               <button
                 type="button"
@@ -486,7 +440,6 @@ export default function SignUpPage() {
               >
                 Cancel
               </button>
-
               <button
                 type="button"
                 onClick={submitRegistration}

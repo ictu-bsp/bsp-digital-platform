@@ -1,38 +1,29 @@
 // src/app/admin/reports/lib/generateReportsPdf.ts
-// Generates a client-side, multi-section PDF summarizing all 6 admin reports.
-// Uses jsPDF + jspdf-autotable for real selectable text/tables (not a screenshot).
-
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-
 type RegistrationSummary = {
   byStatus: { status: string; count: number }[];
   total: number;
 };
-
 type PaymentCollections = {
   byStatus: { paymentStatus: string; count: number; estimatedAmount: number }[];
   totalEstimatedAmount: number;
   note: string;
 };
-
 type RegionCouncilRow = {
   regionName: string | null;
   councilName: string;
   count: number;
 };
-
 type OverTimeRow = {
   month: string;
   count: number;
 };
-
 type RevenueByTenureRow = {
   registrationYears: number;
   count: number;
   estimatedRevenue: number;
 };
-
 type EnrolleeDetailRow = {
   scoutId: string;
   membershipNumber: string | null;
@@ -48,9 +39,6 @@ type EnrolleeDetailRow = {
   estimatedAmountPaid: number;
   activitiesEnrolled: string[];
 };
-
-
-
 type ActivitySummaryRow = {
   activityId: string;
   title: string;
@@ -62,7 +50,6 @@ type ActivitySummaryRow = {
   isPublished: boolean;
   enrolledCount: number;
 };
-
 export type AllReports = {
   registrationSummary: RegistrationSummary;
   paymentCollections: PaymentCollections;
@@ -72,14 +59,13 @@ export type AllReports = {
   activitiesSummary: ActivitySummaryRow[];
   enrolleeDetails: EnrolleeDetailRow[];
 };
-
-const GREEN: [number, number, number] = [22, 101, 52]; // matches Tailwind green-800
-
+const GREEN: [number, number, number] = [22, 101, 52];
+// Generate a client-side multi-section PDF document summarizing all admin reports.
 export function generateReportsPdf(reports: AllReports) {
   const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
   const marginX = 40;
   let cursorY = 50;
-
+  // Render section title header with branding color.
   const addSectionTitle = (text: string) => {
     doc.setFontSize(13);
     doc.setFont("helvetica", "bold");
@@ -87,19 +73,13 @@ export function generateReportsPdf(reports: AllReports) {
     doc.text(text, marginX, cursorY);
     cursorY += 18;
   };
-
+  // Update vertical cursor position after rendering a table.
   const afterTable = () => {
-    // jspdf-autotable attaches finalY to the doc instance after each call
     cursorY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 24;
   };
-
-const NOTE_MAX_WIDTH = 515;
+  const NOTE_MAX_WIDTH = 515;
   const NOTE_LINE_HEIGHT = 10;
-
-  // Draws an italic footnote in the gap under a table, then returns the
-  // Y position the next section should start at — accounting for how many
-  // lines the note actually wrapped to (fixes overlap with the next
-  // section's title when a note is long enough to wrap to 2+ lines).
+  // Draw an italicized footnote below a table and advance the cursor position dynamically.
   const addNoteAndAdvance = (text: string, startY: number): number => {
     doc.setFontSize(8);
     doc.setFont("helvetica", "italic");
@@ -110,21 +90,16 @@ const NOTE_MAX_WIDTH = 515;
     const noteBottom = noteY + wrappedLines.length * NOTE_LINE_HEIGHT;
     return Math.max(startY, noteBottom + 12);
   };
-
-  // ---- Header ----
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...GREEN);
   doc.text("BSP Admin Reports", marginX, cursorY);
   cursorY += 16;
-
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(120, 120, 120);
   doc.text(`Generated: ${new Date().toLocaleString()}`, marginX, cursorY);
   cursorY += 26;
-
-  // ---- 1. Registration Summary ----
   addSectionTitle(`1. Registration Summary — Total: ${reports.registrationSummary.total}`);
   autoTable(doc, {
     startY: cursorY,
@@ -136,45 +111,29 @@ const NOTE_MAX_WIDTH = 515;
     styles: { fontSize: 9 },
   });
   afterTable();
-
-  // ---- 2. Payment Collections ----
-  addSectionTitle(
-    `2. Payment Collections — Est. Total: PHP ${reports.paymentCollections.totalEstimatedAmount.toLocaleString()}`
-  );
+  addSectionTitle(`2. Payment Collections — Est. Total: PHP ${reports.paymentCollections.totalEstimatedAmount.toLocaleString()}`);
   autoTable(doc, {
     startY: cursorY,
     margin: { left: marginX, right: marginX },
     head: [["Payment Status", "Count", "Estimated Amount"]],
-    body: reports.paymentCollections.byStatus.map((r) => [
-      r.paymentStatus,
-      String(r.count),
-      `PHP ${r.estimatedAmount.toLocaleString()}`,
-    ]),
+    body: reports.paymentCollections.byStatus.map((r) => [r.paymentStatus, String(r.count), `PHP ${r.estimatedAmount.toLocaleString()}`]),
     theme: "grid",
     headStyles: { fillColor: GREEN },
     styles: { fontSize: 9 },
   });
   afterTable();
   cursorY = addNoteAndAdvance(reports.paymentCollections.note, cursorY);
-
-  // ---- 3. Registrations by Region/Council ----
   addSectionTitle("3. Registrations by Region/Council");
   autoTable(doc, {
     startY: cursorY,
     margin: { left: marginX, right: marginX },
     head: [["Region", "Council", "Count"]],
-    body: reports.registrationsByRegionCouncil.map((r) => [
-      r.regionName ?? "Unassigned Region",
-      r.councilName,
-      String(r.count),
-    ]),
+    body: reports.registrationsByRegionCouncil.map((r) => [r.regionName ?? "Unassigned Region", r.councilName, String(r.count)]),
     theme: "grid",
     headStyles: { fillColor: GREEN },
     styles: { fontSize: 9 },
   });
   afterTable();
-
-  // ---- 4. Registrations Over Time ----
   addSectionTitle("4. Registrations Over Time");
   autoTable(doc, {
     startY: cursorY,
@@ -186,48 +145,29 @@ const NOTE_MAX_WIDTH = 515;
     styles: { fontSize: 9 },
   });
   afterTable();
-
-  // ---- 5. Revenue by Tenure ----
   addSectionTitle("5. Revenue by Tenure");
   autoTable(doc, {
     startY: cursorY,
     margin: { left: marginX, right: marginX },
     head: [["Years", "Paid Count", "Estimated Revenue"]],
-    body: reports.revenueByTenure.map((r) => [
-      `${r.registrationYears} year${r.registrationYears > 1 ? "s" : ""}`,
-      String(r.count),
-      `PHP ${r.estimatedRevenue.toLocaleString()}`,
-    ]),
+    body: reports.revenueByTenure.map((r) => [`${r.registrationYears} year${r.registrationYears > 1 ? "s" : ""}`, String(r.count), `PHP ${r.estimatedRevenue.toLocaleString()}`]),
     theme: "grid",
     headStyles: { fillColor: GREEN },
-    styles: { fontSize: 9 },
+    styles: { fillColor: GREEN },
   });
   afterTable();
-  cursorY = addNoteAndAdvance(
-    "Revenue is estimated at PHP 50/year and counts paid registrations only.",
-    cursorY
-  );
-
-  // ---- 6. Activities & Enrollment ----
+  cursorY = addNoteAndAdvance("Revenue is estimated at PHP 50/year and counts paid registrations only.", cursorY);
   addSectionTitle("6. Activities & Enrollment");
   autoTable(doc, {
     startY: cursorY,
     margin: { left: marginX, right: marginX },
     head: [["Title", "Category", "Enrolled", "Max", "Published"]],
-    body: reports.activitiesSummary.map((a) => [
-      a.title,
-      a.category,
-      String(a.enrolledCount),
-      a.maxParticipants ? String(a.maxParticipants) : "—",
-      a.isPublished ? "Yes" : "No",
-    ]),
+    body: reports.activitiesSummary.map((a) => [a.title, a.category, String(a.enrolledCount), a.maxParticipants ? String(a.maxParticipants) : "—", a.isPublished ? "Yes" : "No"]),
     theme: "grid",
     headStyles: { fillColor: GREEN },
     styles: { fontSize: 9 },
   });
   afterTable();
-
-  // ---- 7. Enrollee Details ----
   doc.addPage();
   cursorY = 50;
   addSectionTitle("7. Enrollee Details");
@@ -255,6 +195,5 @@ const NOTE_MAX_WIDTH = 515;
       5: { cellWidth: 135 },
     },
   });
-
   doc.save(`bsp-admin-reports-${new Date().toISOString().slice(0, 10)}.pdf`);
 }
