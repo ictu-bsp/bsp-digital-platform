@@ -1,4 +1,4 @@
-//src/app/api/admin/activites/[id]/route.ts
+//src/app/admin/api/activites/[id]/route.ts
 
 import { NextResponse } from "next/server";
 

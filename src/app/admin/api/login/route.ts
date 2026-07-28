@@ -1,4 +1,4 @@
-// src/app/api/admin/login/route.ts
+// src/app/admin/api/login/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
