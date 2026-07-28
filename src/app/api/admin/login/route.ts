@@ -70,16 +70,90 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3. Verify Password
-    const passwordMatches = await verifyPassword(
-      password,
-      adminUser.passwordHash
-    );
+    if (adminUser.locked) {
+      return NextResponse.json(
+        {
+          message:
+            "This account has been locked due to too many failed login attempts. Please contact your council administrator.",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
+
+    if (
+      adminUser.passwordExpiration &&
+      new Date(adminUser.passwordExpiration) < new Date()
+    ) {
+      return NextResponse.json(
+        {
+          message:
+            "Your password has expired. Please contact your council administrator to reset it.",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
+
+    // -------------------------------------------------
+    // TODO:
+    // Verify the officer belongs to the same Council.
+    //
+    // Replace this later with a councilId comparison
+    // once the logged-in Council Admin's council can
+    // be retrieved.
+    // -------------------------------------------------
+
+    if (
+      user.role === "COUNCIL_ADMIN" &&
+      adminUser.createdBy !== user.id
+    ) {
+      return NextResponse.json(
+        {
+          message:
+            "This administrator account does not belong to your council.",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
+
+    // -------------------------------------------------
+    // Verify Password
+    // -------------------------------------------------
+
+    const passwordMatches =
+      await verifyPassword(
+        password,
+        adminUser.passwordHash
+      );
 
     if (!passwordMatches) {
+      const newAttemptCount = adminUser.incorrectPasswordAttempts + 1;
+      const threshold = adminUser.accountLockThreshold ?? 5;
+      const shouldLock = newAttemptCount >= threshold;
+
+      await db
+        .update(adminUsers)
+        .set({
+          incorrectPasswordAttempts: newAttemptCount,
+          locked: shouldLock,
+          updatedAt: new Date(),
+        })
+        .where(eq(adminUsers.id, adminUser.id));
+
       return NextResponse.json(
-        { message: "Invalid username or password." },
-        { status: 401 }
+        {
+          message: shouldLock
+            ? "This account has been locked due to too many failed login attempts. Please contact your council administrator."
+            : "Invalid username or password.",
+        },
+        {
+          status: shouldLock ? 403 : 401,
+        }
       );
     }
 
@@ -91,6 +165,7 @@ export async function POST(req: NextRequest) {
       .update(adminUsers)
       .set({
         lastLoginAt: new Date(),
+        incorrectPasswordAttempts: 0,
         updatedAt: new Date(),
       })
       .where(eq(adminUsers.id, adminUser.id));

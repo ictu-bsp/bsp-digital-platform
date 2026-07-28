@@ -53,6 +53,43 @@ function formatToday() {
   });
 }
 
+
+function generateRandomDigits(length: number): string {
+  let result = "";
+  for (let i = 0; i < length; i++) {
+    result += Math.floor(Math.random() * 10).toString();
+  }
+  return result;
+}
+
+function generateRandomAccountNumber(): string {
+  // 10-digit bank-account-style number, e.g. 1907432198
+  return generateRandomDigits(10);
+}
+
+function generateRandomConfirmationNumber(): string {
+  // 20-digit long-form confirmation number, e.g. 00002026072714325940
+  return generateRandomDigits(20);
+}
+
+function formatReceiptTimestamp() {
+  const now = new Date();
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const months = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  ];
+  const day = days[now.getDay()];
+  const month = months[now.getMonth()];
+  const date = String(now.getDate()).padStart(2, "0");
+  const hours = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+  const seconds = String(now.getSeconds()).padStart(2, "0");
+  const year = now.getFullYear();
+  return `${day} ${month} ${date} ${hours}:${minutes}:${seconds} PHT ${year}`;
+}
+
+
 async function generateReceiptPDF({
   transactionId,
   amount,
@@ -67,16 +104,15 @@ async function generateReceiptPDF({
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const marginX = 56;
-  let y = 70;
+  let y = 60;
 
   // Watermark — faint BSP logo centered behind the receipt content.
-  // Drawn first so all text below paints cleanly on top of it.
   try {
     const watermarkDataUrl = await loadWatermarkAsPngDataUrl(
       "/bsp-logo-with-bkg.svg",
       600
     );
-    const wmSize = 320; // pt, roughly a third of the A4 page width
+    const wmSize = 340;
     const wmX = (pageWidth - wmSize) / 2;
     const wmY = (pageHeight - wmSize) / 2;
 
@@ -85,63 +121,128 @@ async function generateReceiptPDF({
     doc.addImage(watermarkDataUrl, "PNG", wmX, wmY, wmSize, wmSize);
     doc.restoreGraphicsState();
   } catch (err) {
-    // Non-fatal — if the watermark can't load for any reason, the receipt
-    // should still generate without it rather than blocking the download.
     console.error("Receipt watermark failed to load:", err);
   }
 
-  // Header
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(20);
-  doc.setTextColor(6, 78, 59); // emerald-800
-  doc.text("eScout", marginX, y);
+  // Optional applicant info, if the wizard ever stores it — falls back
+  // gracefully if these keys don't exist yet.
+  const applicantName =
+    typeof window !== "undefined"
+      ? localStorage.getItem("paymentApplicantName")
+      : null;
+  const applicantEmail =
+    typeof window !== "undefined"
+      ? localStorage.getItem("paymentApplicantEmail")
+      : null;
 
-  y += 24;
-  doc.setFontSize(14);
+  const referenceNumber = `${new Date().getFullYear()}-${generateRandomDigits(7)}`;
+  const transactionNumber = formatTransactionId(transactionId);
+  const debitAccountNo = generateRandomAccountNumber();
+  const confirmationNumber = generateRandomConfirmationNumber();
+  const confirmationDate = formatToday();
+
+  // ---- Title ----
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(15);
   doc.setTextColor(30, 30, 30);
-  doc.text("Official Payment Receipt", marginX, y);
+  doc.text(
+    `eScout ePayment Confirmation Receipt (${formatReceiptTimestamp()})`,
+    marginX,
+    y,
+    { maxWidth: pageWidth - marginX * 2 }
+  );
+
+  y += 26;
+  doc.setDrawColor(210, 210, 210);
+  doc.line(marginX, y, pageWidth - marginX, y);
+
+  // ---- From / To / Date header ----
+  y += 26;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+
+  const headerRow = (label: string, value: string) => {
+    doc.setTextColor(140, 140, 140);
+    doc.text(label, marginX, y);
+    doc.setTextColor(30, 30, 30);
+    doc.text(value, marginX + 55, y);
+    y += 20;
+  };
+
+  headerRow("From:", "escout-epayment@bsp.org.ph");
+  headerRow("To:", applicantEmail ?? "member@example.com");
+  headerRow("Date:", confirmationDate);
 
   y += 10;
-  doc.setDrawColor(200, 200, 200);
+  doc.setDrawColor(210, 210, 210);
   doc.line(marginX, y, pageWidth - marginX, y);
 
-  // Body
-  y += 36;
+  // ---- Greeting + intro line ----
+  y += 30;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(12);
-  doc.setTextColor(80, 80, 80);
+  doc.setTextColor(30, 30, 30);
+  doc.text(`Dear Mr./Ms. ${applicantName ?? "Scout Member"},`, marginX, y);
 
-  const rows: [string, string][] = [
-    ["Transaction ID", formatTransactionId(transactionId)],
-    ["Date", formatToday()],
-    ["Type of Transaction", methodLabel],
-    ["Amount Paid", `PHP ${amount}`],
+  y += 24;
+  const introLines = doc.splitTextToSize(
+    "This is to confirm that your transaction has been successfully completed based on the following details:",
+    pageWidth - marginX * 2
+  );
+  doc.text(introLines, marginX, y);
+  y += introLines.length * 16 + 14;
+
+  // ---- Detail rows ----
+  const detailRows: [string, string][] = [
+    ["Reference Number", referenceNumber],
+    ["Transaction Number", transactionNumber],
+    ["Payment Amount", `PHP ${amount}`],
+    ["Payment Method", methodLabel],
+    ["Debit from Account No", debitAccountNo],
+    ["LBP Confirmation Number", confirmationNumber],
+    ["Payment Confirmation Date", confirmationDate],
+    ["Transaction Status", "Transaction Completed Successfully"],
   ];
 
-  rows.forEach(([label, value]) => {
-    doc.setTextColor(120, 120, 120);
-    doc.text(label, marginX, y);
-    doc.setTextColor(20, 20, 20);
-    doc.setFont("helvetica", "bold");
-    doc.text(value, pageWidth - marginX, y, { align: "right" });
+  doc.setFontSize(11.5);
+  detailRows.forEach(([label, value]) => {
     doc.setFont("helvetica", "normal");
-    y += 26;
+    doc.setTextColor(60, 60, 60);
+    doc.text(label, marginX, y);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 15, 15);
+    doc.text(value, marginX + 220, y, { maxWidth: pageWidth - marginX - 220 - marginX });
+    y += 22;
   });
 
-  y += 20;
-  doc.setDrawColor(200, 200, 200);
+  y += 18;
+  doc.setDrawColor(210, 210, 210);
   doc.line(marginX, y, pageWidth - marginX, y);
 
-  y += 30;
-  doc.setFontSize(10);
-  doc.setTextColor(140, 140, 140);
-  doc.text(
-    "This receipt confirms payment for your Boy Scouts of the Philippines",
-    marginX,
-    y
-  );
-  y += 14;
-  doc.text("Scout Membership Registration.", marginX, y);
+  // ---- Footer ----
+  y += 26;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10.5);
+  doc.setTextColor(90, 90, 90);
+
+  const footerLines = [
+    "Please review the details of your transaction.",
+    "",
+    "For questions or concerns regarding this receipt, please contact the BSP",
+    "Membership Support desk through your Local Council office.",
+    "",
+    "This is a system-generated notification. Replies to this message are not",
+    "monitored or answered.",
+    "",
+    "Thank you, Scout!",
+    "",
+    "From the BSP eScout Payment Team",
+  ];
+
+  footerLines.forEach((line) => {
+    doc.text(line, marginX, y);
+    y += 15;
+  });
 
   const fileNameSafeId = (transactionId ?? "receipt").replace(/[^a-zA-Z0-9]/g, "");
   doc.save(`eScout-Receipt-${fileNameSafeId}.pdf`);
