@@ -1,5 +1,9 @@
 {
+<<<<<<< HEAD
   "id": "1a26ce8e-52ec-4520-a26e-459a9b3f76ff",
+=======
+  "id": "a177bc07-26c0-4989-bd61-df32d035ed37",
+>>>>>>> 89a574d5089d86bd85a8713c557a01c203671c3b
   "prevId": "ca2cee10-2eda-40ef-8bb2-31c1dd0ac556",
   "version": "7",
   "dialect": "postgresql",
@@ -70,12 +74,15 @@
           "primaryKey": false,
           "notNull": false
         },
+<<<<<<< HEAD
         "region_id": {
           "name": "region_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
+=======
+>>>>>>> 89a574d5089d86bd85a8713c557a01c203671c3b
         "max_participants": {
           "name": "max_participants",
           "type": "integer",
@@ -138,6 +145,7 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
+<<<<<<< HEAD
         "activities_region_id_regions_id_fk": {
           "name": "activities_region_id_regions_id_fk",
           "tableFrom": "activities",
@@ -151,6 +159,8 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
+=======
+>>>>>>> 89a574d5089d86bd85a8713c557a01c203671c3b
         "activities_created_by_users_id_fk": {
           "name": "activities_created_by_users_id_fk",
           "tableFrom": "activities",
@@ -339,6 +349,7 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
+<<<<<<< HEAD
         "scope": {
           "name": "scope",
           "type": "admin_scope",
@@ -347,10 +358,13 @@
           "notNull": true,
           "default": "'COUNCIL'"
         },
+=======
+>>>>>>> 89a574d5089d86bd85a8713c557a01c203671c3b
         "council_id": {
           "name": "council_id",
           "type": "uuid",
           "primaryKey": false,
+<<<<<<< HEAD
           "notNull": false
         },
         "region_id": {
@@ -358,6 +372,9 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": false
+=======
+          "notNull": true
+>>>>>>> 89a574d5089d86bd85a8713c557a01c203671c3b
         },
         "created_by": {
           "name": "created_by",
@@ -383,6 +400,21 @@
           "primaryKey": false,
           "notNull": true
         },
+<<<<<<< HEAD
+=======
+        "first_name": {
+          "name": "first_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_name": {
+          "name": "last_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+>>>>>>> 89a574d5089d86bd85a8713c557a01c203671c3b
         "role": {
           "name": "role",
           "type": "admin_role",
@@ -403,6 +435,87 @@
           "primaryKey": false,
           "notNull": false
         },
+<<<<<<< HEAD
+=======
+        "password_expiration": {
+          "name": "password_expiration",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "account_lock_threshold": {
+          "name": "account_lock_threshold",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 5
+        },
+        "incorrect_password_attempts": {
+          "name": "incorrect_password_attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "locked": {
+          "name": "locked",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "alternate_email": {
+          "name": "alternate_email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "profile_picture": {
+          "name": "profile_picture",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "first_time_user": {
+          "name": "first_time_user",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "can_change_password": {
+          "name": "can_change_password",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "turn_off_email_notif": {
+          "name": "turn_off_email_notif",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "added_by": {
+          "name": "added_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deleted_date": {
+          "name": "deleted_date",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+>>>>>>> 89a574d5089d86bd85a8713c557a01c203671c3b
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -433,12 +546,21 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
+<<<<<<< HEAD
         "admin_users_region_id_regions_id_fk": {
           "name": "admin_users_region_id_regions_id_fk",
           "tableFrom": "admin_users",
           "tableTo": "regions",
           "columnsFrom": [
             "region_id"
+=======
+        "admin_users_created_by_users_id_fk": {
+          "name": "admin_users_created_by_users_id_fk",
+          "tableFrom": "admin_users",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by"
+>>>>>>> 89a574d5089d86bd85a8713c557a01c203671c3b
           ],
           "columnsTo": [
             "id"
@@ -446,12 +568,21 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
+<<<<<<< HEAD
         "admin_users_created_by_users_id_fk": {
           "name": "admin_users_created_by_users_id_fk",
           "tableFrom": "admin_users",
           "tableTo": "users",
           "columnsFrom": [
             "created_by"
+=======
+        "admin_users_added_by_admin_users_id_fk": {
+          "name": "admin_users_added_by_admin_users_id_fk",
+          "tableFrom": "admin_users",
+          "tableTo": "admin_users",
+          "columnsFrom": [
+            "added_by"
+>>>>>>> 89a574d5089d86bd85a8713c557a01c203671c3b
           ],
           "columnsTo": [
             "id"
@@ -590,12 +721,15 @@
           "primaryKey": false,
           "notNull": false
         },
+<<<<<<< HEAD
         "region_id": {
           "name": "region_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
+=======
+>>>>>>> 89a574d5089d86bd85a8713c557a01c203671c3b
         "author_id": {
           "name": "author_id",
           "type": "uuid",
@@ -639,6 +773,7 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
+<<<<<<< HEAD
         "announcements_region_id_regions_id_fk": {
           "name": "announcements_region_id_regions_id_fk",
           "tableFrom": "announcements",
@@ -652,6 +787,8 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
+=======
+>>>>>>> 89a574d5089d86bd85a8713c557a01c203671c3b
         "announcements_author_id_users_id_fk": {
           "name": "announcements_author_id_users_id_fk",
           "tableFrom": "announcements",
@@ -970,12 +1107,15 @@
           "primaryKey": false,
           "notNull": false
         },
+<<<<<<< HEAD
         "region_id": {
           "name": "region_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
+=======
+>>>>>>> 89a574d5089d86bd85a8713c557a01c203671c3b
         "avatar_url": {
           "name": "avatar_url",
           "type": "text",
@@ -1011,6 +1151,7 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+<<<<<<< HEAD
         },
         "users_region_id_regions_id_fk": {
           "name": "users_region_id_regions_id_fk",
@@ -1024,6 +1165,8 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+=======
+>>>>>>> 89a574d5089d86bd85a8713c557a01c203671c3b
         }
       },
       "compositePrimaryKeys": {},
@@ -1788,8 +1931,12 @@
       "values": [
         "PUBLIC",
         "SCOUTS",
+<<<<<<< HEAD
         "COUNCIL",
         "REGIONAL"
+=======
+        "COUNCIL"
+>>>>>>> 89a574d5089d86bd85a8713c557a01c203671c3b
       ]
     },
     "public.activity_category": {
@@ -1813,6 +1960,7 @@
         "REPORTS_OFFICER"
       ]
     },
+<<<<<<< HEAD
     "public.admin_scope": {
       "name": "admin_scope",
       "schema": "public",
@@ -1822,6 +1970,8 @@
         "NATIONAL"
       ]
     },
+=======
+>>>>>>> 89a574d5089d86bd85a8713c557a01c203671c3b
     "public.application_status": {
       "name": "application_status",
       "schema": "public",

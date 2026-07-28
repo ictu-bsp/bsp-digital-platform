@@ -50,8 +50,8 @@ export const ADMIN_MENU: AdminMenuItem[] = [
   },
 
   {
-    label: "Officers", // create/manage admin (officer) accounts
-    href: "/admin/officers",
+    label: "System Users", // create/manage admin (system user) accounts
+    href: "/admin/system-users",
     roles: ["CHIEF_EXECUTIVE"],
   },
   {
