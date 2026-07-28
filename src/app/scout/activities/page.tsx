@@ -5,7 +5,11 @@ import { getCurrentUser } from "@/lib/auth/current-user";
 import type { Activity, FeaturedBanner } from "@/types/activities";
 import { getPublishedActivities } from "@/services/activity.service";
 import ScoutingActivitiesScreen from "./components/ScoutingActivitiesScreen";
-import { getScoutByUserId, getRegisteredActivities, getRegisteredCounts, } from "@/services/activity-registration.service";
+import {
+  getScoutByUserId,
+  getRegisteredActivities,
+  getRegisteredCounts,
+} from "@/services/activity-registration.service";
 
 export default async function ActivitiesPage() {
   const user = await getCurrentUser();
@@ -24,24 +28,25 @@ export default async function ActivitiesPage() {
   }
 
   const dbActivities = await getPublishedActivities();
-
   const now = new Date();
 
   const scout = await getScoutByUserId(user.id);
 
-  const registeredActivities = scout ? await getRegisteredActivities(scout.id): [];
+  const registeredActivities = scout
+    ? await getRegisteredActivities(scout.id)
+    : [];
 
   const registrationCounts = await getRegisteredCounts(
     dbActivities.map((a) => a.id)
   );
 
   const bannerColors = [
-  "#daf5e7",
-  "#e7f2df",
-  "#d7f0fc",
-  "#f1f8e7",
-  "#e9f6ea",
-];
+    "#daf5e7",
+    "#e7f2df",
+    "#d7f0fc",
+    "#f1f8e7",
+    "#e9f6ea",
+  ];
 
   const banners: FeaturedBanner[] = dbActivities
     .filter(
@@ -52,17 +57,11 @@ export default async function ActivitiesPage() {
     .slice(0, 3)
     .map((activity, index) => ({
       id: activity.id,
-
       title: activity.title,
-
       linkUrl: `/scout/activities/${activity.id}`,
-
-      backgroundColor:
-        bannerColors[index % bannerColors.length],
-
+      backgroundColor: bannerColors[index % bannerColors.length],
       imageUrl:
-        activity.imageUrl &&
-        activity.imageUrl.trim() !== ""
+        activity.imageUrl && activity.imageUrl.trim() !== ""
           ? activity.imageUrl
           : null,
     }));
@@ -77,74 +76,45 @@ export default async function ActivitiesPage() {
   };
 
   const activities: Activity[] = dbActivities
-  .map((activity) => ({
-    id: activity.id,
-
-    title: activity.title,
-
-    description: activity.description,
-
-    startDate: formatDateTime(activity.startDate),
-
-    endDate: formatDateTime(activity.endDate),
-
-    registrationOpen:
-      !activity.registrationDeadline ||
-      activity.registrationDeadline > now,
-
-    maxParticipants: activity.maxParticipants,
-
-    registeredCount: registrationCounts[activity.id] ?? 0,
-
-    minimumRank: activity.minimumRank,
-
-    location: activity.location,
-
-    category: activity.category,
-
-    councilId: activity.councilId,
-
-    imageUrl: activity.imageUrl,
-
-    createdAt: activity.createdAt.toISOString(),
-
-    updatedAt: activity.updatedAt.toISOString(),
-  }))
-  .sort((a, b) => Number(b.registrationOpen) - Number(a.registrationOpen));
-
-  const myActivities: Activity[] =
-  registeredActivities
     .map((activity) => ({
       id: activity.id,
-
       title: activity.title,
-
       description: activity.description,
-
       startDate: formatDateTime(activity.startDate),
-
       endDate: formatDateTime(activity.endDate),
-
       registrationOpen:
         !activity.registrationDeadline ||
         activity.registrationDeadline > now,
-
       maxParticipants: activity.maxParticipants,
-
       registeredCount: registrationCounts[activity.id] ?? 0,
-
       minimumRank: activity.minimumRank,
-
       location: activity.location,
-
       category: activity.category,
-
       councilId: activity.councilId,
-
       imageUrl: activity.imageUrl,
-
       createdAt: activity.createdAt.toISOString(),
+      updatedAt: activity.updatedAt.toISOString(),
+    }))
+    .sort((a, b) => Number(b.registrationOpen) - Number(a.registrationOpen));
 
+  const myActivities: Activity[] = registeredActivities
+    .map((activity) => ({
+      id: activity.id,
+      title: activity.title,
+      description: activity.description,
+      startDate: formatDateTime(activity.startDate),
+      endDate: formatDateTime(activity.endDate),
+      registrationOpen:
+        !activity.registrationDeadline ||
+        activity.registrationDeadline > now,
+      maxParticipants: activity.maxParticipants,
+      registeredCount: registrationCounts[activity.id] ?? 0,
+      minimumRank: activity.minimumRank,
+      location: activity.location,
+      category: activity.category,
+      councilId: activity.councilId,
+      imageUrl: activity.imageUrl,
+      createdAt: activity.createdAt.toISOString(),
       updatedAt: activity.updatedAt.toISOString(),
     }))
     .sort((a, b) => Number(b.registrationOpen) - Number(a.registrationOpen));

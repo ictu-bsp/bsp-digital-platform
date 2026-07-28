@@ -14,7 +14,7 @@ export default function AdminSidebarClient({
   const router = useRouter();
 
   const onLogout = async () => {
-    await fetch("/api/admin/logout", { method: "POST" });
+    await fetch("/api/admin/logout-officer", { method: "POST" });
     router.push("/admin/login");
   };
 

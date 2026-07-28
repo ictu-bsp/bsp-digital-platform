@@ -10,17 +10,11 @@ import LoadingSpinner from "./LoadingSpinner";
 
 interface SuccessOverlayProps {
   open: boolean;
-
   title: string;
-
   message?: string;
-
   subtitle?: string;
-
   avatarUrl?: string | null;
-
   duration?: number;
-
   onComplete?: () => void;
 }
 
