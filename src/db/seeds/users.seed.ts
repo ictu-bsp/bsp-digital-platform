@@ -1,6 +1,7 @@
 //src/db/seeds/users.seeds.ts
 
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import { eq } from "drizzle-orm";
 import * as schema from "../schema";
 import { hashPassword } from "../../lib/auth/hash";
 
@@ -8,6 +9,32 @@ export async function seedUsers(
   db: NodePgDatabase<typeof schema>
 ) {
   const passwordHash = await hashPassword("Password123$");
+
+  const [manilaCouncil] = await db
+    .select()
+    .from(schema.councils)
+    .where(eq(schema.councils.name, "Manila Council"));
+
+  const [bulacanCouncil] = await db
+    .select()
+    .from(schema.councils)
+    .where(eq(schema.councils.name, "Bulacan Council"));
+
+  const [centralLuzonRegion] = await db
+    .select()
+    .from(schema.regions)
+    .where(
+      eq(
+        schema.regions.name,
+        "Central Luzon Region Coordination Office"
+      )
+    );
+
+  if (!manilaCouncil || !bulacanCouncil || !centralLuzonRegion) {
+    throw new Error(
+      "Expected councils/regions not found while seeding users. Seed regions and councils first."
+    );
+  }
 
   const users: typeof schema.users.$inferInsert[] = [
     {
@@ -33,8 +60,50 @@ export async function seedUsers(
       birthdate: new Date("2004-10-12"),
       sex: "Male",
       role: "COUNCIL_ADMIN",
+      councilId: manilaCouncil.id,
       avatarUrl:
         "/uploads/avatars/02685f3f-774c-4153-9409-6d988ecc126e.jpg",
+      emailVerified: new Date(),
+    },
+
+    {
+      email: "bulacan.counciladmin@bsp.ph",
+      passwordHash,
+      firstName: "Bulacan",
+      middleName: null,
+      lastName: "Council",
+      birthdate: new Date("1990-01-01"),
+      sex: "Other",
+      role: "COUNCIL_ADMIN",
+      councilId: bulacanCouncil.id,
+      avatarUrl: null,
+      emailVerified: new Date(),
+    },
+
+    {
+      email: "centralluzon.regionaladmin@bsp.ph",
+      passwordHash,
+      firstName: "Central Luzon",
+      middleName: null,
+      lastName: "Region",
+      birthdate: new Date("1990-01-01"),
+      sex: "Other",
+      role: "REGIONAL_ADMIN",
+      regionId: centralLuzonRegion.id,
+      avatarUrl: null,
+      emailVerified: new Date(),
+    },
+
+    {
+      email: "nationalcouncil.admin@bsp.ph",
+      passwordHash,
+      firstName: "National",
+      middleName: null,
+      lastName: "Council",
+      birthdate: new Date("1990-01-01"),
+      sex: "Other",
+      role: "NATIONAL_ADMIN",
+      avatarUrl: null,
       emailVerified: new Date(),
     },
 

@@ -1,13 +1,14 @@
 // src/app/api/admin/login/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import { adminUsers } from "@/db/schema";
 
 import { verifyPassword } from "@/lib/auth/hash";
 import { getSessionCookie } from "@/lib/auth/cookies";
+import { resolveAdminScope } from "@/lib/utils/admin-scope";
 
 import {
   getCurrentUser,
@@ -44,16 +45,52 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (user.role !== "COUNCIL_ADMIN" && user.role !== "SUPER_ADMIN") {
+    if (
+      user.role !== "COUNCIL_ADMIN" &&
+      user.role !== "REGIONAL_ADMIN" &&
+      user.role !== "NATIONAL_ADMIN" &&
+      user.role !== "SUPER_ADMIN"
+    ) {
       return NextResponse.json(
         { message: "You are not authorized to access the Admin Dashboard." },
         { status: 403 }
       );
     }
 
-    // 2. Find Officer Account (Layer 2)
+    const scope = resolveAdminScope(user);
+
+    if (!scope) {
+      return NextResponse.json(
+        {
+          message:
+            "Your admin account isn't fully configured (missing council/region assignment). Contact a system administrator.",
+        },
+        { status: 403 }
+      );
+    }
+
+    // 2. Find Officer Account (Layer 2) -- scoped to the same tier as the
+    // logged-in top-level account. SUPER_ADMIN is the one exception: it's
+    // the true system account and can log in as any officer anywhere.
+    const scopeFilter =
+      scope.tier === "SUPER"
+        ? undefined
+        : scope.tier === "COUNCIL"
+          ? and(
+              eq(adminUsers.scope, "COUNCIL"),
+              eq(adminUsers.councilId, scope.councilId)
+            )
+          : scope.tier === "REGIONAL"
+            ? and(
+                eq(adminUsers.scope, "REGIONAL"),
+                eq(adminUsers.regionId, scope.regionId)
+              )
+            : eq(adminUsers.scope, "NATIONAL");
+
     const adminUser = await db.query.adminUsers.findFirst({
-      where: eq(adminUsers.username, username),
+      where: scopeFilter
+        ? and(eq(adminUsers.username, username), scopeFilter)
+        : eq(adminUsers.username, username),
     });
 
     if (!adminUser) {

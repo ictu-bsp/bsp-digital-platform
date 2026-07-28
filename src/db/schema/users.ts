@@ -9,6 +9,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { councils } from "./councils";
+import { regions } from "./regions";
 
 export const users = pgTable("users", {
   id: uuid("id")
@@ -46,6 +47,8 @@ export const users = pgTable("users", {
       | "VISITOR"
       | "SCOUT"
       | "COUNCIL_ADMIN"
+      | "REGIONAL_ADMIN"
+      | "NATIONAL_ADMIN"
       | "SUPER_ADMIN"
     >()
     .default("VISITOR")
@@ -57,6 +60,12 @@ export const users = pgTable("users", {
    */
   councilId: uuid("council_id")
     .references(() => councils.id),
+
+  /**
+   * Nullable except for Regional Admins, where it's required.
+   */
+  regionId: uuid("region_id")
+    .references(() => regions.id),
 
   avatarUrl: text("avatar_url"),
 

@@ -12,8 +12,9 @@ import PromoCarousel, {
 } from "./components/PromoCarousel";
 
 import { getCurrentUser } from "@/lib/auth/current-user";
-import { getPublishedActivities } from "@/services/activity.service";
-import { getScoutByUserId } from "@/services/activity-registration.service";
+import { getPublishedActivities, getPublishedActivitiesForScope } from "@/services/activity.service";
+import { getScoutByUserId, getScoutScope } from "@/services/scout.service";
+import { getAnnouncementsForUser } from "@/services/announcement.service";
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -25,20 +26,40 @@ export default async function DashboardPage() {
   const isScout =
     user.role === "SCOUT" ||
     user.role === "COUNCIL_ADMIN" ||
+    user.role === "REGIONAL_ADMIN" ||
+    user.role === "NATIONAL_ADMIN" ||
     user.role === "SUPER_ADMIN";
 
   const scout = await getScoutByUserId(user.id);
 
   const canOpenActivities =
     user.role === "COUNCIL_ADMIN" ||
+    user.role === "REGIONAL_ADMIN" ||
+    user.role === "NATIONAL_ADMIN" ||
     user.role === "SUPER_ADMIN" ||
     (user.role === "SCOUT" &&
       scout?.status === "ACTIVE" &&
       scout?.verificationStatus === "active");
 
-  const dbActivities = await getPublishedActivities();
+  const dbActivities =
+    user.role === "SCOUT"
+      ? await getPublishedActivitiesForScope(
+          await getScoutScope(user.id)
+        )
+      : await getPublishedActivities();
 
   const now = new Date();
+
+  const scoutScope =
+    user.role === "SCOUT"
+      ? await getScoutScope(user.id)
+      : { councilId: user.councilId ?? null, regionId: user.regionId ?? null };
+
+  const announcements = await getAnnouncementsForUser({
+    role: user.role,
+    councilId: scoutScope.councilId,
+    regionId: scoutScope.regionId,
+  });
 
   const openActivities = dbActivities.filter(
     (activity) =>
@@ -84,7 +105,7 @@ export default async function DashboardPage() {
 
             <NotificationSection role={user.role} />
 
-            <AnnouncementSection role={user.role} />
+            <AnnouncementSection announcements={announcements} />
 
             {isScout && <ProgressSection />}
 

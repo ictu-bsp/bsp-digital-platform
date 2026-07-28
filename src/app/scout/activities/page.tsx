@@ -3,10 +3,13 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import type { Activity, FeaturedBanner } from "@/types/activities";
-import { getPublishedActivities } from "@/services/activity.service";
-import ScoutingActivitiesScreen from "./components/ScoutingActivitiesScreen";
+import { getPublishedActivities, getPublishedActivitiesForScope } from "@/services/activity.service";
 import {
   getScoutByUserId,
+  getScoutScope,
+} from "@/services/scout.service";
+import ScoutingActivitiesScreen from "./components/ScoutingActivitiesScreen";
+import {
   getRegisteredActivities,
   getRegisteredCounts,
 } from "@/services/activity-registration.service";
@@ -21,16 +24,24 @@ export default async function ActivitiesPage() {
   const canViewActivities =
     user.role === "SCOUT" ||
     user.role === "COUNCIL_ADMIN" ||
+    user.role === "REGIONAL_ADMIN" ||
+    user.role === "NATIONAL_ADMIN" ||
     user.role === "SUPER_ADMIN";
 
   if (!canViewActivities) {
     redirect("/scout/membership");
   }
 
-  const dbActivities = await getPublishedActivities();
-  const now = new Date();
-
   const scout = await getScoutByUserId(user.id);
+
+  const dbActivities =
+    user.role === "SCOUT"
+      ? await getPublishedActivitiesForScope(
+          await getScoutScope(user.id)
+        )
+      : await getPublishedActivities();
+
+  const now = new Date();
 
   const registeredActivities = scout
     ? await getRegisteredActivities(scout.id)

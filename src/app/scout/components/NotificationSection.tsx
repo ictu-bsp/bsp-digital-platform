@@ -3,7 +3,7 @@
 import NotificationCard from "./NotificationCard";
 
 interface NotificationSectionProps {
-  role: "VISITOR" | "SCOUT" | "COUNCIL_ADMIN" | "SUPER_ADMIN";
+  role: "VISITOR" | "SCOUT" | "COUNCIL_ADMIN" | "REGIONAL_ADMIN" | "NATIONAL_ADMIN" | "SUPER_ADMIN";
 }
 
 export default function NotificationSection({
