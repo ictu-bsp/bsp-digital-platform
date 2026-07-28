@@ -5,36 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1784858498919,
-      "tag": "0000_thick_micromacro",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1784791424529,
-      "tag": "0002_cold_pyro",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1784979500000,
-      "tag": "0003_add_registration_fee",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1785119930932,
-      "tag": "0004_clumsy_dragon_man",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1785132016181,
-      "tag": "0005_lovely_christian_walker",
+      "when": 1785200381278,
+      "tag": "0000_steep_nextwave",
       "breakpoints": true
     }
   ]

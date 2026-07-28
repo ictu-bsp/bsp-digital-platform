@@ -1,9 +1,10 @@
-CREATE TYPE "public"."announcement_visibility" AS ENUM('PUBLIC', 'SCOUTS', 'COUNCIL');--> statement-breakpoint
+CREATE TYPE "public"."announcement_visibility" AS ENUM('PUBLIC', 'SCOUTS', 'COUNCIL', 'REGIONAL');--> statement-breakpoint
 CREATE TYPE "public"."activity_category" AS ENUM('COUNCIL', 'REGIONAL', 'NATIONAL');--> statement-breakpoint
 CREATE TYPE "public"."admin_role" AS ENUM('CHIEF_EXECUTIVE', 'MEMBERSHIP_OFFICER', 'ACTIVITIES_OFFICER', 'FINANCE_OFFICER', 'REGISTRAR', 'REPORTS_OFFICER');--> statement-breakpoint
+CREATE TYPE "public"."admin_scope" AS ENUM('COUNCIL', 'REGIONAL', 'NATIONAL');--> statement-breakpoint
 CREATE TYPE "public"."application_status" AS ENUM('PENDING', 'APPROVED', 'REJECTED', 'CANCELLED');--> statement-breakpoint
 CREATE TYPE "public"."payment_status" AS ENUM('awaiting_payment', 'paid', 'failed');--> statement-breakpoint
-CREATE TYPE "public"."registration_status" AS ENUM('pending', 'active', 'expired', 'cancelled');--> statement-breakpoint
+CREATE TYPE "public"."registration_status" AS ENUM('pending', 'membership_approved', 'active', 'expired', 'cancelled');--> statement-breakpoint
 CREATE TYPE "public"."scout_rank" AS ENUM('KID', 'KAB', 'BOY', 'SENIOR', 'ROVER');--> statement-breakpoint
 CREATE TYPE "public"."scout_status" AS ENUM('PENDING', 'ACTIVE', 'SUSPENDED', 'EXPIRED');--> statement-breakpoint
 CREATE TYPE "public"."verification_status" AS ENUM('unverified', 'pending', 'active');--> statement-breakpoint
@@ -18,7 +19,10 @@ CREATE TABLE "activities" (
 	"location" text NOT NULL,
 	"category" "activity_category" NOT NULL,
 	"council_id" uuid,
+	"region_id" uuid,
 	"max_participants" integer,
+	"minimum_rank" "scout_rank",
+	"registration_fee" integer,
 	"is_published" boolean DEFAULT true NOT NULL,
 	"created_by" uuid,
 	"created_at" timestamp DEFAULT now() NOT NULL,
@@ -45,14 +49,30 @@ CREATE TABLE "administrators" (
 --> statement-breakpoint
 CREATE TABLE "admin_users" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"council_id" uuid NOT NULL,
+	"scope" "admin_scope" DEFAULT 'COUNCIL' NOT NULL,
+	"council_id" uuid,
+	"region_id" uuid,
 	"created_by" uuid NOT NULL,
 	"username" text NOT NULL,
 	"password_hash" text NOT NULL,
 	"full_name" text NOT NULL,
+	"first_name" text,
+	"last_name" text,
 	"role" "admin_role" NOT NULL,
 	"active" boolean DEFAULT true NOT NULL,
 	"last_login_at" timestamp,
+	"password_expiration" date,
+	"account_lock_threshold" integer DEFAULT 5,
+	"incorrect_password_attempts" integer DEFAULT 0 NOT NULL,
+	"locked" boolean DEFAULT false NOT NULL,
+	"email" text,
+	"alternate_email" text,
+	"profile_picture" text,
+	"first_time_user" boolean DEFAULT true NOT NULL,
+	"can_change_password" boolean DEFAULT true NOT NULL,
+	"turn_off_email_notif" boolean DEFAULT false NOT NULL,
+	"added_by" uuid,
+	"deleted_date" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "admin_users_username_unique" UNIQUE("username")
@@ -75,6 +95,7 @@ CREATE TABLE "announcements" (
 	"image_url" text,
 	"visibility" "announcement_visibility" DEFAULT 'PUBLIC' NOT NULL,
 	"council_id" uuid,
+	"region_id" uuid,
 	"author_id" uuid NOT NULL,
 	"is_pinned" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
@@ -127,6 +148,7 @@ CREATE TABLE "users" (
 	"sex" text NOT NULL,
 	"role" text DEFAULT 'VISITOR' NOT NULL,
 	"council_id" uuid,
+	"region_id" uuid,
 	"avatar_url" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
@@ -232,19 +254,24 @@ CREATE TABLE "sessions" (
 );
 --> statement-breakpoint
 ALTER TABLE "activities" ADD CONSTRAINT "activities_council_id_councils_id_fk" FOREIGN KEY ("council_id") REFERENCES "public"."councils"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "activities" ADD CONSTRAINT "activities_region_id_regions_id_fk" FOREIGN KEY ("region_id") REFERENCES "public"."regions"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "activities" ADD CONSTRAINT "activities_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "activity_registrations" ADD CONSTRAINT "activity_registrations_scout_id_scouts_id_fk" FOREIGN KEY ("scout_id") REFERENCES "public"."scouts"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "activity_registrations" ADD CONSTRAINT "activity_registrations_activity_id_activities_id_fk" FOREIGN KEY ("activity_id") REFERENCES "public"."activities"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "administrators" ADD CONSTRAINT "administrators_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "administrators" ADD CONSTRAINT "administrators_role_id_roles_id_fk" FOREIGN KEY ("role_id") REFERENCES "public"."roles"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "admin_users" ADD CONSTRAINT "admin_users_council_id_councils_id_fk" FOREIGN KEY ("council_id") REFERENCES "public"."councils"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "admin_users" ADD CONSTRAINT "admin_users_region_id_regions_id_fk" FOREIGN KEY ("region_id") REFERENCES "public"."regions"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "admin_users" ADD CONSTRAINT "admin_users_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "admin_users" ADD CONSTRAINT "admin_users_added_by_admin_users_id_fk" FOREIGN KEY ("added_by") REFERENCES "public"."admin_users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "advancements" ADD CONSTRAINT "advancements_scout_id_scouts_id_fk" FOREIGN KEY ("scout_id") REFERENCES "public"."scouts"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "announcements" ADD CONSTRAINT "announcements_council_id_councils_id_fk" FOREIGN KEY ("council_id") REFERENCES "public"."councils"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "announcements" ADD CONSTRAINT "announcements_region_id_regions_id_fk" FOREIGN KEY ("region_id") REFERENCES "public"."regions"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "announcements" ADD CONSTRAINT "announcements_author_id_users_id_fk" FOREIGN KEY ("author_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "councils" ADD CONSTRAINT "councils_region_id_regions_id_fk" FOREIGN KEY ("region_id") REFERENCES "public"."regions"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "email_verifications" ADD CONSTRAINT "email_verifications_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "users" ADD CONSTRAINT "users_council_id_councils_id_fk" FOREIGN KEY ("council_id") REFERENCES "public"."councils"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "users" ADD CONSTRAINT "users_region_id_regions_id_fk" FOREIGN KEY ("region_id") REFERENCES "public"."regions"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "scouts" ADD CONSTRAINT "scouts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "scouts" ADD CONSTRAINT "scouts_council_id_councils_id_fk" FOREIGN KEY ("council_id") REFERENCES "public"."councils"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "scouts" ADD CONSTRAINT "scouts_approved_by_users_id_fk" FOREIGN KEY ("approved_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint

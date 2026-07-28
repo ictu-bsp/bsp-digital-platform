@@ -67,3 +67,13 @@ export const adminRoleEnum = pgEnum("admin_role", [
   "REGISTRAR",
   "REPORTS_OFFICER",
 ]);
+
+// Which tier of the org an admin_users (officer) row belongs to.
+// COUNCIL -> scoped to one council (councilId set, regionId null)
+// REGIONAL -> scoped to one region (regionId set, councilId null)
+// NATIONAL -> scoped to the whole org (both null)
+export const adminScopeEnum = pgEnum("admin_scope", [
+  "COUNCIL",
+  "REGIONAL",
+  "NATIONAL",
+]);

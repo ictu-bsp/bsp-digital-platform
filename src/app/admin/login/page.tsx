@@ -19,9 +19,11 @@ export default async function AdminLoginPage() {
     redirect("/login");
   }
 
-  // Layer 1 Check: Require valid council/super admin role
+  // Layer 1 Check: Require valid council/regional/national/super admin role
   if (
     session.user.role !== "COUNCIL_ADMIN" &&
+    session.user.role !== "REGIONAL_ADMIN" &&
+    session.user.role !== "NATIONAL_ADMIN" &&
     session.user.role !== "SUPER_ADMIN"
   ) {
     redirect("/scout");

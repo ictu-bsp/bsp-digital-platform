@@ -60,7 +60,7 @@ const emptyForm = {
   isPublished: true,
 };
 
-export default function ActivitiesTable({ initialActivities, councils }: Props) {
+export default function ActivitiesTable({ initialActivities, councils, regions }: Props) {
   const [activities, setActivities] = useState<ActivityRow[]>(initialActivities);
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -451,7 +451,25 @@ export default function ActivitiesTable({ initialActivities, councils }: Props) 
                     </option>
                   ))}
                 </select>
+
+                <select
+                  className="border rounded px-3 py-2 text-sm w-1/2"
+                  value={form.regionId}
+                  onChange={(e) => setForm({ ...form, regionId: e.target.value })}
+                >
+                  <option value="">No specific region</option>
+                  {regions.map((region) => (
+                    <option key={region.id} value={region.id}>
+                      {region.name}
+                    </option>
+                  ))}
+                </select>
               </div>
+
+              <p className="text-xs text-zinc-500 -mt-2">
+                Leave both council and region unset for a national activity.
+                Set one or the other, not both.
+              </p>
 
               <label className="text-xs font-semibold text-zinc-600">
                 Start Date & Time
@@ -622,6 +640,24 @@ export default function ActivitiesTable({ initialActivities, councils }: Props) 
                     {councils.map((council) => (
                       <option key={council.id} value={council.id}>
                         {council.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <div className="flex gap-2">
+                <label className="text-xs font-semibold text-zinc-600 w-1/2">
+                  Region
+                  <select
+                    className="border rounded px-3 py-2 text-sm w-full mt-1"
+                    value={editForm.regionId}
+                    onChange={(e) => setEditForm({ ...editForm, regionId: e.target.value })}
+                  >
+                    <option value="">No specific region</option>
+                    {regions.map((region) => (
+                      <option key={region.id} value={region.id}>
+                        {region.name}
                       </option>
                     ))}
                   </select>

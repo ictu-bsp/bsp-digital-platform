@@ -5,12 +5,13 @@
 // hands it to the client-side table/form component.
 
 import { getActivitiesAction } from "@/app/actions/activities";
-import { getCouncilsAction } from "@/app/actions/councils";
+import { getCouncilsAction, getRegionsAction } from "@/app/actions/councils";
 import ActivitiesTable from "./ActivitiesTable";
 
 export default async function ActivitiesPage() {
   const result = await getActivitiesAction();
   const councilsResult = await getCouncilsAction();
+  const regionsResult = await getRegionsAction();
 
   if (!result.success || !result.data) {
     return (
@@ -35,6 +36,7 @@ export default async function ActivitiesPage() {
       <ActivitiesTable
         initialActivities={result.data}
         councils={councilsResult.success ? councilsResult.data ?? [] : []}
+        regions={regionsResult.success ? regionsResult.data ?? [] : []}
       />
     </div>
   );
