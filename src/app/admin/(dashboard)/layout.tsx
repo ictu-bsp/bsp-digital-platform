@@ -70,7 +70,9 @@ export default async function AdminLayout({
             </p>
 
             <p className="text-xs text-zinc-500">
-              {officerRole.replaceAll("_", " ")}
+              {officerRole === "CHIEF_EXECUTIVE"
+                ? "Local Council Admin"
+                : officerRole.replaceAll("_", " ")}
             </p>
           </div>
         </div>
@@ -79,8 +81,7 @@ export default async function AdminLayout({
       <div className="flex gap-4">
         {/* Sidebar */}
         <AdminSidebar role={officerRole as AdminRole} />
-
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 min-w-0">{children}</main>
       </div>
     </div>
   );

@@ -2,8 +2,13 @@
 
 import { db } from "@/db";
 import { count, eq, inArray, desc } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { scoutApplications } from "@/db/schema";
 import { assignMembershipIdToScout } from "@/services/application.service";
+import { hashPassword } from "@/lib/auth/hash";
+import { asc } from "drizzle-orm";
+
+
 
 import {
   scouts,
@@ -974,27 +979,263 @@ export type AdminUserRecord = {
   id: string;
   username: string;
   fullName: string;
+  firstName: string | null;
+  lastName: string | null;
   role: string;
   active: boolean;
   council: string;
+  councilId: string;
   lastLoginAt: Date | null;
+
+  passwordExpiration: Date | null;
+  accountLockThreshold: number | null;
+  incorrectPasswordAttempts: number;
+  locked: boolean;
+
+  email: string | null;
+  alternateEmail: string | null;
+  profilePicture: string | null;
+
+  firstTimeUser: boolean;
+  canChangePassword: boolean;
+  turnOffEmailNotif: boolean;
+
+  addedBy: string | null;
+  addedByName: string | null;
   createdAt: Date;
+  deletedAt: Date | null;
 };
 
 export async function getAdminUsers(): Promise<AdminUserRecord[]> {
+  const addedByUser = alias(adminUsers, "added_by_user");
+
   const records = await db
     .select({
       id: adminUsers.id,
       username: adminUsers.username,
       fullName: adminUsers.fullName,
+      firstName: adminUsers.firstName,
+      lastName: adminUsers.lastName,
       role: adminUsers.role,
       active: adminUsers.active,
       council: councils.name,
+      councilId: adminUsers.councilId,
       lastLoginAt: adminUsers.lastLoginAt,
+
+      passwordExpiration: adminUsers.passwordExpiration,
+      accountLockThreshold: adminUsers.accountLockThreshold,
+      incorrectPasswordAttempts: adminUsers.incorrectPasswordAttempts,
+      locked: adminUsers.locked,
+
+      email: adminUsers.email,
+      alternateEmail: adminUsers.alternateEmail,
+      profilePicture: adminUsers.profilePicture,
+
+      firstTimeUser: adminUsers.firstTimeUser,
+      canChangePassword: adminUsers.canChangePassword,
+      turnOffEmailNotif: adminUsers.turnOffEmailNotif,
+
+      addedBy: adminUsers.addedBy,
+      addedByName: addedByUser.fullName,
       createdAt: adminUsers.createdAt,
+      deletedAt: adminUsers.deletedAt,
     })
     .from(adminUsers)
-    .innerJoin(councils, eq(adminUsers.councilId, councils.id));
+    .innerJoin(councils, eq(adminUsers.councilId, councils.id))
+    .leftJoin(addedByUser, eq(adminUsers.addedBy, addedByUser.id));
 
   return records;
+}
+
+
+export async function getAdminUserById(
+  id: string
+): Promise<AdminUserRecord | null> {
+  const addedByUser = alias(adminUsers, "added_by_user_single");
+
+  const [record] = await db
+    .select({
+      id: adminUsers.id,
+      username: adminUsers.username,
+      fullName: adminUsers.fullName,
+      firstName: adminUsers.firstName,
+      lastName: adminUsers.lastName,
+      role: adminUsers.role,
+      active: adminUsers.active,
+      council: councils.name,
+      councilId: adminUsers.councilId,
+      lastLoginAt: adminUsers.lastLoginAt,
+
+      passwordExpiration: adminUsers.passwordExpiration,
+      accountLockThreshold: adminUsers.accountLockThreshold,
+      incorrectPasswordAttempts: adminUsers.incorrectPasswordAttempts,
+      locked: adminUsers.locked,
+
+      email: adminUsers.email,
+      alternateEmail: adminUsers.alternateEmail,
+      profilePicture: adminUsers.profilePicture,
+
+      firstTimeUser: adminUsers.firstTimeUser,
+      canChangePassword: adminUsers.canChangePassword,
+      turnOffEmailNotif: adminUsers.turnOffEmailNotif,
+
+      addedBy: adminUsers.addedBy,
+      addedByName: addedByUser.fullName,
+      createdAt: adminUsers.createdAt,
+      deletedAt: adminUsers.deletedAt,
+    })
+    .from(adminUsers)
+    .innerJoin(councils, eq(adminUsers.councilId, councils.id))
+    .leftJoin(addedByUser, eq(adminUsers.addedBy, addedByUser.id))
+    .where(eq(adminUsers.id, id));
+
+  return record ?? null;
+}
+
+export type CreateAdminUserInput = {
+  councilId: string;
+  createdBy: string; // users.id of the person submitting the form
+  addedBy: string | null; // adminUsers.id of the acting admin, if applicable
+
+  username: string;
+  password: string; // plain text in — hashed before insert
+  firstName: string;
+  lastName: string;
+  role: (typeof adminUsers.role.enumValues)[number];
+
+  email: string | null;
+  alternateEmail: string | null;
+  passwordExpiration: string | null; // ISO date string, e.g. "2027-01-01"
+  accountLockThreshold: number | null;
+
+  firstTimeUser: boolean;
+  canChangePassword: boolean;
+  turnOffEmailNotif: boolean;
+  locked: boolean;
+};
+
+export async function createAdminUser(input: CreateAdminUserInput) {
+  // NOTE: hashing must match whatever library src/app/api/admin/login/route.ts
+  // uses to verify passwords (bcrypt, argon2, etc.) — confirm before wiring
+  // this up, since a mismatch would make new accounts unable to log in.
+  const passwordHash = await hashPassword(input.password);
+
+  const [created] = await db
+    .insert(adminUsers)
+    .values({
+      councilId: input.councilId,
+      createdBy: input.createdBy,
+      addedBy: input.addedBy,
+
+      username: input.username,
+      passwordHash,
+      fullName: `${input.firstName} ${input.lastName}`,
+      firstName: input.firstName,
+      lastName: input.lastName,
+      role: input.role,
+
+      email: input.email,
+      alternateEmail: input.alternateEmail,
+      passwordExpiration: input.passwordExpiration
+        ? new Date(input.passwordExpiration)
+        : null,
+      accountLockThreshold: input.accountLockThreshold,
+
+      firstTimeUser: input.firstTimeUser,
+      canChangePassword: input.canChangePassword,
+      turnOffEmailNotif: input.turnOffEmailNotif,
+      locked: input.locked,
+    })
+    .returning();
+
+  return created;
+}
+
+export type UpdateAdminUserInput = Partial<
+  Omit<CreateAdminUserInput, "password" | "createdBy">
+> & {
+  password?: string; // only present if admin is resetting the password
+};
+
+export async function updateAdminUser(
+  id: string,
+  input: UpdateAdminUserInput
+) {
+  const updateValues: Partial<typeof adminUsers.$inferInsert> = {
+    updatedAt: new Date(),
+  };
+
+  if (input.username !== undefined) updateValues.username = input.username;
+  if (input.firstName !== undefined) updateValues.firstName = input.firstName;
+  if (input.lastName !== undefined) updateValues.lastName = input.lastName;
+  if (input.firstName !== undefined || input.lastName !== undefined) {
+    // Keep fullName in sync if either name part changes.
+    const existing = await getAdminUserById(id);
+    updateValues.fullName = `${input.firstName ?? existing?.firstName ?? ""} ${
+      input.lastName ?? existing?.lastName ?? ""
+    }`.trim();
+  }
+  if (input.role !== undefined) updateValues.role = input.role;
+  if (input.email !== undefined) updateValues.email = input.email;
+  if (input.alternateEmail !== undefined)
+    updateValues.alternateEmail = input.alternateEmail;
+  if (input.passwordExpiration !== undefined) {
+    updateValues.passwordExpiration = input.passwordExpiration
+      ? new Date(input.passwordExpiration)
+      : null;
+  }
+  if (input.accountLockThreshold !== undefined)
+    updateValues.accountLockThreshold = input.accountLockThreshold;
+  if (input.firstTimeUser !== undefined)
+    updateValues.firstTimeUser = input.firstTimeUser;
+  if (input.canChangePassword !== undefined)
+    updateValues.canChangePassword = input.canChangePassword;
+  if (input.turnOffEmailNotif !== undefined)
+    updateValues.turnOffEmailNotif = input.turnOffEmailNotif;
+  if (input.locked !== undefined) updateValues.locked = input.locked;
+  if (input.addedBy !== undefined) updateValues.addedBy = input.addedBy;
+
+  if (input.password) {
+    updateValues.passwordHash = await hashPassword(input.password);
+  }
+
+  const [updated] = await db
+    .update(adminUsers)
+    .set(updateValues)
+    .where(eq(adminUsers.id, id))
+    .returning();
+
+  return updated;
+}
+
+// Soft-delete: sets deletedAt + active=false, does NOT remove the row.
+// This preserves audit history (addedBy chains, sessions FK, etc.)
+export async function deactivateAdminUser(id: string) {
+  const [deactivated] = await db
+    .update(adminUsers)
+    .set({
+      active: false,
+      deletedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(adminUsers.id, id))
+    .returning();
+
+  return deactivated;
+}
+
+
+export type CouncilOption = {
+  id: string;
+  name: string;
+};
+
+export async function getCouncilsForDropdown(): Promise<CouncilOption[]> {
+  return db
+    .select({
+      id: councils.id,
+      name: councils.name,
+    })
+    .from(councils)
+    .orderBy(asc(councils.name));
 }
