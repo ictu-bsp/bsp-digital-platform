@@ -1,4 +1,4 @@
-// src/app/api/admin/reports/activities/[activityId]/route.ts
+// src/app/admin/api/reports/activities/[activityId]/route.ts
 //
 // GET /api/admin/reports/activities/:activityId
 // Drill-down: returns the list of scouts enrolled in a specific activity,

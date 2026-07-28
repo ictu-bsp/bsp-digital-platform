@@ -5,8 +5,8 @@ import { redirect } from "next/navigation";
 
 import Header from "@/app/scout/components/Header";
 import BottomNav from "@/app/scout/components/BottomNav";
-import JoinButton from "@/app/(public)/components/JoinButton";
-import LeaveButton from "@/app/(public)/components/LeaveButton";
+import JoinButton from "@/app/scout/activities/components/JoinButton";
+import LeaveButton from "@/app/scout/activities/components/LeaveButton";
 import ActivityMetaBadges from "@/app/scout/activities/components/ActivityMetaBadges";
 
 import { getCurrentUser } from "@/lib/auth/current-user";

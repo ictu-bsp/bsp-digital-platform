@@ -1,4 +1,4 @@
-// src/app/api/admin/reports/route.ts
+// src/app/admin/api/reports/route.ts
 //
 // GET /api/admin/reports
 // Returns all 6 admin reports in one payload.

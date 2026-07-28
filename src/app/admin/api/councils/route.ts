@@ -1,4 +1,4 @@
-// src/app/api/admin/councils/route.ts
+// src/app/admin/api/councils/route.ts
 
 import { NextResponse } from "next/server";
 import { getCouncilsForDropdown } from "@/services/admin.service";

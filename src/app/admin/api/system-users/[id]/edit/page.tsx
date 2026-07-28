@@ -1,5 +1,6 @@
+// src/app/admin/api/system-users/[id]/edit/page.tsx
+
 "use client";
-// src/app/admin/(dashboard)/system-users/[id]/edit/page.tsx
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";

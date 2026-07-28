@@ -3,7 +3,7 @@
 "use client";
 
 import Link from "next/link";
-
+//Scout Activites Join Button Functions
 interface JoinButtonProps {
   activityId: string;
   registrationDeadline?: Date | string | null;

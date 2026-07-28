@@ -1,4 +1,4 @@
-//src/app/api/admin/logout-officer/route.ts
+//src/app/admin/api/logout-officer/route.ts
 
 import { NextResponse } from "next/server";
 import { getSessionCookie } from "@/lib/auth/cookies";

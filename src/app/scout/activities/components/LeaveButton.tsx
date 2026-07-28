@@ -5,6 +5,7 @@ import Link from "next/link";
 interface LeaveButtonProps {
   activityId: string;
 }
+//Scout Activites Leave Button Functions
 
 export default function LeaveButton({
   activityId,

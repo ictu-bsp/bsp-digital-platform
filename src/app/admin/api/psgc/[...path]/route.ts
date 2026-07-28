@@ -1,4 +1,4 @@
-// src/app/api/psgc/[...path]/route.ts
+// src/app/admin/api/psgc/[...path]/route.ts
 // Server-side proxy to the free PSGC (Philippine Standard Geographic Code)
 // API (https://psgc.gitlab.io/api/). We proxy instead of calling it
 // directly from the browser to avoid CORS issues and keep the third-party
