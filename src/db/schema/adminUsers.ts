@@ -12,13 +12,8 @@ import {
 
 import { users } from "./users";
 import { councils } from "./councils";
-<<<<<<< HEAD
 import { regions } from "./regions";
 import { adminRoleEnum, adminScopeEnum } from "./enums";
-
-=======
-import { adminRoleEnum } from "./enums";
->>>>>>> 89a574d5089d86bd85a8713c557a01c203671c3b
 
 export const adminUsers = pgTable("admin_users", {
   id: uuid("id")
