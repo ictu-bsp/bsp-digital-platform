@@ -1,8 +1,10 @@
 // src/app/admin/scout-roster/page.tsx
 import { getScoutRosterAction } from "@/app/actions/scouts";
 import { ScoutRosterTable } from "./ScoutRosterTable";
+import { requireAdminPage } from "@/lib/auth/require-admin";
 // Fetch and display the admin scout roster on the server side.
 export default async function ScoutRosterPage() {
+  await requireAdminPage(["CHIEF_EXECUTIVE", "MEMBERSHIP_OFFICER", "ACTIVITIES_OFFICER", "REGISTRAR"]);
   const result = await getScoutRosterAction();
   if (!result.success || !result.data) {
     return (

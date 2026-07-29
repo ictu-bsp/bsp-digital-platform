@@ -3,29 +3,27 @@
 import { useState } from "react";
 import { approveRegistrationAction, rejectRegistrationAction } from "@/app/actions/admin";
 import type { PendingRegistrationRecord } from "@/services/admin.service";
-// Calculate age in years based on a birthdate input string or Date object.
+// Calculates age in years based on birthdate
 function calculateAge(birthdate: Date | string): number {
   const today = new Date();
   const bday = new Date(birthdate);
   let age = today.getFullYear() - bday.getFullYear();
   const monthDiff = today.getMonth() - bday.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < bday.getDate())) {
-    age--;
-  }
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < bday.getDate())) age--;
   return age;
 }
-// Render the table of pending registrations and the approval/rejection modal.
+// Renders pending registrations list and review modal
 export default function RegistrationTable({ registrations }: { registrations: PendingRegistrationRecord[] }) {
   const [selected, setSelected] = useState<PendingRegistrationRecord | null>(null);
   const [feedback, setFeedback] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [rows, setRows] = useState(registrations);
-  // Reset selected registration and feedback state to close the modal.
+  // Resets modal selection and state
   const closeModal = () => {
     setSelected(null);
     setFeedback("");
   };
-  // Approve selected registration record and update the pending list state.
+  // Handles registration approval action
   const handleApprove = async () => {
     if (!selected) return;
     setIsSubmitting(true);
@@ -33,12 +31,10 @@ export default function RegistrationTable({ registrations }: { registrations: Pe
     if (result.success) {
       setRows((prev) => prev.filter((r) => r.id !== selected.id));
       closeModal();
-    } else {
-      alert(result.error ?? "Failed to approve registration.");
-    }
+    } else alert(result.error ?? "Failed to approve registration.");
     setIsSubmitting(false);
   };
-  // Reject selected registration record with feedback and update state.
+  // Handles registration rejection with feedback action
   const handleReject = async () => {
     if (!selected) return;
     setIsSubmitting(true);
@@ -46,9 +42,7 @@ export default function RegistrationTable({ registrations }: { registrations: Pe
     if (result.success) {
       setRows((prev) => prev.filter((r) => r.id !== selected.id));
       closeModal();
-    } else {
-      alert(result.error ?? "Failed to reject registration.");
-    }
+    } else alert(result.error ?? "Failed to reject registration.");
     setIsSubmitting(false);
   };
   return (

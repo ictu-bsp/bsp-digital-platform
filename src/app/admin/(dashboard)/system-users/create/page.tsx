@@ -1,9 +1,6 @@
 // src/app/admin/(dashboard)/system-users/create/page.tsx
 
-import { redirect } from "next/navigation";
-import { getSessionCookie } from "@/lib/auth/cookies";
-import { getCurrentSession } from "@/lib/auth/session";
-import { resolveAdminScope } from "@/lib/utils/admin-scope";
+import { requireAdminPage } from "@/lib/auth/require-admin";
 import { getCouncilsAction, getRegionsAction } from "@/app/actions/councils";
 import CreateSystemUserForm from "./CreateSystemUserForm";
 
@@ -13,14 +10,8 @@ import CreateSystemUserForm from "./CreateSystemUserForm";
 // inherited from their own account, except for the true SUPER_ADMIN system
 // account, which can target any council/region/national tier explicitly.
 export default async function CreateSystemUserPage() {
-  const sessionId = await getSessionCookie();
-  if (!sessionId) redirect("/login");
-
-  const session = await getCurrentSession(sessionId);
-  if (!session) redirect("/login");
-
-  const scope = resolveAdminScope(session.user);
-  if (!scope) redirect("/admin/login");
+  // Matches the "System Users" menu item's role list in admin-menu.ts.
+  const { scope } = await requireAdminPage(["CHIEF_EXECUTIVE"]);
 
   let councils: { id: string; name: string }[] = [];
   let regions: { id: string; name: string }[] = [];

@@ -17,8 +17,10 @@ export * from "./pending-user-registrations";
 // 3. Other application modules
 export * from "./activities";
 export * from "./activity-registrations";
+export * from "./activity-payments";
 export * from "./advancements";
 export * from "./announcements";
+export * from "./notifications";
 export * from "./email-verifications";
 export * from "./meritbadges";
 export * from "./payments";

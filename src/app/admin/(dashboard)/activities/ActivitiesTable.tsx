@@ -34,6 +34,7 @@ interface Props {
   initialActivities: ActivityRow[];
   councils: Council[];
   regions: Region[];
+  scope: { tier: "COUNCIL" | "REGIONAL" | "NATIONAL" | "SUPER"; councilId?: string; regionId?: string };
 }
 const emptyForm = {
   title: "",
@@ -51,7 +52,16 @@ const emptyForm = {
   isPublished: true,
 };
 // Render the activities administration table with search, filtering, creation, and inline editing.
-export default function ActivitiesTable({ initialActivities, councils, regions }: Props) {
+export default function ActivitiesTable({ initialActivities, councils, regions, scope }: Props) {
+  const scopeLabel =
+    scope.tier === "COUNCIL"
+      ? councils.find((c) => c.id === scope.councilId)?.name ?? "your council"
+      : scope.tier === "REGIONAL"
+        ? regions.find((r) => r.id === scope.regionId)?.name ?? "your region"
+        : scope.tier === "NATIONAL"
+          ? "the national tier (visible to every scout)"
+          : null;
+
   const [activities, setActivities] = useState<ActivityRow[]>(initialActivities);
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -274,20 +284,30 @@ export default function ActivitiesTable({ initialActivities, councils, regions }
                   <option value="REGIONAL">Regional</option>
                   <option value="NATIONAL">National</option>
                 </select>
-                <select className="border rounded px-3 py-2 text-sm w-1/2" value={form.councilId} onChange={(e) => setForm({ ...form, councilId: e.target.value })}>
-                  <option value="">No specific council</option>
-                  {councils.map((council) => (
-                    <option key={council.id} value={council.id}>{council.name}</option>
-                  ))}
-                </select>
-                <select className="border rounded px-3 py-2 text-sm w-1/2" value={form.regionId} onChange={(e) => setForm({ ...form, regionId: e.target.value })}>
-                  <option value="">No specific region</option>
-                  {regions.map((region) => (
-                    <option key={region.id} value={region.id}>{region.name}</option>
-                  ))}
-                </select>
+                {scope.tier === "SUPER" ? (
+                  <>
+                    <select className="border rounded px-3 py-2 text-sm w-1/2" value={form.councilId} onChange={(e) => setForm({ ...form, councilId: e.target.value })}>
+                      <option value="">No specific council</option>
+                      {councils.map((council) => (
+                        <option key={council.id} value={council.id}>{council.name}</option>
+                      ))}
+                    </select>
+                    <select className="border rounded px-3 py-2 text-sm w-1/2" value={form.regionId} onChange={(e) => setForm({ ...form, regionId: e.target.value })}>
+                      <option value="">No specific region</option>
+                      {regions.map((region) => (
+                        <option key={region.id} value={region.id}>{region.name}</option>
+                      ))}
+                    </select>
+                  </>
+                ) : null}
               </div>
-              <p className="text-xs text-zinc-500 -mt-2">Leave both council and region unset for a national activity. Set one or the other, not both.</p>
+              {scope.tier === "SUPER" ? (
+                <p className="text-xs text-zinc-500 -mt-2">Leave both council and region unset for a national activity. Set one or the other, not both.</p>
+              ) : (
+                <p className="rounded bg-emerald-50 px-3 py-2 text-xs text-emerald-800 -mt-1">
+                  This activity will be posted for: <strong>{scopeLabel}</strong>
+                </p>
+              )}
               <label className="text-xs font-semibold text-zinc-600">
                 Start Date & Time
                 <input type="datetime-local" className="border rounded px-3 py-2 text-sm w-full mt-1" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} required />
@@ -354,16 +374,23 @@ export default function ActivitiesTable({ initialActivities, councils, regions }
                     <option value="NATIONAL">National</option>
                   </select>
                 </label>
-                <label className="text-xs font-semibold text-zinc-600 w-1/2">
-                  Council
-                  <select className="border rounded px-3 py-2 text-sm w-full mt-1" value={editForm.councilId} onChange={(e) => setEditForm({ ...editForm, councilId: e.target.value })}>
-                    <option value="">No specific council</option>
-                    {councils.map((council) => (
-                      <option key={council.id} value={council.id}>{council.name}</option>
-                    ))}
-                  </select>
-                </label>
+                {scope.tier === "SUPER" ? (
+                  <label className="text-xs font-semibold text-zinc-600 w-1/2">
+                    Council
+                    <select className="border rounded px-3 py-2 text-sm w-full mt-1" value={editForm.councilId} onChange={(e) => setEditForm({ ...editForm, councilId: e.target.value })}>
+                      <option value="">No specific council</option>
+                      {councils.map((council) => (
+                        <option key={council.id} value={council.id}>{council.name}</option>
+                      ))}
+                    </select>
+                  </label>
+                ) : (
+                  <div className="w-1/2 rounded bg-emerald-50 px-3 py-2 text-xs text-emerald-800 self-end">
+                    Scoped to: <strong>{scopeLabel}</strong>
+                  </div>
+                )}
               </div>
+              {scope.tier === "SUPER" && (
               <div className="flex gap-2">
                 <label className="text-xs font-semibold text-zinc-600 w-1/2">
                   Region
@@ -375,6 +402,7 @@ export default function ActivitiesTable({ initialActivities, councils, regions }
                   </select>
                 </label>
               </div>
+              )}
               <label className="text-xs font-semibold text-zinc-600">
                 Start Date & Time
                 <input type="datetime-local" className="border rounded px-3 py-2 text-sm w-full mt-1" value={editForm.startDate} onChange={(e) => setEditForm({ ...editForm, startDate: e.target.value })} required />

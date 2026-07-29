@@ -1,4 +1,5 @@
-// src/db/schema/payments.ts
+//src/db/schema/activity-payments.ts
+
 import {
   integer,
   pgTable,
@@ -8,30 +9,36 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { paymentStatusEnum } from "./enums";
-import { registrations } from "./scout-registrations";
+import { activityRegistrations } from "./activity-registrations";
 
-export const payments = pgTable("payments", {
+export const activityPayments = pgTable("activity_payments", {
   id: uuid("id").defaultRandom().primaryKey(),
 
   registrationId: uuid("registration_id")
-    .references(() => registrations.id)
+    .references(() => activityRegistrations.id)
     .notNull(),
+
+  amount: integer("amount").notNull(),
 
   paymentIntentId: text("payment_intent_id"),
 
-  // Added missing fields used by updateRegistrationPaymentStatus in admin.service
-  amount: integer("amount").default(0).notNull(),
   paymentMethod: text("payment_method"),
+
+  receiptNumber: text("receipt_number"),
 
   paymentStatus: paymentStatusEnum("payment_status")
     .default("awaiting_payment")
     .notNull(),
 
+  refundedAt: timestamp("refunded_at"),
+
+  refundReference: text("refund_reference"),
+
   createdAt: timestamp("created_at")
     .defaultNow()
     .notNull(),
+
   updatedAt: timestamp("updated_at")
-    .$onUpdate(() => new Date())
     .defaultNow()
     .notNull(),
 });

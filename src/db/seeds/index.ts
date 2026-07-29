@@ -7,3 +7,5 @@ export * from "./activityRegistrations.seed";
 export * from "./scouts.seed";
 export * from "./scoutApplications.seed";
 export * from "./adminUsers.seed";
+export * from "./notifications.seed";
+export * from "./announcements.seed";

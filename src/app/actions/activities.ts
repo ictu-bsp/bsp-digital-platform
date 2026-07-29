@@ -9,7 +9,11 @@ import {
   unregisterScoutFromActivity, getRegisteredCount } from "@/services/activity-registration.service";
 import { meetsRankRequirement } from "@/lib/utils/rank";
 import { getCurrentUser } from "@/lib/auth/current-user";
+import { requireAdmin } from "@/lib/auth/require-admin";
+import type { AdminScope } from "@/lib/utils/admin-scope";
 import { activities } from "@/db/schema/activities";
+
+const ACTIVITY_MANAGER_ROLES = ["CHIEF_EXECUTIVE", "REGISTRAR", "ACTIVITIES_OFFICER"] as const;
 export type ActionResult<T = unknown> = {
   success: boolean; data?: T | null; error?: string | null; redirectTo?: string | null; };
 // Authenticates current session and gets scout record
@@ -43,11 +47,45 @@ Promise<ActionResult<Awaited<ReturnType<typeof getActivityById>>>> {
     return { success: false, data: null, error: "Failed to load activity." };
   }
 }
+// Given a resolved admin scope and whatever council/region the client
+// submitted, returns the council/region that should actually be saved.
+// Non-super admins always get their own council/region forced onto the
+// record, regardless of what the form sent -- a council officer cannot
+// post an activity under a different council no matter what the client
+// sends. SUPER_ADMIN is the only tier allowed to pass through whatever
+// council/region it explicitly chose.
+function enforceScope(
+  scope: AdminScope,
+  submitted: { councilId?: string | null; regionId?: string | null }
+) {
+  if (scope.tier === "SUPER") {
+    return {
+      councilId: submitted.councilId ?? null,
+      regionId: submitted.regionId ?? null,
+    };
+  }
+
+  if (scope.tier === "COUNCIL") {
+    return { councilId: scope.councilId, regionId: null };
+  }
+
+  if (scope.tier === "REGIONAL") {
+    return { councilId: null, regionId: scope.regionId };
+  }
+
+  // NATIONAL tier: unscoped, visible to everyone.
+  return { councilId: null, regionId: null };
+}
+
 // Creates a new activity record
 export async function createActivityAction(data: typeof activities.$inferInsert):
 Promise<ActionResult<Awaited<ReturnType<typeof createActivity>>>> {
+  const auth = await requireAdmin([...ACTIVITY_MANAGER_ROLES]);
+  if (!auth.ok) return { success: false, data: null, error: auth.error };
+
   try {
-    const created = await createActivity(data);
+    const { councilId, regionId } = enforceScope(auth.context.scope, data);
+    const created = await createActivity({ ...data, councilId, regionId });
     revalidatePath("/scout/activities");
     return { success: true, data: created, error: null };
   } catch (error) {
@@ -58,8 +96,12 @@ Promise<ActionResult<Awaited<ReturnType<typeof createActivity>>>> {
 // Updates an existing activity by ID
 export async function updateActivityAction(id: string, data: Partial<typeof activities.$inferInsert>):
 Promise<ActionResult<Awaited<ReturnType<typeof updateActivity>>>> {
+  const auth = await requireAdmin([...ACTIVITY_MANAGER_ROLES]);
+  if (!auth.ok) return { success: false, data: null, error: auth.error };
+
   try {
-    const updated = await updateActivity(id, data);
+    const { councilId, regionId } = enforceScope(auth.context.scope, data);
+    const updated = await updateActivity(id, { ...data, councilId, regionId });
     if (!updated) return { success: false, data: null, error: "Activity not found." };
     revalidatePath("/scout/activities");
     return { success: true, data: updated, error: null };
@@ -71,6 +113,9 @@ Promise<ActionResult<Awaited<ReturnType<typeof updateActivity>>>> {
 // Deletes an activity by ID
 export async function deleteActivityAction(id: string):
 Promise<ActionResult<null>> {
+  const auth = await requireAdmin([...ACTIVITY_MANAGER_ROLES]);
+  if (!auth.ok) return { success: false, data: null, error: auth.error };
+
   try {
     await deleteActivity(id);
     revalidatePath("/scout/activities");

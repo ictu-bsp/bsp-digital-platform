@@ -1,12 +1,8 @@
 // src/db/seeds/adminUsers.seed.ts
-
 import { eq } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-
 import * as schema from "../schema";
-import { adminUsers } from "../schema/adminUsers";
-import { users } from "../schema/users";
-
+import { adminUsers, councils, regions, users } from "../schema";
 import { hashPassword } from "../../lib/auth/hash";
 
 const SYSTEM_USER_TEMPLATE = [
@@ -18,41 +14,38 @@ const SYSTEM_USER_TEMPLATE = [
   { suffix: "reports", fullName: "Reports Officer", role: "REPORTS_OFFICER" as const },
 ];
 
-// Only the legacy test admin (Andrei) gets a pre-seeded system user set,
-// kept exactly as before for backwards compatibility. Every other
-// council/regional/national admin creates their own system users
-// on-demand through their dashboard (System Users > Add System User) --
-// that's the whole point of scoping login by council/region, so we don't
-// pre-seed hundreds of accounts nobody asked for.
-export async function seedAdminUsers(
-  db: NodePgDatabase<typeof schema>
-) {
+export async function seedAdminUsers(db: NodePgDatabase<typeof schema>) {
   const passwordHash = await hashPassword("Admin123!");
 
-  const andrei = await db.query.users.findFirst({
+  const creator = await db.query.users.findFirst({
     where: eq(users.email, "art.testadmin@bsp.ph"),
   });
 
-  if (!andrei) {
-    throw new Error(
-      "Expected admin account not found. Seed users first."
-    );
+  if (!creator) {
+    throw new Error("Admin account (art.testadmin@bsp.ph) not found. Seed users first.");
   }
 
-  const rows: (typeof adminUsers.$inferInsert)[] = SYSTEM_USER_TEMPLATE.map(
-    (systemUser) => ({
-      scope: "COUNCIL" as const,
-      councilId: andrei.councilId,
-      createdBy: andrei.id,
-      username: systemUser.suffix,
-      passwordHash,
-      fullName: systemUser.fullName,
-      role: systemUser.role,
-      active: true,
-    })
-  );
+  const creatorId = creator.id;
+  const rows: (typeof adminUsers.$inferInsert)[] = [];
 
-  await db.insert(adminUsers).values(rows);
+  const allCouncils = await db.query.councils.findMany();
+  for (const council of allCouncils) {
+    for (const systemUser of SYSTEM_USER_TEMPLATE) {
+      rows.push({
+        scope: "COUNCIL",
+        councilId: council.id,
+        createdBy: creatorId,
+        username: systemUser.suffix, // Pure 'chief.executive', no prefix
+        passwordHash,
+        fullName: `${council.name} ${systemUser.fullName}`,
+        role: systemUser.role,
+        active: true,
+      });
+    }
+  }
 
-  console.log(`✅ Seeded ${rows.length} system user account(s) for the legacy test admin.`);
+  if (rows.length > 0) {
+    await db.insert(adminUsers).values(rows).onConflictDoNothing();
+    console.log(`Seeded ${rows.length} system user account(s).`);
+  }
 }
