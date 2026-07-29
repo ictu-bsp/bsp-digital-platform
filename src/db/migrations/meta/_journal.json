@@ -8,6 +8,13 @@
       "when": 1785200381278,
       "tag": "0000_steep_nextwave",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1785289263653,
+      "tag": "0001_slimy_firelord",
+      "breakpoints": true
     }
   ]
 }

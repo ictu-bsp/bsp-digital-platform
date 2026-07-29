@@ -163,9 +163,7 @@ export default function ReportsView() {
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [pendingFilters, setPendingFilters] = useState<FilterState>(EMPTY_FILTERS);
-  const [activeTab, setActiveTab] = useState
-    "membership" | "registration" | "activities" | "financial"
-  >("membership");
+  const [activeTab, setActiveTab] = useState<"membership" | "registration" | "activities" | "financial">("membership");
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const [selectedActivity, setSelectedActivity] = useState<ActivitySummaryRow | null>(null);
