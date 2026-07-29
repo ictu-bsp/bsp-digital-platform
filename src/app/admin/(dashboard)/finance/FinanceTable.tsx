@@ -46,6 +46,7 @@ export default function FinanceTable({
             <th className="py-2 font-medium">Registration ID</th>
             <th className="py-2 font-medium">Name</th>
             <th className="py-2 font-medium">Council</th>
+            <th className="py-2 font-medium">Type</th>
             <th className="py-2 font-medium">Payment Status</th>
           </tr>
         </thead>
@@ -64,6 +65,15 @@ export default function FinanceTable({
               <td className="py-3">
                 <span
                   className={`text-xs font-medium px-3 py-1 rounded-full text-white ${
+                    reg.isExistingScout ? "bg-indigo-600" : "bg-green-700"
+                  }`}
+                >
+                  {reg.isExistingScout ? "Renewal" : "New"}
+                </span>
+              </td>
+              <td className="py-3">
+                <span
+                  className={`text-xs font-medium px-3 py-1 rounded-full text-white ${
                     reg.paymentStatus === "paid"
                       ? "bg-green-700"
                       : reg.paymentStatus === "failed"
@@ -79,7 +89,7 @@ export default function FinanceTable({
 
           {rows.length === 0 && (
             <tr>
-              <td colSpan={4} className="py-8 text-center text-zinc-400">
+              <td colSpan={5} className="py-8 text-center text-zinc-400">
                 No registrations awaiting finance verification.
               </td>
             </tr>
@@ -115,7 +125,14 @@ export default function FinanceTable({
               </div>
 
               <div>
-                <label className="text-xs text-zinc-500">Registration Type</label>
+                <label className="text-xs text-zinc-500">Application Type</label>
+                <p className="border rounded px-3 py-2">
+                  {selected.isExistingScout ? "Renewal" : "New Scout"}
+                </p>
+              </div>
+
+              <div>
+                <label className="text-xs text-zinc-500">Membership Duration</label>
                 <p className="border rounded px-3 py-2">
                   {selected.registrationYears === 1
                     ? "Single-Year"

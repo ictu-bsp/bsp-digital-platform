@@ -117,12 +117,16 @@ export async function getPaymentByRegistrationId(registrationId: string) {
 
 export async function updatePaymentStatus(
   paymentRecordId: string,
-  status: "paid" | "failed"
+  status: "paid" | "failed",
+  paymentMethod?: string
 ) {
   try {
     await db
       .update(payments)
-      .set({ paymentStatus: status })
+      .set({
+        paymentStatus: status,
+        ...(paymentMethod ? { paymentMethod } : {}),
+      })
       .where(eq(payments.id, paymentRecordId));
   } catch (error) {
     console.error("Error updating payment status:", error);

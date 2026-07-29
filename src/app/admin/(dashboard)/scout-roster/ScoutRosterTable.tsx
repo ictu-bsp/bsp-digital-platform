@@ -24,11 +24,37 @@ type RosterRow = {
   status: string;
   isActive: boolean;
   joinedAt: Date | null;
+  validUntil: string | null;
 };
 
 interface Props {
   initialRoster: RosterRow[];
 }
+
+
+function getValidityInfo(validUntil: string | null) {
+  if (!validUntil) {
+    return { label: "No Record", className: "bg-zinc-100 text-zinc-500", dateText: "—" };
+  }
+
+  const endDate = new Date(validUntil);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const dateText = endDate.toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  });
+
+  if (endDate < today) {
+    return { label: "Expired", className: "bg-red-100 text-red-700", dateText };
+  }
+
+  return { label: "Valid", className: "bg-green-100 text-green-700", dateText };
+}
+
+
 
 export function ScoutRosterTable({ initialRoster }: Props) {
   const [roster, setRoster] = useState<RosterRow[]>(initialRoster);
@@ -107,6 +133,7 @@ export function ScoutRosterTable({ initialRoster }: Props) {
             <th className="px-4 py-3">Membership No.</th>
             <th className="px-4 py-3">Scout Type</th>
             <th className="px-4 py-3">Status</th>
+            <th className="px-4 py-3">Validity</th>
             <th className="px-4 py-3">Action</th>
           </tr>
         </thead>
@@ -114,7 +141,7 @@ export function ScoutRosterTable({ initialRoster }: Props) {
         <tbody className="divide-y divide-gray-100">
           {filteredRoster.length === 0 && (
             <tr>
-              <td colSpan={7} className="px-4 py-6 text-center text-gray-400">
+              <td colSpan={8} className="px-4 py-6 text-center text-gray-400">
                 {roster.length === 0
                   ? "No scouts have registered yet."
                   : "No scouts match your search."}
@@ -154,6 +181,24 @@ export function ScoutRosterTable({ initialRoster }: Props) {
                 >
                   {!row.isActive ? "Revoked" : row.status}
                 </span>
+              </td>
+
+              <td className="px-4 py-3">
+                {(() => {
+                  const validity = getValidityInfo(row.validUntil);
+                  return (
+                    <div className="flex flex-col gap-1">
+                      <span
+                        className={`text-xs font-bold px-2 py-1 rounded w-fit ${validity.className}`}
+                      >
+                        {validity.label}
+                      </span>
+                      <span className="text-xs text-zinc-400">
+                        {validity.dateText}
+                      </span>
+                    </div>
+                  );
+                })()}
               </td>
 
               <td className="px-4 py-3">

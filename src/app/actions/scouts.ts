@@ -18,10 +18,11 @@ export async function getScoutsByCouncil(_councilId: string) {
 
 export async function verifyScoutPayment(
   paymentRecordId: string,
-  status: "paid" | "failed"
+  status: "paid" | "failed",
+  paymentMethod?: string
 ) {
   try {
-    await updatePaymentStatus(paymentRecordId, status);
+    await updatePaymentStatus(paymentRecordId, status, paymentMethod);
 
     return {
       success: true,

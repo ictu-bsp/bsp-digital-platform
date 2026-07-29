@@ -1,30 +1,21 @@
 // src/app/admin/reports/components/StatCard.tsx
 //
-// Reusable card for the admin reports page. Displays a title, a primary
-// value, an optional note (e.g. data-limitation disclaimers), and an
-// optional breakdown list (e.g. counts grouped by status/council/etc.).
-
-type BreakdownRow = {
-  label: string;
-  value: string | number;
-};
+// Reusable shell for the admin reports page. Displays a title, an optional
+// primary value, an optional note (e.g. data-limitation disclaimers), and
+// arbitrary content (typically a ReportTable) via children.
 
 type StatCardProps = {
   title: string;
   value?: string | number;
   valueLabel?: string; // e.g. "Total Applications"
-  breakdown?: BreakdownRow[];
-  breakdownLabel?: string; // e.g. "By Status"
   note?: string; // e.g. data limitation disclaimer
-  children?: React.ReactNode; // for custom content (charts, tables, etc.)
+  children?: React.ReactNode;
 };
 
 export default function StatCard({
   title,
   value,
   valueLabel,
-  breakdown,
-  breakdownLabel,
   note,
   children,
 }: StatCardProps) {
@@ -35,30 +26,7 @@ export default function StatCard({
       {value !== undefined && (
         <div>
           <p className="text-3xl font-bold">{value}</p>
-          {valueLabel && (
-            <p className="text-sm text-zinc-500">{valueLabel}</p>
-          )}
-        </div>
-      )}
-
-      {breakdown && breakdown.length > 0 && (
-        <div>
-          {breakdownLabel && (
-            <p className="text-sm font-medium text-zinc-700 mb-2">
-              {breakdownLabel}
-            </p>
-          )}
-          <ul className="flex flex-col gap-1.5">
-            {breakdown.map((row) => (
-              <li
-                key={row.label}
-                className="flex items-center justify-between text-sm border-b border-zinc-100 pb-1.5 last:border-0"
-              >
-                <span className="text-zinc-600">{row.label}</span>
-                <span className="font-medium text-zinc-900">{row.value}</span>
-              </li>
-            ))}
-          </ul>
+          {valueLabel && <p className="text-sm text-zinc-500">{valueLabel}</p>}
         </div>
       )}
 

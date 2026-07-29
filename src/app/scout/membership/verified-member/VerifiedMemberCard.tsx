@@ -6,6 +6,7 @@ import Image from "next/image";
 import { QRCodeCanvas } from "qrcode.react";
 import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
+import { useRouter } from "next/navigation";
 
 export type VerifiedMemberData = {
   firstName: string;
@@ -15,6 +16,7 @@ export type VerifiedMemberData = {
   council: string;
   idNumber: string;
   validUntil: string;
+  validUntilRaw: string | null;
   status: string;
   dob: string;
   sex: string;
@@ -49,6 +51,7 @@ function ShrinkToFit({
   const ref = useRef<HTMLSpanElement>(null);
   const [fontSize, setFontSize] = useState(maxFontSize);
   const floor = minFontSize ?? maxFontSize * 0.55;
+  const [isStillValidOpen, setIsStillValidOpen] = useState(false);
 
   useEffect(() => {
     const el = ref.current;
@@ -491,6 +494,9 @@ export default function VerifiedMemberCard({
   const [isFlipped, setIsFlipped] = useState(false);
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isStillValidOpen, setIsStillValidOpen] = useState(false);
+  const router = useRouter();
+
 
   const frontCaptureRef = useRef<HTMLDivElement>(null);
   const backCaptureRef = useRef<HTMLDivElement>(null);
@@ -500,6 +506,15 @@ export default function VerifiedMemberCard({
     name: `${userData.lastName}, ${userData.firstName} ${userData.middleInitial}`,
     status: userData.status,
   });
+
+
+
+const isExpired = userData.validUntilRaw
+    ? new Date(userData.validUntilRaw).getTime() < Date.now()
+    : true; // if we somehow have no date on file, don't block renewal
+
+
+
 
   const captureBothFaces = async () => {
     if (!frontCaptureRef.current || !backCaptureRef.current) return null;
@@ -612,7 +627,19 @@ export default function VerifiedMemberCard({
             Show QR Code
           </button>
 
-          <button className="w-full rounded-xl border border-gray-300 bg-white py-3.5 text-center text-sm font-bold text-green-900 shadow-sm transition-colors hover:bg-gray-50">
+          <button
+            onClick={() => {
+              if (!isExpired) {
+                setIsStillValidOpen(true);
+                return;
+              }
+              localStorage.setItem("paymentIsRenewal", "true");
+              localStorage.setItem("paymentRenewalReason", "id_expired");
+              localStorage.setItem("paymentRenewalIdNumber", userData.idNumber);
+              router.push("/scout/membership/membership-registration/register");
+            }}
+            className="w-full rounded-xl border border-gray-300 bg-white py-3.5 text-center text-sm font-bold text-green-900 shadow-sm transition-colors hover:bg-gray-50"
+          >
             Renew Membership
           </button>
 
@@ -689,6 +716,77 @@ export default function VerifiedMemberCard({
           </div>
         </div>
       )}
-    </PageLayout>
+
+{/* Modal: ID Still Valid */}
+      {isStillValidOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-xs transition-opacity duration-300 animate-fadeIn"
+          onClick={() => setIsStillValidOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-xs overflow-hidden rounded-3xl bg-white shadow-2xl border border-gray-200 flex flex-col items-center pt-9 pb-8 px-7 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setIsStillValidOpen(false)}
+              className="absolute top-3 right-3 rounded-full bg-black/10 p-1.5 text-gray-600 hover:bg-black/20 transition-colors"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2.5}
+                stroke="currentColor"
+                className="h-4 w-4"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18 18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+
+            <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mb-3">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                stroke="currentColor"
+                className="w-7 h-7 text-green-700"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                />
+              </svg>
+            </div>
+
+            <h4 className="text-sm font-bold uppercase tracking-wider text-green-900 mb-1">
+              Your ID Is Still Valid
+            </h4>
+            <p className="text-sm text-gray-500">
+              Your membership is valid until{" "}
+              <span className="font-semibold text-gray-700">
+                {userData.validUntil}
+              </span>
+              . Renewal opens up once it expires.
+            </p>
+
+            <button
+              onClick={() => setIsStillValidOpen(false)}
+              className="mt-6 w-full rounded-xl bg-green-800 hover:bg-green-900 transition-colors text-white py-2.5 text-sm font-bold"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
+
+</PageLayout>
   );
 }
+
+
