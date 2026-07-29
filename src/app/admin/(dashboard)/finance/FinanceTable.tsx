@@ -124,6 +124,13 @@ export default function FinanceTable({ registrations }: { registrations: Pending
               </div>
 
               <div className="col-span-2">
+                <label className="text-xs text-zinc-500">Payment Method</label>
+                <p className="border rounded px-3 py-2 capitalize">
+                  {selected.paymentMethod ?? "—"}
+                </p>
+              </div>
+
+              <div className="col-span-2">
                 <label className="text-xs text-zinc-500">Payment Intent ID</label>
                 <p className="border rounded px-3 py-2 text-zinc-500 text-xs">
                   {selected.paymentIntentId ?? "—"}

@@ -378,7 +378,7 @@ export default function ReportsView() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
 
         {/* 0a. Membership Summary */}
         {activeTab === "membership" && (
@@ -543,22 +543,46 @@ export default function ReportsView() {
           </StatCard>
         )}
 
-        {/* 5b. Registration Type Breakdown */}
+        {/* 5b2. Registration Details — per-scout list with payment + activities */}
         {activeTab === "registration" && (
           <StatCard
-            title="Registration Type Breakdown"
-            value={reports.registrationTypeBreakdown.total}
-            valueLabel="Total Registrations"
+            title="Registration Details"
+            value={reports.enrolleeDetails.length}
+            valueLabel="Total Registration Records"
+            note="Includes all registrations regardless of payment status."
           >
             <ReportTable
               columns={[
-                { header: "Type", accessor: (r) => r.type },
-                { header: "Count", accessor: (r) => r.count, align: "right" },
+                {
+                  header: "Name",
+                  accessor: (e) =>
+                    `${e.firstName} ${e.middleName ? e.middleName + " " : ""}${e.lastName}`,
+                },
+                { header: "Membership #", accessor: (e) => e.membershipNumber ?? "—" },
+                { header: "Council", accessor: (e) => e.councilName },
+                { header: "Region", accessor: (e) => e.regionName ?? "Unassigned Region" },
+                { header: "Type", accessor: (e) => e.registrationType },
+                { header: "Reg. Status", accessor: (e) => e.registrationStatus },
+                { header: "Payment Status", accessor: (e) => e.paymentStatus },
+                { header: "Method", accessor: (e) => e.paymentMethod ?? "—" },
+                {
+                  header: "Activities Joined",
+                  accessor: (e) =>
+                    e.activitiesEnrolled.length > 0
+                      ? e.activitiesEnrolled.join(", ")
+                      : "—",
+                },
+                {
+                  header: "Registered At",
+                  accessor: (e) =>
+                    e.registeredAt ? new Date(e.registeredAt).toLocaleDateString() : "—",
+                },
               ]}
-              rows={[
-                { type: "New Registrations", count: reports.registrationTypeBreakdown.new },
-                { type: "Renewals", count: reports.registrationTypeBreakdown.renewal },
-              ]}
+              rows={[...reports.enrolleeDetails].sort((a, b) => {
+                const ta = a.registeredAt ? new Date(a.registeredAt).getTime() : 0;
+                const tb = b.registeredAt ? new Date(b.registeredAt).getTime() : 0;
+                return tb - ta; // most recent first
+              })}
             />
           </StatCard>
         )}
@@ -590,6 +614,13 @@ export default function ReportsView() {
                   header: "Date Paid",
                   accessor: (e) =>
                     e.paymentDate ? new Date(e.paymentDate).toLocaleDateString() : "—",
+                },
+                {
+                  header: "Activities",
+                  accessor: (e) =>
+                    e.activitiesEnrolled.length > 0
+                      ? e.activitiesEnrolled.join(", ")
+                      : "—",
                 },
               ]}
               rows={reports.enrolleeDetails

@@ -55,6 +55,7 @@ export type PendingRegistrationRecord = {
 
   paymentStatus: string | null;
   paymentIntentId: string | null;
+  paymentMethod: string | null;
 
   extraDetails: {
     scoutingPosition?: string;
@@ -401,6 +402,7 @@ export async function getPendingRegistrations(): Promise<PendingRegistrationReco
           registrationId: payments.registrationId,
           paymentStatus: payments.paymentStatus,
           paymentIntentId: payments.paymentIntentId,
+          paymentMethod: payments.paymentMethod,
           createdAt: payments.createdAt,
         })
         .from(payments)
@@ -411,7 +413,7 @@ export async function getPendingRegistrations(): Promise<PendingRegistrationReco
   // falling back to the most recent payment of any status if none paid.
   const bestPaymentByRegId = new Map<
     string,
-    { paymentStatus: string; paymentIntentId: string | null; createdAt: Date }
+    { paymentStatus: string; paymentIntentId: string | null; paymentMethod: string | null; createdAt: Date }
   >();
 
   for (const payment of relatedPayments) {
@@ -478,6 +480,7 @@ export async function getPendingRegistrations(): Promise<PendingRegistrationReco
 
         paymentStatus: bestPayment?.paymentStatus ?? null,
         paymentIntentId: bestPayment?.paymentIntentId ?? null,
+        paymentMethod: bestPayment?.paymentMethod ?? null,
 
         extraDetails,
 
@@ -687,13 +690,14 @@ export async function getRegistrationsAwaitingFinance(): Promise<PendingRegistra
           registrationId: payments.registrationId,
           paymentStatus: payments.paymentStatus,
           paymentIntentId: payments.paymentIntentId,
+          paymentMethod: payments.paymentMethod,
           createdAt: payments.createdAt,
         })
         .from(payments)
         .where(inArray(payments.registrationId, regIds))
     : [];
 
-  const bestPaymentByRegId = new Map<string, { paymentStatus: string; paymentIntentId: string | null; createdAt: Date }>();
+ const bestPaymentByRegId = new Map<string, { paymentStatus: string; paymentIntentId: string | null; paymentMethod: string | null; createdAt: Date }>();
 
   for (const payment of relatedPayments) {
     const current = bestPaymentByRegId.get(payment.registrationId);
@@ -752,6 +756,7 @@ export async function getRegistrationsAwaitingFinance(): Promise<PendingRegistra
 
       paymentStatus: bestPayment?.paymentStatus ?? null,
       paymentIntentId: bestPayment?.paymentIntentId ?? null,
+      paymentMethod: bestPayment?.paymentMethod ?? null,
 
       extraDetails,
 

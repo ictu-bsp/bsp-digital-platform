@@ -425,7 +425,7 @@ export default function RegisterPage() {
         )}
 
         <p className="text-zinc-600 text-lg">
-          Amount to pay: ₱{amount} (₱{FEE_PER_YEAR}/year — placeholder fee)
+          Amount to pay: ₱{amount} (₱{FEE_PER_YEAR} registration fee per year)
         </p>
 
         {submitError && (

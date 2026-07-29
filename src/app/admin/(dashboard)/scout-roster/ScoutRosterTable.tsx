@@ -89,12 +89,14 @@ export function ScoutRosterTable({ initialRoster }: Props) {
   });
   return (
     <div className="flex flex-col gap-3">
-      <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
-      placeholder="Search by name, email, council, membership no., or scout type..."
-      className="w-full max-w-sm border border-gray-300 rounded-lg px-3 py-2.5 text-sm
-      text-zinc-900 focus:outline-none focus:ring-2 focus:ring-green-800" />
-      <div className="overflow-x-auto rounded-lg border
-      border-gray-200 shadow-md p-4 bg-white">
+      <input
+        type="text"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Search by name, email, council, membership no., or scout type..."
+        className="w-full max-w-sm border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-green-800"
+      />
+      <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-md p-4 bg-white">
         <table className="w-full text-left text-sm text-gray-500">
         <thead className="bg-green-800 text-xs text-white uppercase font-semibold">
           <tr>
@@ -177,17 +179,15 @@ export function ScoutRosterTable({ initialRoster }: Props) {
                   <button
                     onClick={() => handleToggle(row.scoutId, row.isActive)}
                     disabled={pendingId === row.scoutId || deletingId === row.scoutId}
-                    className={`text-xs font-bold px-3 py-1.5 rounded transition-all
-                    shadow-sm text-white disabled:opacity-50 ${row.isActive ?
-                    "bg-red-600 hover:bg-red-700" : "bg-green-700 hover:bg-green-600"}`}>
-                      {pendingId === row.scoutId ? "Updating..." : row.isActive ?
-                      "Revoke Membership" : "Restore Membership"}
-                    </button>
-                    <button onClick={() => handleDelete(row.scoutId, `${row.firstName}
-                      ${row.lastName}`)} disabled={deletingId === row.scoutId || pendingId
-                      === row.scoutId} className="text-xs font-bold px-3 py-1.5 rounded
-                      transition-all shadow-sm text-white bg-zinc-800 hover:bg-black
-                      disabled:opacity-50">
+                    className={`text-xs font-bold px-3 py-1.5 rounded transition-all shadow-sm text-white disabled:opacity-50 ${row.isActive ? "bg-red-600 hover:bg-red-700" : "bg-green-700 hover:bg-green-600"}`}
+                  >
+                    {pendingId === row.scoutId ? "Updating..." : row.isActive ? "Revoke Membership" : "Restore Membership"}
+                  </button>
+                    <button
+                      onClick={() => handleDelete(row.scoutId, `${row.firstName} ${row.lastName}`)}
+                      disabled={deletingId === row.scoutId || pendingId === row.scoutId}
+                      className="text-xs font-bold px-3 py-1.5 rounded transition-all shadow-sm text-white bg-zinc-800 hover:bg-black disabled:opacity-50"
+                    >
                       {deletingId === row.scoutId ? "Deleting..." : "Delete Permanently"}
                     </button>
                   </div>

@@ -127,7 +127,7 @@ export default function AddressSelect({
   const [loadingBarangays, setLoadingBarangays] = useState(false);
 
   useEffect(() => {
-    fetch("/api/psgc/regions")
+    fetch("/admin/api/psgc/regions")
       .then((res) => res.json())
       .then((data: PsgcItem[]) =>
         setRegions([...data].sort((a, b) => a.name.localeCompare(b.name)))
@@ -146,7 +146,7 @@ export default function AddressSelect({
 
     setLoadingProvinces(true);
     try {
-      const provRes = await fetch(`/api/psgc/regions/${item.code}/provinces`);
+      const provRes = await fetch(`/admin/api/psgc/regions/${item.code}/provinces`);
       const provData: PsgcItem[] = await provRes.json();
 
       if (Array.isArray(provData) && provData.length > 0) {
@@ -156,7 +156,7 @@ export default function AddressSelect({
         // Regions like NCR have no provinces -- cities sit directly under the region.
         setHasProvinces(false);
         setLoadingCities(true);
-        const cityRes = await fetch(`/api/psgc/regions/${item.code}/cities-municipalities`);
+        const cityRes = await fetch(`/admin/api/psgc/regions/${item.code}/cities-municipalities`);
         const cityData: PsgcItem[] = await cityRes.json();
         setCities([...cityData].sort((a, b) => a.name.localeCompare(b.name)));
         setLoadingCities(false);
@@ -177,7 +177,7 @@ export default function AddressSelect({
 
     setLoadingCities(true);
     try {
-      const res = await fetch(`/api/psgc/provinces/${item.code}/cities-municipalities`);
+      const res = await fetch(`/admin/api/psgc/provinces/${item.code}/cities-municipalities`);
       const data: PsgcItem[] = await res.json();
       setCities([...data].sort((a, b) => a.name.localeCompare(b.name)));
     } catch (err) {
@@ -194,7 +194,7 @@ export default function AddressSelect({
 
     setLoadingBarangays(true);
     try {
-      const res = await fetch(`/api/psgc/cities-municipalities/${item.code}/barangays`);
+      const res = await fetch(`/admin/api/psgc/cities-municipalities/${item.code}/barangays`);
       const data: PsgcItem[] = await res.json();
       setBarangays([...data].sort((a, b) => a.name.localeCompare(b.name)));
     } catch (err) {

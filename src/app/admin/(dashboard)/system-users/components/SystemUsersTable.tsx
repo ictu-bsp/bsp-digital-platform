@@ -1,5 +1,5 @@
 ﻿// src/app/admin/(dashboard)/system-users/components/SystemUsersTable.tsx
-"use " + "client";
+"use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AdminUserRecord } from "@/services/admin.service";

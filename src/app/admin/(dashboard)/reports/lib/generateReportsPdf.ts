@@ -51,6 +51,7 @@ type EnrolleeDetailRow = {
   registrationStatus: string;
   registrationType: string;
   paymentStatus: string;
+  paymentMethod: string | null;
   estimatedAmountPaid: number;
   paymentDate: string | null;
   activitiesEnrolled: string[];
@@ -376,6 +377,27 @@ export function generateReportsPdf(reports: AllReports) {
     ]
   );
 
+  const allRegistrations = [...reports.enrolleeDetails].sort((a, b) => {
+    const ta = a.registeredAt ? new Date(a.registeredAt).getTime() : 0;
+    const tb = b.registeredAt ? new Date(b.registeredAt).getTime() : 0;
+    return tb - ta; // most recent first
+  });
+
+  addSubheading(`Registration Details  —  ${allRegistrations.length} records`);
+  addTable(
+    ["Name", "Council", "Type", "Reg. Status", "Payment Status", "Method", "Registered At"],
+    allRegistrations.map((e) => [
+      fullName(e),
+      e.councilName,
+      e.registrationType,
+      e.registrationStatus,
+      e.paymentStatus,
+      e.paymentMethod ?? "—",
+      e.registeredAt ? new Date(e.registeredAt).toLocaleDateString() : "—",
+    ])
+  );
+  addSmallNote("Includes all registrations regardless of payment status.");
+
   // ============================================================
   // Page: Activities
   // ============================================================
@@ -436,13 +458,15 @@ export function generateReportsPdf(reports: AllReports) {
 
   addSubheading(`Individual Payments  —  ${paidTransactions.length} paid transactions`);
   addTable(
-    ["Name", "Membership #", "Type", "Amount Paid", "Date Paid"],
+    ["Name", "Membership #", "Type", "Method", "Amount Paid", "Date Paid", "Activities Joined"],
     paidTransactions.map((e) => [
       fullName(e),
       e.membershipNumber ?? "—",
       e.registrationType,
+      e.paymentMethod ?? "—",
       `PHP ${e.estimatedAmountPaid.toLocaleString()}`,
       e.paymentDate ? new Date(e.paymentDate).toLocaleDateString() : "—",
+      e.activitiesEnrolled.length > 0 ? e.activitiesEnrolled.join(", ") : "—",
     ])
   );
   addSmallNote(
