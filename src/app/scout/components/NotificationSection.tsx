@@ -1,14 +1,30 @@
-// src/app/scout/components/NotificationSection.tsx
+//src/app/scout/components/NotificationSection.tsx
 
+import Link from "next/link";
 import NotificationCard from "./NotificationCard";
 
-interface NotificationSectionProps {
-  role: "VISITOR" | "SCOUT" | "COUNCIL_ADMIN" | "REGIONAL_ADMIN" | "NATIONAL_ADMIN" | "SUPER_ADMIN";
+interface NotificationItem {
+  id: string;
+  title: string;
+  message: string;
+  link: string | null;
+  createdAt: Date;
+}
+
+interface Props {
+  notifications: NotificationItem[];
+}
+
+function formatDate(date: Date): string {
+  return new Date(date).toLocaleDateString("en-PH", {
+    month: "long",
+    day: "numeric",
+  });
 }
 
 export default function NotificationSection({
-  role,
-}: NotificationSectionProps) {
+  notifications,
+}: Props) {
   return (
     <section className="px-4 pt-6">
       <h2 className="mb-3 text-lg font-bold text-slate-900">
@@ -16,26 +32,28 @@ export default function NotificationSection({
       </h2>
 
       <div className="space-y-3">
-        {role === "VISITOR" ? (
-          <NotificationCard
-            title="Become a Scout"
-            description="Apply for membership to unlock activities, reports, and advancement tracking."
-            date="Today"
-          />
+        {notifications.length === 0 ? (
+          <p className="text-sm text-slate-500">
+            No notifications yet.
+          </p>
         ) : (
-          <>
-            <NotificationCard
-              title="Upcoming Activity"
-              description="Tree Planting Activity starts this Saturday."
-              date="Today"
-            />
+          notifications.map((item) => {
+            const card = (
+              <NotificationCard
+                title={item.title}
+                description={item.message}
+                date={formatDate(item.createdAt)}
+              />
+            );
 
-            <NotificationCard
-              title="Attendance Reminder"
-              description="Don't forget to check in before your scheduled activity."
-              date="Yesterday"
-            />
-          </>
+            return item.link ? (
+              <Link key={item.id} href={item.link} className="block">
+                {card}
+              </Link>
+            ) : (
+              <div key={item.id}>{card}</div>
+            );
+          })
         )}
       </div>
     </section>

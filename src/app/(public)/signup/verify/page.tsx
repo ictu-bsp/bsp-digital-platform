@@ -8,91 +8,140 @@ import {
   verifyEmailAction,
   resendVerificationAction,
 } from "@/app/actions/auth";
-// Render inner verification form UI utilizing search params state.
+
 function VerificationFormInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const email =
-    searchParams.get("email") ?? "";
-  const [
-    verificationCode,
-    setVerificationCode,
-  ] = useState("");
-  const [loading, setLoading] =
-    useState(false);
-  const [error, setError] =
-    useState("");
-  const [
-    showConfirmDialog,
-    setShowConfirmDialog,
-  ] = useState(false);
-  const [
-    showSuccessDialog,
-    setShowSuccessDialog,
-  ] = useState(false);
-// Handle initial verification form submission to trigger confirmation dialog.
-  const handleSubmit = (
-    e: React.FormEvent<HTMLFormElement>
-  ) => {
+
+  const userEmail = searchParams.get("email") ?? "";
+  const ageParam = searchParams.get("age");
+  const age = ageParam ? parseInt(ageParam, 10) : 18;
+  const isMinor = age < 18;
+
+  const [parentEmail, setParentEmail] = useState("");
+  const [parentEmailSubmitted, setParentEmailSubmitted] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+
+  // Target email where verification code was sent
+  const targetEmail = isMinor && parentEmailSubmitted ? parentEmail : userEmail;
+
+  // Handle Parent Email input step for minors
+  const handleParentEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!parentEmail || !parentEmail.includes("@")) {
+      setError("Please enter a valid parent or guardian email address.");
+      return;
+    }
+    setError("");
+    setLoading(true);
+
+    // Send/resend code to Parent Email address
+    const result = await resendVerificationAction(parentEmail);
+    setLoading(false);
+
+    if (result.success) {
+      setParentEmailSubmitted(true);
+    } else {
+      setError(
+        result.message ?? "Failed to send verification code to parent email."
+      );
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setShowConfirmDialog(true);
   };
-// Dispatch verification code to server action and manage modal confirmation dialog state.
+
   const submitVerification = async () => {
     setShowConfirmDialog(false);
     setLoading(true);
     setError("");
-    const result =
-      await verifyEmailAction(
-        email,
-        verificationCode
-      );
+
+    const result = await verifyEmailAction(targetEmail, verificationCode);
     setLoading(false);
+
     if (!result.success) {
-      setError(
-        result.message ??
-          "Verification failed."
-      );
+      setError(result.message ?? "Verification failed.");
       return;
     }
     setShowSuccessDialog(true);
   };
-// Dismiss success modal and redirect user to the password creation route.
+
   const continueToPassword = () => {
     setShowSuccessDialog(false);
     router.push(
-      `/signup/create-password?email=${encodeURIComponent(
-        email
-      )}`
+      `/signup/create-password?email=${encodeURIComponent(userEmail)}`
     );
   };
-// Request a new email verification code using the resend server action.
+
   const handleResendCode = async () => {
-    const result =
-      await resendVerificationAction(
-        email
-      );
+    const result = await resendVerificationAction(targetEmail);
     if (result.success) {
-      alert(
-        "A new verification code has been sent."
-      );
+      alert(`A new verification code has been sent to ${targetEmail}.`);
     } else {
       alert(
-        result.message ??
-          "Unable to resend verification code."
+        result.message ?? "Unable to resend verification code."
       );
     }
   };
+
+  // Minor User View: Step 1 - Request Parent Email
+  if (isMinor && !parentEmailSubmitted) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <p className="text-sm font-semibold text-amber-900">
+            Parental Consent Required
+          </p>
+          <p className="mt-1 text-xs text-amber-800">
+            Because you are under 18 years old, account verification requires
+            a parent or legal guardian's email address.
+          </p>
+        </div>
+
+        <form onSubmit={handleParentEmailSubmit} className="space-y-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Parent or Guardian Email
+            </label>
+            <input
+              type="email"
+              required
+              placeholder="parent@example.com"
+              value={parentEmail}
+              onChange={(e) => setParentEmail(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 p-3.5 text-base outline-none transition-all placeholder:text-gray-400 focus:border-green-900 focus:ring-1 focus:ring-green-900"
+            />
+          </div>
+
+          {error && <p className="text-sm text-red-600">{error}</p>}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-lg bg-green-900 py-3.5 text-center font-bold text-white transition-colors hover:bg-green-950 focus:outline-none focus:ring-4 focus:ring-green-300 disabled:opacity-60"
+          >
+            {loading ? "Sending Code..." : "Send Verification Code to Parent"}
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  // Verification Code View (For Adults & Minors after Parent Email is set)
   return (
     <>
       <p className="text-sm leading-relaxed text-gray-500">
         We've sent a verification code to{" "}
-        <span className="font-bold text-gray-800">
-          {email}
-        </span>
-        . Enter the 6-digit code below to continue creating your
-        account.
+        <span className="font-bold text-gray-800">{targetEmail}</span>
+        {isMinor && " (Parent/Guardian)"}. Enter the 6-digit code below to continue creating your account.
       </p>
+
       <form
         onSubmit={handleSubmit}
         className="mt-6 flex flex-1 flex-col justify-between"
@@ -105,18 +154,10 @@ function VerificationFormInner() {
             required
             maxLength={6}
             value={verificationCode}
-            onChange={(e) =>
-              setVerificationCode(
-                e.target.value
-              )
-            }
+            onChange={(e) => setVerificationCode(e.target.value)}
             className="w-full rounded-lg border border-gray-300 p-3.5 text-base outline-none transition-all placeholder:text-gray-400 focus:border-green-900 focus:ring-1 focus:ring-green-900"
           />
-          {error && (
-            <p className="text-sm text-red-600">
-              {error}
-            </p>
-          )}
+          {error && <p className="text-sm text-red-600">{error}</p>}
           <button
             type="button"
             onClick={handleResendCode}
@@ -125,44 +166,50 @@ function VerificationFormInner() {
             Resend code
           </button>
         </div>
+
         <div className="mt-auto space-y-3 pt-8 text-center">
           <div className="space-y-1">
             <p className="text-sm text-gray-400">
-              Not your email?
+              {isMinor ? "Wrong parent email?" : "Not your email?"}
             </p>
-            <Link
-              href="/signup"
-              className="inline-block text-sm font-bold text-green-800 hover:text-green-950 hover:underline"
-            >
-              Click to edit your email
-            </Link>
+            {isMinor ? (
+              <button
+                type="button"
+                onClick={() => setParentEmailSubmitted(false)}
+                className="inline-block text-sm font-bold text-green-800 hover:text-green-950 hover:underline"
+              >
+                Change parent email
+              </button>
+            ) : (
+              <Link
+                href="/signup"
+                className="inline-block text-sm font-bold text-green-800 hover:text-green-950 hover:underline"
+              >
+                Click to edit your email
+              </Link>
+            )}
           </div>
           <button
             type="submit"
             disabled={loading}
             className="w-full rounded-lg bg-green-900 py-3.5 text-center font-bold text-white transition-colors hover:bg-green-950 focus:outline-none focus:ring-4 focus:ring-green-300 disabled:opacity-60"
           >
-            {loading
-              ? "Verifying..."
-              : "Verify Email"}
+            {loading ? "Verifying..." : "Verify Email"}
           </button>
         </div>
       </form>
+
       {showConfirmDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-            <h2 className="text-xl font-bold text-green-900">
-              Verify Email
-            </h2>
+            <h2 className="text-xl font-bold text-green-900">Verify Email</h2>
             <p className="mt-3 text-sm leading-relaxed text-gray-600">
-              Are you sure you want to verify this email address?
+              Are you sure you want to verify using this code?
             </p>
             <div className="mt-6 flex justify-end gap-3">
               <button
                 type="button"
-                onClick={() =>
-                  setShowConfirmDialog(false)
-                }
+                onClick={() => setShowConfirmDialog(false)}
                 disabled={loading}
                 className="rounded-lg border border-gray-300 px-5 py-2.5 font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
               >
@@ -174,14 +221,13 @@ function VerificationFormInner() {
                 disabled={loading}
                 className="rounded-lg bg-green-900 px-5 py-2.5 font-bold text-white transition hover:bg-green-950 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {loading
-                  ? "Verifying..."
-                  : "Verify"}
+                {loading ? "Verifying..." : "Verify"}
               </button>
             </div>
           </div>
         </div>
       )}
+
       {showSuccessDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
@@ -189,7 +235,7 @@ function VerificationFormInner() {
               Email Verified
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-gray-600">
-              Your email has been verified successfully.
+              Your account has been verified successfully.
             </p>
             <div className="mt-6 flex justify-end">
               <button
@@ -206,7 +252,7 @@ function VerificationFormInner() {
     </>
   );
 }
-// Render the primary email verification page wrapper with Suspense integration.
+
 export default function EmailVerificationPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-white md:bg-gray-50 md:p-6">
@@ -247,9 +293,7 @@ export default function EmailVerificationPage() {
         </div>
         <Suspense
           fallback={
-            <p className="text-sm text-gray-400">
-              Loading details...
-            </p>
+            <p className="text-sm text-gray-400">Loading details...</p>
           }
         >
           <VerificationFormInner />

@@ -10,6 +10,8 @@ import { seedRegions } from "./seeds/regions.seed";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { seedCouncils } from "./seeds/councils.seed";
 import { seedAdminUsers} from "./seeds/adminUsers.seed";
+import { seedNotifications } from "./seeds/notifications.seed";
+import { seedAnnouncements } from "./seeds/announcements.seed";
 import { seedActivities } from "./seeds/activities.seed";
 import { seedActivityRegistrations } from "./seeds/activityRegistrations.seed";
 import { seedScoutApplications } from "./seeds/scoutApplications.seed";
@@ -31,6 +33,8 @@ async function main() {
       scout_applications,
       scouts,
       activities,
+      notifications,
+      announcements,
       admin_users,
       sessions,
       users,
@@ -44,6 +48,8 @@ async function main() {
   await seedUsers(db);
 
   await seedAdminUsers(db);
+  await seedNotifications(db);
+  await seedAnnouncements(db);
 
   await seedScouts(db);
   await seedScoutApplications(db);

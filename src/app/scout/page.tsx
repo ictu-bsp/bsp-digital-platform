@@ -15,6 +15,7 @@ import { getCurrentUser } from "@/lib/auth/current-user";
 import { getPublishedActivities, getPublishedActivitiesForScope } from "@/services/activity.service";
 import { getScoutByUserId, getScoutScope } from "@/services/scout.service";
 import { getAnnouncementsForUser } from "@/services/announcement.service";
+import { getNotificationsForUser } from "@/services/notification.service";
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -56,6 +57,12 @@ export default async function DashboardPage() {
       : { councilId: user.councilId ?? null, regionId: user.regionId ?? null };
 
   const announcements = await getAnnouncementsForUser({
+    role: user.role,
+    councilId: scoutScope.councilId,
+    regionId: scoutScope.regionId,
+  });
+
+  const notifications = await getNotificationsForUser({
     role: user.role,
     councilId: scoutScope.councilId,
     regionId: scoutScope.regionId,
@@ -103,7 +110,7 @@ export default async function DashboardPage() {
 
             <PromoCarousel banners={promoBanners} />
 
-            <NotificationSection role={user.role} />
+            <NotificationSection notifications={notifications} />
 
             <AnnouncementSection announcements={announcements} />
 

@@ -1,3 +1,4 @@
+// src/app/scout/membership/verified-member/page.tsx
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { getMembershipCardData } from "@/services/application.service";
@@ -10,16 +11,22 @@ export default async function VerifiedMemberPage() {
     redirect("/login");
   }
 
-  // FIX 1: getMembershipCardData takes 0 arguments (it uses session internally)
   const cardData = await getMembershipCardData();
 
-  // FIX 2: Check cardData and cardData.scout nullability
   if (!cardData || !cardData.scout || cardData.scout.verificationStatus !== "active") {
     redirect("/scout/membership");
   }
 
-  // FIX 3: Removed non-existent `personalInfo` from destructure
   const { application, scout, registration, council } = cardData;
+
+  let parsedRemarks: Record<string, any> = {};
+  if (application?.remarks) {
+    try {
+      parsedRemarks = JSON.parse(application.remarks);
+    } catch {
+      // Ignore non-JSON remarks
+    }
+  }
 
   const scoutingPositionLabels: Record<string, string> = {
     kid_scout: "Kid Scout",
@@ -66,7 +73,7 @@ export default async function VerifiedMemberPage() {
     middleInitial: user.middleName ? `${user.middleName.charAt(0)}.` : "",
     lastName: user.lastName,
     designation: formatLabel(
-      application?.scoutingPosition,
+      application?.scoutingPosition || parsedRemarks.scoutingPosition,
       scoutingPositionLabels
     ),
     council: council?.name ?? "N/A",
@@ -75,18 +82,42 @@ export default async function VerifiedMemberPage() {
     status: scout.verificationStatus === "active" ? "VALID" : "PENDING",
     dob: formatDate(user.birthdate),
     sex: user.sex ?? "N/A",
-    // FIX 4: Access emergency & personal data from scout/application directly
-    bloodType: scout.bloodType || application?.bloodType || "N/A",
+    bloodType:
+      scout.bloodType ||
+      application?.bloodType ||
+      parsedRemarks.bloodType ||
+      "N/A",
     sponsoringInst: formatLabel(
-      application?.sponsoringInstitution,
+      application?.sponsoringInstitution || parsedRemarks.sponsoringInstitution,
       sponsoringInstitutionLabels
     ),
-    address: scout.address || application?.address || "N/A",
-    telephone: scout.telephoneNumber || application?.telephoneNumber || "N/A",
+    address:
+      scout.address ||
+      application?.address ||
+      parsedRemarks.address ||
+      "N/A",
+    telephone:
+      scout.telephoneNumber ||
+      application?.telephoneNumber ||
+      parsedRemarks.telephoneNumber ||
+      parsedRemarks.telephone ||
+      "N/A",
     email: user.email,
-    emergencyContact: scout.emergencyContactName || application?.emergencyContactName || "N/A",
-    emergencyRelationship: scout.emergencyContactRelationship || application?.emergencyContactRelationship || "N/A",
-    emergencyContactNum: scout.emergencyContactNumber || application?.emergencyContactNumber || "N/A",
+    emergencyContact:
+      scout.emergencyContactName ||
+      application?.emergencyContactName ||
+      parsedRemarks.emergencyContactName ||
+      "N/A",
+    emergencyRelationship:
+      scout.emergencyContactRelationship ||
+      application?.emergencyContactRelationship ||
+      parsedRemarks.emergencyContactRelationship ||
+      "N/A",
+    emergencyContactNum:
+      scout.emergencyContactNumber ||
+      application?.emergencyContactNumber ||
+      parsedRemarks.emergencyContactNumber ||
+      "N/A",
   };
 
   return (
