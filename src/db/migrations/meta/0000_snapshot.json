@@ -1,5 +1,5 @@
 {
-  "id": "12d2dc56-0fcb-4812-89af-43ad2d5846b8",
+  "id": "b9d7e76e-bf9b-410c-97a5-2f8ad85061f9",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -70,8 +70,27 @@
           "primaryKey": false,
           "notNull": false
         },
+        "region_id": {
+          "name": "region_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "max_participants": {
           "name": "max_participants",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "minimum_rank": {
+          "name": "minimum_rank",
+          "type": "scout_rank",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "registration_fee": {
+          "name": "registration_fee",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
@@ -112,6 +131,19 @@
           "tableTo": "councils",
           "columnsFrom": [
             "council_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "activities_region_id_regions_id_fk": {
+          "name": "activities_region_id_regions_id_fk",
+          "tableFrom": "activities",
+          "tableTo": "regions",
+          "columnsFrom": [
+            "region_id"
           ],
           "columnsTo": [
             "id"
@@ -307,11 +339,25 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
+        "scope": {
+          "name": "scope",
+          "type": "admin_scope",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'COUNCIL'"
+        },
         "council_id": {
           "name": "council_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
+        },
+        "region_id": {
+          "name": "region_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_by": {
           "name": "created_by",
@@ -337,6 +383,18 @@
           "primaryKey": false,
           "notNull": true
         },
+        "first_name": {
+          "name": "first_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_name": {
+          "name": "last_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "role": {
           "name": "role",
           "type": "admin_role",
@@ -353,6 +411,84 @@
         },
         "last_login_at": {
           "name": "last_login_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "password_expiration": {
+          "name": "password_expiration",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "account_lock_threshold": {
+          "name": "account_lock_threshold",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 5
+        },
+        "incorrect_password_attempts": {
+          "name": "incorrect_password_attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "locked": {
+          "name": "locked",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "alternate_email": {
+          "name": "alternate_email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "profile_picture": {
+          "name": "profile_picture",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "first_time_user": {
+          "name": "first_time_user",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "can_change_password": {
+          "name": "can_change_password",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "turn_off_email_notif": {
+          "name": "turn_off_email_notif",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "added_by": {
+          "name": "added_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deleted_date": {
+          "name": "deleted_date",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false
@@ -387,12 +523,38 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
+        "admin_users_region_id_regions_id_fk": {
+          "name": "admin_users_region_id_regions_id_fk",
+          "tableFrom": "admin_users",
+          "tableTo": "regions",
+          "columnsFrom": [
+            "region_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
         "admin_users_created_by_users_id_fk": {
           "name": "admin_users_created_by_users_id_fk",
           "tableFrom": "admin_users",
           "tableTo": "users",
           "columnsFrom": [
             "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "admin_users_added_by_admin_users_id_fk": {
+          "name": "admin_users_added_by_admin_users_id_fk",
+          "tableFrom": "admin_users",
+          "tableTo": "admin_users",
+          "columnsFrom": [
+            "added_by"
           ],
           "columnsTo": [
             "id"
@@ -531,6 +693,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "region_id": {
+          "name": "region_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "author_id": {
           "name": "author_id",
           "type": "uuid",
@@ -567,6 +735,19 @@
           "tableTo": "councils",
           "columnsFrom": [
             "council_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "announcements_region_id_regions_id_fk": {
+          "name": "announcements_region_id_regions_id_fk",
+          "tableFrom": "announcements",
+          "tableTo": "regions",
+          "columnsFrom": [
+            "region_id"
           ],
           "columnsTo": [
             "id"
@@ -892,6 +1073,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "region_id": {
+          "name": "region_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "avatar_url": {
           "name": "avatar_url",
           "type": "text",
@@ -921,6 +1108,19 @@
           "tableTo": "councils",
           "columnsFrom": [
             "council_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "users_region_id_regions_id_fk": {
+          "name": "users_region_id_regions_id_fk",
+          "tableFrom": "users",
+          "tableTo": "regions",
+          "columnsFrom": [
+            "region_id"
           ],
           "columnsTo": [
             "id"
@@ -1691,7 +1891,8 @@
       "values": [
         "PUBLIC",
         "SCOUTS",
-        "COUNCIL"
+        "COUNCIL",
+        "REGIONAL"
       ]
     },
     "public.activity_category": {
@@ -1713,6 +1914,15 @@
         "FINANCE_OFFICER",
         "REGISTRAR",
         "REPORTS_OFFICER"
+      ]
+    },
+    "public.admin_scope": {
+      "name": "admin_scope",
+      "schema": "public",
+      "values": [
+        "COUNCIL",
+        "REGIONAL",
+        "NATIONAL"
       ]
     },
     "public.application_status": {
@@ -1739,6 +1949,7 @@
       "schema": "public",
       "values": [
         "pending",
+        "membership_approved",
         "active",
         "expired",
         "cancelled"

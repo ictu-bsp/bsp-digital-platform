@@ -1,8 +1,43 @@
 "use server";
 
 import { db } from "@/db";
-import { announcements, councils, users } from "@/db/schema";
+import { announcements, councils, regions, users } from "@/db/schema";
 import { and, desc, eq, or } from "drizzle-orm";
+
+const announcementSelect = {
+  id: announcements.id,
+  title: announcements.title,
+  content: announcements.content,
+  imageUrl: announcements.imageUrl,
+  visibility: announcements.visibility,
+  isPinned: announcements.isPinned,
+  createdAt: announcements.createdAt,
+
+  author: {
+    id: users.id,
+    firstName: users.firstName,
+    lastName: users.lastName,
+  },
+
+  council: {
+    id: councils.id,
+    name: councils.name,
+  },
+
+  region: {
+    id: regions.id,
+    name: regions.name,
+  },
+};
+
+function announcementsWithAuthorAndScope() {
+  return db
+    .select(announcementSelect)
+    .from(announcements)
+    .leftJoin(users, eq(users.id, announcements.authorId))
+    .leftJoin(councils, eq(councils.id, announcements.councilId))
+    .leftJoin(regions, eq(regions.id, announcements.regionId));
+}
 
 export async function getLatestAnnouncements(
   limit = 10
@@ -52,32 +87,24 @@ export async function getLatestAnnouncements(
 }
 
 export async function getAnnouncementsForUser(user: {
-  role: "VISITOR" | "SCOUT" | "COUNCIL_ADMIN" | "SUPER_ADMIN";
+  role: "VISITOR" | "SCOUT" | "COUNCIL_ADMIN" | "REGIONAL_ADMIN" | "NATIONAL_ADMIN" | "SUPER_ADMIN";
   councilId?: string | null;
+  regionId?: string | null;
 }) {
-  if (user.role === "SUPER_ADMIN") {
-    return db
-      .select()
-      .from(announcements)
-      .orderBy(desc(announcements.isPinned), desc(announcements.createdAt));
+  if (user.role === "SUPER_ADMIN" || user.role === "NATIONAL_ADMIN") {
+    return announcementsWithAuthorAndScope().orderBy(
+      desc(announcements.isPinned),
+      desc(announcements.createdAt)
+    );
   }
 
   if (user.role === "VISITOR") {
-    return db
-      .select()
-      .from(announcements)
-      .where(
-        eq(
-          announcements.visibility,
-          "PUBLIC"
-        )
-      )
+    return announcementsWithAuthorAndScope()
+      .where(eq(announcements.visibility, "PUBLIC"))
       .orderBy(desc(announcements.isPinned), desc(announcements.createdAt));
   }
 
-  return db
-    .select()
-    .from(announcements)
+  return announcementsWithAuthorAndScope()
     .where(
       or(
         eq(announcements.visibility, "PUBLIC"),
@@ -93,6 +120,19 @@ export async function getAnnouncementsForUser(user: {
               eq(
                 announcements.councilId,
                 user.councilId
+              )
+            )
+          : undefined,
+
+        user.regionId
+          ? and(
+              eq(
+                announcements.visibility,
+                "REGIONAL"
+              ),
+              eq(
+                announcements.regionId,
+                user.regionId
               )
             )
           : undefined
@@ -125,9 +165,12 @@ interface CreateAnnouncementInput {
   visibility:
     | "PUBLIC"
     | "SCOUTS"
-    | "COUNCIL";
+    | "COUNCIL"
+    | "REGIONAL";
 
   councilId?: string | null;
+
+  regionId?: string | null;
 
   authorId: string;
 
@@ -146,6 +189,8 @@ export async function createAnnouncement(
     visibility: data.visibility,
 
     councilId: data.councilId ?? null,
+
+    regionId: data.regionId ?? null,
 
     authorId: data.authorId,
 

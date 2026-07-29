@@ -1,5 +1,5 @@
 import Link from "next/link";
-
+//function to redirect from signup to login
 export function AuthLinks() {
   return (
     <p className="mb-4 text-sm text-gray-500">

@@ -1,24 +1,27 @@
 // src/proxy.ts
-
 import { NextRequest, NextResponse } from "next/server";
-
+//Publicly accessible route paths that bypass authentication checks.
 const PUBLIC_ROUTES = [
   "/",
   "/login",
   "/signup",
-  "/admin/login", // Required so users can reach the 2nd layer form
-  "/scout/membership/membership-registration/webhook",
+  "/admin/login", // Allows administrative users to reach secondary login step
+  "/scout/membership/membership-registration/webhook", // Payment provider callback handler
 ];
-
+/**
+ * Next.js Edge Middleware proxy function handling access control enforcement
+ * and cache header adjustments for protected application routes.
+ * @param request - The incoming Next.js HTTP request object.
+ * @returns A `NextResponse` redirect, JSON error response, or forwarded response.
+ */
 export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const session = request.cookies.get("bsp_session");
-
+  // Determines if current request path matches any entry in PUBLIC_ROUTES
   const isPublic = PUBLIC_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(route + "/")
   );
-
-  // 1. Visitors attempting to access protected pages without any session
+  // 1. Guard check: Unauthenticated access attempt on protected routes
   if (!session && !isPublic) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json(
@@ -28,18 +31,15 @@ export function proxy(request: NextRequest) {
     }
     return NextResponse.redirect(new URL("/login", request.url));
   }
-
-  // 2. Logged-in users attempting to access primary auth pages (/login, /signup)
+  // 2. Guard check: Authenticated users attempting to visit auth pages (/login, /signup)
   if (
     session &&
     (pathname === "/login" || pathname.startsWith("/signup"))
   ) {
     return NextResponse.redirect(new URL("/scout", request.url));
   }
-
   const response = NextResponse.next();
-
-  // Disable back/forward browser caching (BFCache) on protected routes
+  // Disable back/forward browser caching (BFCache) for sensitive, non-public pages
   if (!isPublic) {
     response.headers.set(
       "Cache-Control",
@@ -48,10 +48,9 @@ export function proxy(request: NextRequest) {
     response.headers.set("Pragma", "no-cache");
     response.headers.set("Expires", "0");
   }
-
   return response;
 }
-
+//Middleware matcher patterns dictating which path domains execute this proxy guard.
 export const config = {
   matcher: [
     "/dashboard/:path*",

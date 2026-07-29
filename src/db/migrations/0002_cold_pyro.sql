@@ -1,1 +1,0 @@
-ALTER TYPE "public"."registration_status" ADD VALUE 'membership_approved' BEFORE 'active';

@@ -15,6 +15,27 @@ export async function getScoutByUserId(userId: string) {
   return scout ?? null;
 }
 
+// Scopes content (activities, announcements) to a scout's council and,
+// transitively, their council's region. Scouts don't have a regionId of
+// their own -- it's always derived via their council.
+export async function getScoutScope(userId: string) {
+  const scout = await getScoutByUserId(userId);
+
+  if (!scout || !scout.councilId) {
+    return { councilId: null, regionId: null };
+  }
+
+  const [council] = await db
+    .select({ regionId: councils.regionId })
+    .from(councils)
+    .where(eq(councils.id, scout.councilId));
+
+  return {
+    councilId: scout.councilId,
+    regionId: council?.regionId ?? null,
+  };
+}
+
 
 export async function createScout(input: { userId: string; councilId: string }) {
   const [scout] = await db

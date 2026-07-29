@@ -2,6 +2,7 @@
 
 import { users } from "./users";
 import { councils } from "./councils";
+import { regions } from "./regions";
 import { activityCategoryEnum, scoutRankEnum } from "./enums";
 import { boolean, integer, pgTable, text, timestamp, uuid, } from "drizzle-orm/pg-core";
 
@@ -29,8 +30,15 @@ export const activities = pgTable("activities", {
 
   category: activityCategoryEnum("category").notNull(),
 
+  // Visibility scope. An activity visible to everyone (national) has both
+  // of these null. A council-scoped activity sets councilId only. A
+  // region-scoped activity sets regionId only (covering every council in
+  // that region). These two are not expected to both be set at once.
   councilId: uuid("council_id")
     .references(() => councils.id),
+
+  regionId: uuid("region_id")
+    .references(() => regions.id),
 
   // Capacity
   maxParticipants: integer("max_participants"),

@@ -1,6 +1,5 @@
-// src/app/admin/dashbaord/reports/components/ReportsView.tsx
+// src/app/admin/dashboard/reports/components/ReportsView.tsx
 "use client";
-
 import { useEffect, useState } from "react";
 import StatCard from "./StatCard";
 import { generateReportsPdf } from "../lib/generateReportsPdf";
@@ -11,24 +10,20 @@ type RegistrationSummary = {
   byStatus: { status: string; count: number }[];
   total: number;
 };
-
 type PaymentCollections = {
   byStatus: { paymentStatus: string; count: number; estimatedAmount: number }[];
   totalEstimatedAmount: number;
   note: string;
 };
-
 type RegionCouncilRow = {
   regionName: string | null;
   councilName: string;
   count: number;
 };
-
 type OverTimeRow = {
   month: string;
   count: number;
 };
-
 type RevenueByTenureRow = {
   registrationYears: number;
   count: number;
@@ -60,7 +55,6 @@ type EnrolleeDetailRow = {
   activitiesEnrolled: string[];
   registeredAt?: string;
 };
-
 type ActivitySummaryRow = {
   activityId: string;
   title: string;
@@ -105,7 +99,6 @@ type AllReports = {
   scoutProfiles: ScoutProfileRow[];
   enrolleeDetails: EnrolleeDetailRow[];
 };
-
 type Enrollee = {
   registrationId: string;
   registeredAt: string;
@@ -163,13 +156,14 @@ const EMPTY_FILTERS: FilterState = {
   rank: "",
 };
 
+// Render dashboard reports view containing registration summaries, metrics, and activity enrollee details.
 export default function ReportsView() {
   const [reports, setReports] = useState<AllReports | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [pendingFilters, setPendingFilters] = useState<FilterState>(EMPTY_FILTERS);
-  const [activeTab, setActiveTab] = useState<
+  const [activeTab, setActiveTab] = useState
     "membership" | "registration" | "activities" | "financial"
   >("membership");
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -178,8 +172,8 @@ export default function ReportsView() {
   const [enrollees, setEnrollees] = useState<Enrollee[]>([]);
   const [enrolleesLoading, setEnrolleesLoading] = useState(false);
   const [pdfGenerating, setPdfGenerating] = useState(false);
-
   useEffect(() => {
+    // Fetch initial report summaries from API endpoint.
     async function loadReports() {
       setLoading(true);
       setError(null);
@@ -192,7 +186,7 @@ export default function ReportsView() {
         if (filters.rank) params.set("rank", filters.rank);
 
         const query = params.toString();
-        const res = await fetch(`/api/admin/reports${query ? `?${query}` : ""}`);
+        const res = await fetch(`/admin/api/reports${query ? `?${query}` : ""}`);
         if (!res.ok) {
           throw new Error(`Failed to load reports (status ${res.status})`);
         }
@@ -214,12 +208,13 @@ export default function ReportsView() {
     setFilters(EMPTY_FILTERS);
   };
 
+  // Fetch detailed list of enrollees for a specific activity.
   const onViewEnrollees = async (activity: ActivitySummaryRow) => {
     setSelectedActivity(activity);
     setEnrolleesLoading(true);
     setEnrollees([]);
     try {
-      const res = await fetch(`/api/admin/reports/activities/${activity.activityId}`);
+      const res = await fetch(`/admin/api/reports/activities/${activity.activityId}`);
       if (!res.ok) {
         throw new Error(`Failed to load enrollees (status ${res.status})`);
       }
@@ -231,11 +226,9 @@ export default function ReportsView() {
       setEnrolleesLoading(false);
     }
   };
-
   if (loading) {
     return <p className="text-zinc-500 py-10 text-center">Loading reports...</p>;
   }
-
   if (error || !reports) {
     return (
       <p className="text-red-600 py-10 text-center">
@@ -243,7 +236,6 @@ export default function ReportsView() {
       </p>
     );
   }
-
   return (
     <div className="flex flex-col gap-6 p-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -573,8 +565,7 @@ export default function ReportsView() {
           </StatCard>
         )}
 
-
-{/* 5c. Individual Payments — who paid, how much, when */}
+        {/* 5c. Individual Payments — who paid, how much, when */}
         {activeTab === "financial" && (
           <StatCard
             title="Individual Payments"
@@ -668,31 +659,24 @@ export default function ReportsView() {
           </StatCard>
         )}
       </div>
-
-      {/* Drill-down modal for selected activity's enrollees */}
       {selectedActivity && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[85vh] overflow-y-auto p-8 text-zinc-900">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[85vh]
+          overflow-y-auto p-8 text-zinc-900">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-green-800">
                 Enrolled Scouts — {selectedActivity.title}
               </h3>
-              <button
-                type="button"
-                onClick={() => setSelectedActivity(null)}
-                className="text-red-600 border border-red-600 rounded-full w-7 h-7 flex items-center justify-center text-sm"
-                aria-label="Close"
-              >
+              <button type="button" onClick={() => setSelectedActivity(null)}
+              className="text-red-600 border border-red-600 rounded-full
+              w-7 h-7 flex items-center justify-center text-sm" aria-label="Close">
                 ✕
               </button>
             </div>
-
             {enrolleesLoading && <p className="text-zinc-500">Loading enrollees...</p>}
-
             {!enrolleesLoading && enrollees.length === 0 && (
               <p className="text-sm text-zinc-500">No scouts enrolled in this activity.</p>
             )}
-
             {!enrolleesLoading && enrollees.length > 0 && (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">

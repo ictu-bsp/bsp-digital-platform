@@ -10,6 +10,7 @@ import {
 
 import { users } from "./users";
 import { councils } from "./councils";
+import { regions } from "./regions";
 
 export const announcementVisibility = pgEnum(
   "announcement_visibility",
@@ -17,6 +18,7 @@ export const announcementVisibility = pgEnum(
     "PUBLIC",
     "SCOUTS",
     "COUNCIL",
+    "REGIONAL",
   ]
 );
 
@@ -42,6 +44,10 @@ export const announcements = pgTable(
 
     councilId: uuid("council_id").references(
       () => councils.id
+    ),
+
+    regionId: uuid("region_id").references(
+      () => regions.id
     ),
 
     authorId: uuid("author_id")

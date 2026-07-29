@@ -969,7 +969,7 @@ export async function getActivityParticipationStats() {
 
 // -------------------------------------------------
 // Officers (adminUsers table — the real, live admin accounts
-// table used by src/app/api/admin/login/route.ts). Not to be
+// table used by src/app/admin/api/login/route.ts). Not to be
 // confused with the older `administrators`/`roles` tables used
 // above in getAdministrators()/getAdministratorById() — those
 // are a separate, stale path.
@@ -983,8 +983,11 @@ export type AdminUserRecord = {
   lastName: string | null;
   role: string;
   active: boolean;
-  council: string;
-  councilId: string;
+  scope: "COUNCIL" | "REGIONAL" | "NATIONAL";
+  council: string | null;
+  councilId: string | null;
+  region: string | null;
+  regionId: string | null;
   lastLoginAt: Date | null;
 
   passwordExpiration: Date | null;
@@ -1006,8 +1009,24 @@ export type AdminUserRecord = {
   deletedAt: Date | null;
 };
 
-export async function getAdminUsers(): Promise<AdminUserRecord[]> {
+export async function getAdminUsers(scope?: {
+  tier: "COUNCIL" | "REGIONAL" | "NATIONAL" | "SUPER";
+  councilId?: string;
+  regionId?: string;
+}): Promise<AdminUserRecord[]> {
   const addedByUser = alias(adminUsers, "added_by_user");
+
+  let scopeFilter = undefined as ReturnType<typeof eq> | undefined;
+
+  if (scope && scope.tier !== "SUPER") {
+    if (scope.tier === "COUNCIL" && scope.councilId) {
+      scopeFilter = eq(adminUsers.councilId, scope.councilId);
+    } else if (scope.tier === "REGIONAL" && scope.regionId) {
+      scopeFilter = eq(adminUsers.regionId, scope.regionId);
+    } else if (scope.tier === "NATIONAL") {
+      scopeFilter = eq(adminUsers.scope, "NATIONAL");
+    }
+  }
 
   const records = await db
     .select({
@@ -1018,8 +1037,11 @@ export async function getAdminUsers(): Promise<AdminUserRecord[]> {
       lastName: adminUsers.lastName,
       role: adminUsers.role,
       active: adminUsers.active,
+      scope: adminUsers.scope,
       council: councils.name,
       councilId: adminUsers.councilId,
+      region: regions.name,
+      regionId: adminUsers.regionId,
       lastLoginAt: adminUsers.lastLoginAt,
 
       passwordExpiration: adminUsers.passwordExpiration,
@@ -1041,8 +1063,13 @@ export async function getAdminUsers(): Promise<AdminUserRecord[]> {
       deletedAt: adminUsers.deletedAt,
     })
     .from(adminUsers)
-    .innerJoin(councils, eq(adminUsers.councilId, councils.id))
-    .leftJoin(addedByUser, eq(adminUsers.addedBy, addedByUser.id));
+    // These MUST be left joins -- a regional/national scope system user
+    // has no councilId (and a council-scope one has no regionId), so an
+    // inner join here would silently drop them from the list entirely.
+    .leftJoin(councils, eq(adminUsers.councilId, councils.id))
+    .leftJoin(regions, eq(adminUsers.regionId, regions.id))
+    .leftJoin(addedByUser, eq(adminUsers.addedBy, addedByUser.id))
+    .where(scopeFilter);
 
   return records;
 }
@@ -1062,8 +1089,11 @@ export async function getAdminUserById(
       lastName: adminUsers.lastName,
       role: adminUsers.role,
       active: adminUsers.active,
+      scope: adminUsers.scope,
       council: councils.name,
       councilId: adminUsers.councilId,
+      region: regions.name,
+      regionId: adminUsers.regionId,
       lastLoginAt: adminUsers.lastLoginAt,
 
       passwordExpiration: adminUsers.passwordExpiration,
@@ -1085,7 +1115,8 @@ export async function getAdminUserById(
       deletedAt: adminUsers.deletedAt,
     })
     .from(adminUsers)
-    .innerJoin(councils, eq(adminUsers.councilId, councils.id))
+    .leftJoin(councils, eq(adminUsers.councilId, councils.id))
+    .leftJoin(regions, eq(adminUsers.regionId, regions.id))
     .leftJoin(addedByUser, eq(adminUsers.addedBy, addedByUser.id))
     .where(eq(adminUsers.id, id));
 
@@ -1093,7 +1124,9 @@ export async function getAdminUserById(
 }
 
 export type CreateAdminUserInput = {
-  councilId: string;
+  scope: "COUNCIL" | "REGIONAL" | "NATIONAL";
+  councilId: string | null;
+  regionId: string | null;
   createdBy: string; // users.id of the person submitting the form
   addedBy: string | null; // adminUsers.id of the acting admin, if applicable
 
@@ -1115,15 +1148,14 @@ export type CreateAdminUserInput = {
 };
 
 export async function createAdminUser(input: CreateAdminUserInput) {
-  // NOTE: hashing must match whatever library src/app/api/admin/login/route.ts
-  // uses to verify passwords (bcrypt, argon2, etc.) — confirm before wiring
-  // this up, since a mismatch would make new accounts unable to log in.
   const passwordHash = await hashPassword(input.password);
 
   const [created] = await db
     .insert(adminUsers)
     .values({
+      scope: input.scope,
       councilId: input.councilId,
+      regionId: input.regionId,
       createdBy: input.createdBy,
       addedBy: input.addedBy,
 

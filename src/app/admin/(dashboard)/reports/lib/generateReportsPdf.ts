@@ -8,29 +8,24 @@
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-
 type RegistrationSummary = {
   byStatus: { status: string; count: number }[];
   total: number;
 };
-
 type PaymentCollections = {
   byStatus: { paymentStatus: string; count: number; estimatedAmount: number }[];
   totalEstimatedAmount: number;
   note: string;
 };
-
 type RegionCouncilRow = {
   regionName: string | null;
   councilName: string;
   count: number;
 };
-
 type OverTimeRow = {
   month: string;
   count: number;
 };
-
 type RevenueByTenureRow = {
   registrationYears: number;
   count: number;
