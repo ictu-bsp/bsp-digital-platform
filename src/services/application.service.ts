@@ -7,6 +7,7 @@ import { scouts } from "@/db/schema/scouts";
 import { registrations } from "@/db/schema/scout-registrations";
 import { councils } from "@/db/schema/councils";
 import { regions } from "@/db/schema/regions";
+import { payments } from "@/db/schema/payments";
 import { getCurrentUser } from "@/lib/auth/current-user";
 
 export interface SubmitApplicationInput {
@@ -15,6 +16,7 @@ export interface SubmitApplicationInput {
   councilId?: string | null;
   scoutingPosition?: string | null;
   advancementRank?: string | null;
+  scoutSection?: string | null;
   tenure?: number | string | null;
   region?: string | null;
   communityBased?: boolean | string | null;
@@ -28,8 +30,32 @@ export interface SubmitApplicationInput {
   emergencyContactNumber?: string | null;
   remarks?: string | null;
   status?: string | null;
+  paymentId?: string | null;
   [key: string]: any;
 }
+
+// Maps section inputs to valid scoutSection Enum values ('KID' | 'KAB' | 'BOY' | 'SENIOR' | 'ROVER')
+function resolveScoutSectionEnum(
+  sectionInput?: string | null,
+  positionInput?: string | null
+): "KID" | "KAB" | "BOY" | "SENIOR" | "ROVER" | null {
+  const value = (sectionInput || positionInput || "").toUpperCase().trim();
+
+  if (value.includes("KID")) return "KID";
+  if (value.includes("KAB")) return "KAB";
+  if (value.includes("BOY")) return "BOY";
+  if (value.includes("SENIOR")) return "SENIOR";
+  if (value.includes("ROVER")) return "ROVER";
+
+  return null;
+}
+
+// Helper to convert empty string inputs into real SQL NULL
+const cleanValue = (val?: unknown): string | null => {
+  if (typeof val !== "string") return null;
+  const trimmed = val.trim();
+  return trimmed === "" ? null : trimmed;
+};
 
 export async function submitApplication(data: SubmitApplicationInput) {
   let userId = data.userId;
@@ -44,41 +70,39 @@ export async function submitApplication(data: SubmitApplicationInput) {
   }
 
   const rawCouncil = data.preferredCouncilId || data.councilId;
-  const preferredCouncilId =
-    rawCouncil && String(rawCouncil).trim() !== "" ? String(rawCouncil) : null;
+  const preferredCouncilId = cleanValue(rawCouncil);
+
+  // Map section to valid enum
+  const mappedSection = resolveScoutSectionEnum(data.scoutSection, data.scoutingPosition);
+  
+  // Allow null for sponsoringInstitution if empty or if community-based
+  const isCommunity = data.communityBased === true || data.communityBased === "true";
+  const sponsoringInstitution = isCommunity ? null : cleanValue(data.sponsoringInstitution);
 
   const insertPayload = {
     userId: userId,
     preferredCouncilId: preferredCouncilId,
-    scoutingPosition: data.scoutingPosition ? String(data.scoutingPosition) : null,
-    advancementRank: data.advancementRank ? String(data.advancementRank) : null,
+    scoutingPosition: cleanValue(data.scoutingPosition),
+    scoutSection: mappedSection,
+    advancementRank: cleanValue(data.advancementRank), // Accepts raw text ("Tenderfoot", "Eagle", etc.)
     tenure:
       data.tenure !== undefined && data.tenure !== null && data.tenure !== ""
         ? Number(data.tenure)
         : 0,
-    region: data.region ? String(data.region) : null,
-    communityBased:
-      data.communityBased === true || data.communityBased === "true",
-    sponsoringInstitution: data.sponsoringInstitution
-      ? String(data.sponsoringInstitution)
-      : null,
+    region: cleanValue(data.region),
+    communityBased: isCommunity,
+    sponsoringInstitution: sponsoringInstitution,
     requestedRegistrationYears: data.requestedRegistrationYears
       ? Number(data.requestedRegistrationYears)
       : 1,
-    bloodType: data.bloodType ? String(data.bloodType) : null,
-    address: data.address ? String(data.address) : null,
-    telephoneNumber: data.telephoneNumber ? String(data.telephoneNumber) : null,
-    emergencyContactName: data.emergencyContactName
-      ? String(data.emergencyContactName)
-      : null,
-    emergencyContactRelationship: data.emergencyContactRelationship
-      ? String(data.emergencyContactRelationship)
-      : null,
-    emergencyContactNumber: data.emergencyContactNumber
-      ? String(data.emergencyContactNumber)
-      : null,
-    remarks: data.remarks ? String(data.remarks) : null,
-    status: data.status ? String(data.status).toUpperCase() : "PENDING",
+    bloodType: cleanValue(data.bloodType),
+    address: cleanValue(data.address),
+    telephoneNumber: cleanValue(data.telephoneNumber),
+    emergencyContactName: cleanValue(data.emergencyContactName),
+    emergencyContactRelationship: cleanValue(data.emergencyContactRelationship),
+    emergencyContactNumber: cleanValue(data.emergencyContactNumber),
+    remarks: cleanValue(data.remarks),
+    status: data.status ? (String(data.status).toUpperCase() as "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED") : "PENDING",
   };
 
   const [inserted] = await db
@@ -86,10 +110,14 @@ export async function submitApplication(data: SubmitApplicationInput) {
     .values(insertPayload as typeof scoutApplications.$inferInsert)
     .returning();
 
+  if (data.paymentId && inserted?.id) {
+    await linkPaymentToApplication(data.paymentId, inserted.id);
+  }
+
   return inserted;
 }
 
-// Fetches all applications submitted by a user (the full history)
+// Fetches all applications submitted by a user
 export async function getApplicationByUser(userId: string) {
   const applications = await db
     .select()
@@ -100,7 +128,7 @@ export async function getApplicationByUser(userId: string) {
   return applications;
 }
 
-// Fetches specifically the most recent application by leveraging the user's application history
+// Fetches the most recent application
 export async function getLatestApplication(userId: string) {
   const applications = await getApplicationByUser(userId);
   return applications[0] ?? null;
@@ -121,41 +149,73 @@ export async function getMembershipCardData() {
     .where(eq(scouts.userId, userId))
     .limit(1);
 
-  if (!scout) {
+  const application = await getLatestApplication(userId);
+
+  if (!scout && !application) {
     return null;
   }
 
-  const application = await getLatestApplication(userId);
+  const scoutId = scout?.id ?? null;
 
-  const [registration] = await db
-    .select()
-    .from(registrations)
-    .where(eq(registrations.scoutId, scout.id))
-    .orderBy(desc(registrations.createdAt))
-    .limit(1);
+  let registration = null;
+  if (scoutId) {
+    const [regRecord] = await db
+      .select()
+      .from(registrations)
+      .where(eq(registrations.scoutId, scoutId))
+      .orderBy(desc(registrations.createdAt))
+      .limit(1);
+    registration = regRecord ?? null;
+  }
 
-  const [council] = await db
-    .select()
-    .from(councils)
-    .where(eq(councils.id, scout.councilId))
-    .limit(1);
+  const councilId = scout?.councilId || application?.preferredCouncilId || null;
+  let council = null;
+  if (councilId) {
+    const [councilRecord] = await db
+      .select()
+      .from(councils)
+      .where(eq(councils.id, councilId))
+      .limit(1);
+    council = councilRecord ?? null;
+  }
+
+  const resolvedSection =
+    application?.scoutSection ||
+    application?.scoutingPosition ||
+    (scout as any)?.scoutSection ||
+    "Unassigned";
+
+  const resolvedRank =
+    application?.advancementRank ||
+    scout?.rank ||
+    (scout as any)?.advancementRank ||
+    "Unranked";
 
   return {
     application: application ?? null,
-    scout: scout
-      ? {
-          ...scout,
-          bloodType: application?.bloodType ?? "",
-          address: application?.address ?? "",
-          telephoneNumber: application?.telephoneNumber ?? "",
-          emergencyContactName: application?.emergencyContactName ?? "",
-          emergencyContactRelationship:
-            application?.emergencyContactRelationship ?? "",
-          emergencyContactNumber: application?.emergencyContactNumber ?? "",
-        }
-      : null,
-    registration: registration ?? null,
-    council: council ?? null,
+    scout: {
+      ...(scout || {}),
+      bloodType: application?.bloodType || (scout as any)?.bloodType || "N/A",
+      address: application?.address || (scout as any)?.address || "N/A",
+      telephoneNumber:
+        application?.telephoneNumber || (scout as any)?.telephoneNumber || "N/A",
+      emergencyContactName:
+        application?.emergencyContactName ||
+        (scout as any)?.emergencyContactName ||
+        "N/A",
+      emergencyContactRelationship:
+        application?.emergencyContactRelationship ||
+        (scout as any)?.emergencyContactRelationship ||
+        "N/A",
+      emergencyContactNumber:
+        application?.emergencyContactNumber ||
+        (scout as any)?.emergencyContactNumber ||
+        "N/A",
+      scoutSection: resolvedSection,
+      advancementRank: resolvedRank,
+    },
+    registration: registration,
+    council: council,
   };
 }
 
@@ -206,16 +266,30 @@ export async function assignMembershipIdToScout(scoutId: string, councilId: stri
 
   const nextOrderNumber = (result?.value || 0) + 1;
 
-  const membershipId = await generateMembershipNumber(
+  return await generateMembershipNumber(
     councilRecord.regionNumber,
     councilRecord.councilNumber,
     nextOrderNumber
   );
-
-  return membershipId;
 }
 
-export async function approveScoutApplication(applicationId: string, adminId: string) {
+export async function linkPaymentToApplication(
+  paymentId: string,
+  applicationId: string
+) {
+  await db
+    .update(payments)
+    .set({
+      applicationId: applicationId,
+      updatedAt: new Date(),
+    } as any)
+    .where(eq(payments.id, paymentId));
+}
+
+export async function approveScoutApplication(
+  applicationId: string,
+  adminId: string
+) {
   const [application] = await db
     .select()
     .from(scoutApplications)
@@ -235,10 +309,17 @@ export async function approveScoutApplication(applicationId: string, adminId: st
     throw new Error("Application does not specify a valid council ID.");
   }
 
-  const membershipId = await assignMembershipIdToScout(
-    application.userId, 
-    councilId
-  );
+  const [scout] = await db
+    .select({ id: scouts.id })
+    .from(scouts)
+    .where(eq(scouts.userId, application.userId))
+    .limit(1);
+
+  if (!scout) {
+    throw new Error("Scout profile record not found for this user.");
+  }
+
+  const membershipId = await assignMembershipIdToScout(scout.id, councilId);
 
   await db.transaction(async (tx) => {
     await tx
@@ -247,6 +328,7 @@ export async function approveScoutApplication(applicationId: string, adminId: st
         status: "APPROVED",
         reviewedBy: adminId,
         reviewedAt: new Date(),
+        updatedAt: new Date(),
       })
       .where(eq(scoutApplications.id, applicationId));
 
@@ -254,7 +336,14 @@ export async function approveScoutApplication(applicationId: string, adminId: st
       .update(scouts)
       .set({
         councilId: councilId,
-      })
+        membershipNumber: membershipId,
+        rank: application.advancementRank as any,
+        scoutSection: application.scoutSection,
+        status: "ACTIVE",
+        verificationStatus: "active",
+        approvedAt: new Date(),
+        updatedAt: new Date(),
+      } as any)
       .where(eq(scouts.userId, application.userId));
   });
 

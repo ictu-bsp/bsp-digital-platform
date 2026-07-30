@@ -1,10 +1,9 @@
 // src/db/seeds/scoutApplications.seed.ts
 
-import { eq } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import { eq } from "drizzle-orm";
 
 import * as schema from "../schema";
-import { scoutApplications } from "@/db/schema/scoutApplications";
 
 export async function seedScoutApplications(
   db: NodePgDatabase<typeof schema>
@@ -40,43 +39,52 @@ export async function seedScoutApplications(
     throw new Error("Super Admin not found.");
   }
 
-  await db.insert(scoutApplications).values({
-    // Foreign Keys
-    userId: marc.id,
-    preferredCouncilId: council.id,
-
-    // Scout Information
-    scoutingPosition: "Scout",
-    advancementRank: "Boy Scout",
-    tenure: 5,
-
-    // Location
-    region: "National Capital Region",
-
-    // Membership
-    communityBased: false,
-    sponsoringInstitution: "School",
-    requestedRegistrationYears: 1,
-
-    // Personal Information
-    bloodType: "O+",
-    address: "123 Scout Street, Quezon City, Metro Manila",
-    telephoneNumber: "09171234567",
-
-    // Emergency Contact
-    emergencyContactName: "Maria James",
-    emergencyContactRelationship: "Mother",
-    emergencyContactNumber: "09179876543",
-
-    // Review
-    remarks: "Automatically approved by seed.",
-    status: "APPROVED",
-    reviewedBy: superAdmin.id,
-    reviewedAt: new Date(),
-
-    // createdAt / updatedAt / id
-    // supplied automatically by the schema
+  // Idempotency check: check if an application already exists for this user
+  const existingApplication = await db.query.scoutApplications.findFirst({
+    where: eq(schema.scoutApplications.userId, marc.id),
   });
 
-  console.log("✅ Scout Application seeded");
+  if (!existingApplication) {
+    await db.insert(schema.scoutApplications).values({
+      // Foreign Keys
+      userId: marc.id,
+      preferredCouncilId: council.id,
+
+      // Scout Information
+      scoutingPosition: "Scout",
+      scoutSection: "BOY", // Section enum: KID | KAB | BOY | SENIOR | ROVER
+      advancementRank: "First Class Scout", // Specific rank text string
+      tenure: 5,
+
+      // Location
+      region: "National Capital Region",
+
+      // Membership
+      communityBased: false,
+      sponsoringInstitution: "School",
+      requestedRegistrationYears: 1,
+
+      // Personal Information
+      bloodType: "O+",
+      address: "123 Scout Street, Quezon City, Metro Manila",
+      telephoneNumber: "09171234567",
+
+      // Emergency Contact
+      emergencyContactName: "Maria James",
+      emergencyContactRelationship: "Mother",
+      emergencyContactNumber: "09179876543",
+
+      // Review
+      remarks: "Automatically approved by seed.",
+      status: "APPROVED",
+      reviewedBy: superAdmin.id,
+      reviewedAt: new Date(),
+
+      // createdAt / updatedAt / id supplied automatically by schema
+    });
+
+    console.log("✅ Scout Application seeded");
+  } else {
+    console.log("⚠️ Scout Application already exists. Skipping.");
+  }
 }

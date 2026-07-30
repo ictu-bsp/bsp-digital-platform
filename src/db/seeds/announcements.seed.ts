@@ -1,6 +1,5 @@
 // src/db/seeds/announcements.seed.ts
-
-import { eq } from "drizzle-orm";
+import { eq, and, isNotNull } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 
 import * as schema from "../schema";
@@ -18,7 +17,10 @@ export async function seedAnnouncements(
   });
 
   const regionalAdmin = await db.query.users.findFirst({
-    where: eq(schema.users.email, "centralluzon.regionaladmin@bsp.ph"),
+    where: and(
+      eq(schema.users.role, "REGIONAL_ADMIN"),
+      isNotNull(schema.users.regionId)
+    ),
   });
 
   if (!superAdmin || !andrei || !regionalAdmin || !andrei.councilId || !regionalAdmin.regionId) {
@@ -49,8 +51,8 @@ export async function seedAnnouncements(
       authorId: andrei.id,
     },
     {
-      title: "Central Luzon Leader Training",
-      content: "A regional leader training course is scheduled for all Central Luzon councils. Slots are limited, register early.",
+      title: "Regional Leader Training",
+      content: "A regional leader training course is scheduled for all regional councils. Slots are limited, register early.",
       visibility: "REGIONAL",
       regionId: regionalAdmin.regionId,
       authorId: regionalAdmin.id,
