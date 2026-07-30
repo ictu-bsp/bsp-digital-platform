@@ -4,6 +4,20 @@ import { db } from "@/db";
 import { eq } from "drizzle-orm";
 import { payments, registrations, scoutApplications, scouts } from "@/db/schema";
 
+
+// Maps the wizard's scoutingPosition value to the scouts.rank enum.
+// scoutingPosition is section-level (kab_scout/boy_scout/senior_scout/rover);
+// scouts.rank is the DB enum (KID/KAB/BOY/SENIOR/ROVER). "KID" has no
+// corresponding wizard option today, so it stays the default fallback
+// only when scoutingPosition is missing/unrecognized.
+const SCOUTING_POSITION_TO_RANK: Record<string, "KAB" | "BOY" | "SENIOR" | "ROVER"> = {
+  kab_scout: "KAB",
+  boy_scout: "BOY",
+  senior_scout: "SENIOR",
+  rover: "ROVER",
+};
+
+
 export async function createPaymentRecord(registrationId: string) {
   try {
     let targetRegistrationId = registrationId;
@@ -25,11 +39,14 @@ export async function createPaymentRecord(registrationId: string) {
 
       if (!scout) {
         // Create scout entry if it doesn't exist yet
+        const resolvedRank = SCOUTING_POSITION_TO_RANK[application.scoutingPosition ?? ""];
+
         [scout] = await db
           .insert(scouts)
           .values({
             userId: application.userId,
             councilId: application.preferredCouncilId,
+            ...(resolvedRank ? { rank: resolvedRank } : {}),
           })
           .returning();
       }

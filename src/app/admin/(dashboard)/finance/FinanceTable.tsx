@@ -66,7 +66,6 @@ export default function FinanceTable({ registrations }: { registrations: Pending
             <th className="py-2 font-medium">Registration ID</th>
             <th className="py-2 font-medium">Name</th>
             <th className="py-2 font-medium">Council</th>
-            <th className="py-2 font-medium">Type</th>
             <th className="py-2 font-medium">Payment Status</th>
           </tr>
         </thead>
