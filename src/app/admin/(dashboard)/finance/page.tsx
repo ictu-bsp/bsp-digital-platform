@@ -1,8 +1,10 @@
 // src/app/admin/(dashboard)/finance/page.tsx
 import { fetchRegistrationsAwaitingFinance } from "@/app/actions/admin";
 import FinanceTable from "./FinanceTable";
+import { requireAdminPage } from "@/lib/auth/require-admin";
 // Fetch pending finance registrations and render the verification table.
 export default async function FinancePage() {
+  await requireAdminPage(["CHIEF_EXECUTIVE", "FINANCE_OFFICER"]);
   const result = await fetchRegistrationsAwaitingFinance();
   const registrations = result.success ? result.data : [];
   return (

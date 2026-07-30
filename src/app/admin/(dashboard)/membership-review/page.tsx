@@ -1,7 +1,9 @@
 // src/app/admin/(dashboard)/membership-review/page.tsx
 import { fetchPendingRegistrations } from "@/app/actions/admin";
 import RegistrationTable from "./RegistrationTable";
+import { requireAdminPage } from "@/lib/auth/require-admin";
 export default async function MembershipReviewPage() {
+  await requireAdminPage(["CHIEF_EXECUTIVE", "MEMBERSHIP_OFFICER"]);
   // Fetch pending scout registrations and set fallbacks for render.
   const result = await fetchPendingRegistrations();
   const registrations = result.success ? result.data : [];

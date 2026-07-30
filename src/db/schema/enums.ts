@@ -77,3 +77,17 @@ export const adminScopeEnum = pgEnum("admin_scope", [
   "REGIONAL",
   "NATIONAL",
 ]);
+
+export const activityRegistrationStatusEnum = pgEnum(
+  "activity_registration_status",
+  [
+    "PENDING_REQUIREMENTS",
+    "PENDING_PAYMENT",
+    "PENDING_UNIT_APPROVAL",
+    "PENDING_ADMIN_APPROVAL",
+    "APPROVED",
+    "REJECTED",
+    "LEFT",
+    "CANCELLED",
+  ]
+);

@@ -1,20 +1,12 @@
-import { redirect } from "next/navigation";
 import { getAdminUsers } from "@/services/admin.service";
-import { getSessionCookie } from "@/lib/auth/cookies";
-import { getCurrentSession } from "@/lib/auth/session";
-import { resolveAdminScope } from "@/lib/utils/admin-scope";
+import { requireAdminPage } from "@/lib/auth/require-admin";
 import Link from "next/link";
 import SystemUsersTable from "./components/SystemUsersTable";
 
 export default async function SystemUsersPage() {
-  const sessionId = await getSessionCookie();
-  if (!sessionId) redirect("/login");
-
-  const session = await getCurrentSession(sessionId);
-  if (!session) redirect("/login");
-
-  const scope = resolveAdminScope(session.user);
-  if (!scope) redirect("/admin/login");
+  // Matches the "System Users" menu item's role list in admin-menu.ts --
+  // only a Chief Executive (or SUPER_ADMIN) may manage system users.
+  const { scope } = await requireAdminPage(["CHIEF_EXECUTIVE"]);
 
   // Council/regional/national admins only ever see their own tier's
   // system users here -- SUPER_ADMIN (the true system account) sees

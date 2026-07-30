@@ -1,15 +1,6 @@
 "use client";
 // src/app/scout/membership/membership-registration/personal-info/page.tsx
-// Step 2 of the registration wizard: Personal & Emergency Contact Info.
-// DOB, sex, and email are NOT collected here — they already exist on the
-// `users` table from signup. This page only collects fields that don't
-// exist anywhere in the schema yet (blood type, address, telephone,
-// emergency contact). These get stashed in localStorage and picked up
-// by register/page.tsx's onNext, which merges them into the
-// submitApplicationAction call (serialized into scoutApplications.remarks
-// as a temporary workaround until Reuben adds real columns).
-
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
@@ -25,10 +16,6 @@ const fieldShellClass = (filled: boolean) =>
       : "border-zinc-300 bg-white text-zinc-400"
   }`;
 
-// Strips anything that isn't a digit, then caps length at 11
-// (PH mobile format: 09XXXXXXXXX). Used on phone-type fields only.
-
-
 const digitsOnly = (value: string) => value.replace(/\D/g, "").slice(0, 11);
 
 const RELATIONSHIP_OPTIONS = [
@@ -43,9 +30,9 @@ const RELATIONSHIP_OPTIONS = [
   "Other",
 ];
 
+// Collects and updates personal and emergency contact details for membership registration step 2
 export default function PersonalInfoPage() {
   const router = useRouter();
-
   const {
     bloodType,
     setBloodType,
@@ -71,8 +58,6 @@ export default function PersonalInfoPage() {
     setEmergencyContactNumber,
   } = useWizard();
 
-  // Warn the user before they reload/close the tab if they've started
-  // filling out this step — prevents silent loss of entered info.
   useEffect(() => {
     const hasUnsavedData =
       bloodType !== "" ||
@@ -106,9 +91,6 @@ export default function PersonalInfoPage() {
       alert("Please complete your address (Region, City/Municipality, and Barangay).");
       return;
     }
-    // Fields already live in WizardContext via the setters above â€”
-    // nothing to persist here. register/page.tsx reads them straight
-    // from the same context at final submit.
     router.push("/scout/membership/membership-registration/register");
   };
 
@@ -131,13 +113,10 @@ export default function PersonalInfoPage() {
             className="h-auto w-[115px] object-contain"
           />
         </h1>
+
         <h2 className="text-2xl font-semibold mb-4">Register Membership</h2>
 
-        <RegistrationStepper
-          currentStep={2}
-          totalSteps={4}
-          currentLabel="Personal Info"
-        />
+        <RegistrationStepper currentStep={2} totalSteps={4} currentLabel="Personal Info" />
 
         {/* Blood Type */}
         <div className="relative">
@@ -172,7 +151,6 @@ export default function PersonalInfoPage() {
               setCityMunicipality(parts.cityMunicipality);
               setBarangay(parts.barangay);
               setStreetAddress(parts.streetAddress);
-
               const composed = [
                 parts.streetAddress,
                 parts.barangay,
@@ -192,31 +170,33 @@ export default function PersonalInfoPage() {
           )}
         </div>
 
-        {/* Telephone Number */}
-        <div className="relative">
-          <input
-            placeholder="Contact Number"
-            inputMode="numeric"
-            maxLength={11}
-            className={`${fieldShellClass(telephone.length === 11)} pl-4 pr-10`}
-            value={telephone}
-            onChange={(e) => setTelephone(digitsOnly(e.target.value))}
-            required
-          />
-          {telephone.length === 11 && (
-            <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+        {/* Contact Number */}
+        <div>
+          <div className="relative">
+            <input
+              placeholder="Contact Number"
+              inputMode="numeric"
+              maxLength={11}
+              className={`${fieldShellClass(telephone.length === 11)} pl-4 pr-10`}
+              value={telephone}
+              onChange={(e) => setTelephone(digitsOnly(e.target.value))}
+              required
+            />
+            {telephone.length === 11 && (
+              <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+            )}
+          </div>
+          {telephone !== "" && telephone.length < 11 && (
+            <p className="text-xs text-amber-600 mt-1">
+              Enter a full 11-digit number (e.g. 09171234567)
+            </p>
           )}
         </div>
-        {telephone !== "" && telephone.length < 11 && (
-          <p className="text-xs text-amber-600 -mt-3">
-            Enter a full 11-digit number (e.g. 09171234567)
-          </p>
-        )}
 
         <hr className="my-2" />
-        <label className="block text-lg font-medium -mb-2">
-          Emergency Contact
-        </label>
+
+        {/* Emergency Contact Section */}
+        <label className="block text-lg font-medium -mb-2">Emergency Contact</label>
 
         {/* Emergency Contact Name */}
         <div className="relative">
@@ -232,61 +212,62 @@ export default function PersonalInfoPage() {
           )}
         </div>
 
+        {/* Relationship & Emergency Number */}
         <div className="grid grid-cols-2 gap-4">
-          {/* Emergency Contact Relationship */}
-        <div>
-          <div className="relative">
-            <select
-              value={emergencyContactRelationship}
-              onChange={(e) => setEmergencyContactRelationship(e.target.value)}
-              className={`${fieldShellClass(emergencyContactRelationship !== "")} appearance-none pl-4 pr-16`}
-              required
-            >
-              <option value="" disabled className="text-zinc-400">
-                Relationship
-              </option>
-              {RELATIONSHIP_OPTIONS.map((rel) => (
-                <option key={rel} value={rel} className="text-zinc-900">
-                  {rel}
+          <div>
+            <div className="relative">
+              <select
+                value={emergencyContactRelationship}
+                onChange={(e) => setEmergencyContactRelationship(e.target.value)}
+                className={`${fieldShellClass(
+                  emergencyContactRelationship !== ""
+                )} appearance-none pl-4 pr-16`}
+                required
+              >
+                <option value="" disabled className="text-zinc-400">
+                  Relationship
                 </option>
-              ))}
-            </select>
-            {emergencyContactRelationship !== "" && (
-              <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-9 top-1/2 -translate-y-1/2 pointer-events-none" />
+                {RELATIONSHIP_OPTIONS.map((rel) => (
+                  <option key={rel} value={rel} className="text-zinc-900">
+                    {rel}
+                  </option>
+                ))}
+              </select>
+              {emergencyContactRelationship !== "" && (
+                <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-9 top-1/2 -translate-y-1/2 pointer-events-none" />
+              )}
+            </div>
+            {emergencyContactRelationship === "Extended Family Member" && (
+              <p className="text-xs text-zinc-500 mt-1">
+                e.g., Uncle, Aunt, Cousin, Grandparent, etc.
+              </p>
             )}
           </div>
-          {emergencyContactRelationship === "Extended Family Member" && (
-            <p className="text-xs text-zinc-500 mt-1">
-              e.g., Uncle, Aunt, Cousin, Grandparent, etc.
-            </p>
-          )}
-        </div>
 
-          {/* Emergency Contact Number */}
-        <div>
-          <div className="relative">
-            <input
-              placeholder="Contact Number"
-              inputMode="numeric"
-              maxLength={11}
-              className={`${fieldShellClass(emergencyContactNumber.length === 11)} pl-4 pr-10`}
-              value={emergencyContactNumber}
-              onChange={(e) => setEmergencyContactNumber(digitsOnly(e.target.value))}
-              required
-            />
-            {emergencyContactNumber.length === 11 && (
-              <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <div>
+            <div className="relative">
+              <input
+                placeholder="Contact Number"
+                inputMode="numeric"
+                maxLength={11}
+                className={`${fieldShellClass(
+                  emergencyContactNumber.length === 11
+                )} pl-4 pr-10`}
+                value={emergencyContactNumber}
+                onChange={(e) => setEmergencyContactNumber(digitsOnly(e.target.value))}
+                required
+              />
+              {emergencyContactNumber.length === 11 && (
+                <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+              )}
+            </div>
+            {emergencyContactNumber !== "" && emergencyContactNumber.length < 11 && (
+              <p className="text-xs text-amber-600 mt-1">
+                Enter a full 11-digit number (e.g. 09171234567)
+              </p>
             )}
           </div>
-          {emergencyContactNumber !== "" && emergencyContactNumber.length < 11 && (
-            <p className="text-xs text-amber-600 mt-1">
-              Enter a full 11-digit number (e.g. 09171234567)
-            </p>
-          )}
         </div>
-        </div>
-
-       
 
         <button
           type="submit"

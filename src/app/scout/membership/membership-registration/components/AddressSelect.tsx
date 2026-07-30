@@ -1,8 +1,4 @@
-"use client";
 // src/app/scout/membership/membership-registration/components/AddressSelect.tsx
-// Searchable, cascading Region -> Province -> City/Municipality -> Barangay
-// picker backed by the PSGC API (proxied through /api/psgc/*), plus a
-// free-text Street/House No. field. Used on the Personal Info step.
 
 import { useEffect, useRef, useState } from "react";
 
@@ -127,8 +123,12 @@ export default function AddressSelect({
   const [loadingBarangays, setLoadingBarangays] = useState(false);
 
   useEffect(() => {
-    fetch("/admin/api/psgc/regions")
-      .then((res) => res.json())
+    // FIX 1: Point to /admin/api/psgc/ and add .json
+    fetch("/admin/api/psgc/regions.json")
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+        return res.json();
+      })
       .then((data: PsgcItem[]) =>
         setRegions([...data].sort((a, b) => a.name.localeCompare(b.name)))
       )
@@ -146,7 +146,9 @@ export default function AddressSelect({
 
     setLoadingProvinces(true);
     try {
-      const provRes = await fetch(`/admin/api/psgc/regions/${item.code}/provinces`);
+      // FIX 2: Point to /admin/api/psgc/ and add .json
+      const provRes = await fetch(`/admin/api/psgc/regions/${item.code}/provinces.json`);
+      if (!provRes.ok) throw new Error(`HTTP error ${provRes.status}`);
       const provData: PsgcItem[] = await provRes.json();
 
       if (Array.isArray(provData) && provData.length > 0) {
@@ -156,7 +158,8 @@ export default function AddressSelect({
         // Regions like NCR have no provinces -- cities sit directly under the region.
         setHasProvinces(false);
         setLoadingCities(true);
-        const cityRes = await fetch(`/admin/api/psgc/regions/${item.code}/cities-municipalities`);
+        const cityRes = await fetch(`/admin/api/psgc/regions/${item.code}/cities-municipalities.json`);
+        if (!cityRes.ok) throw new Error(`HTTP error ${cityRes.status}`);
         const cityData: PsgcItem[] = await cityRes.json();
         setCities([...cityData].sort((a, b) => a.name.localeCompare(b.name)));
         setLoadingCities(false);
@@ -177,7 +180,9 @@ export default function AddressSelect({
 
     setLoadingCities(true);
     try {
-      const res = await fetch(`/admin/api/psgc/provinces/${item.code}/cities-municipalities`);
+      // FIX 3: Point to /admin/api/psgc/ and add .json
+      const res = await fetch(`/admin/api/psgc/provinces/${item.code}/cities-municipalities.json`);
+      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
       const data: PsgcItem[] = await res.json();
       setCities([...data].sort((a, b) => a.name.localeCompare(b.name)));
     } catch (err) {
@@ -194,7 +199,9 @@ export default function AddressSelect({
 
     setLoadingBarangays(true);
     try {
-      const res = await fetch(`/admin/api/psgc/cities-municipalities/${item.code}/barangays`);
+      // FIX 4: Point to /admin/api/psgc/ and add .json
+      const res = await fetch(`/admin/api/psgc/cities-municipalities/${item.code}/barangays.json`);
+      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
       const data: PsgcItem[] = await res.json();
       setBarangays([...data].sort((a, b) => a.name.localeCompare(b.name)));
     } catch (err) {
