@@ -1,6 +1,7 @@
 // src/app/actions/admin.ts
 "use server";
 
+import { revalidatePath } from "next/cache";
 import {
   getDashboardStats,
   getAllScouts,
@@ -19,7 +20,7 @@ import {
   getScoutRankBreakdown,
   getActivityParticipationStats,
   getSexBreakdown,
-  updateRegistrationPaymentStatus, // Ensure this exists or matches your service method name
+  updateRegistrationPaymentStatus,
 } from "@/services/admin.service";
 
 // Fetches high-level metrics for the admin dashboard overview
@@ -27,9 +28,9 @@ export async function fetchDashboardStats() {
   try {
     const data = await getDashboardStats();
     return { success: true, data };
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    return { success: false, error: "Failed to load dashboard statistics." };
+    return { success: false, error: error?.message || "Failed to load dashboard statistics." };
   }
 }
 
@@ -38,9 +39,9 @@ export async function fetchAllScouts() {
   try {
     const data = await getAllScouts();
     return { success: true, data };
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    return { success: false, error: "Failed to load scouts." };
+    return { success: false, error: error?.message || "Failed to load scouts." };
   }
 }
 
@@ -49,9 +50,9 @@ export async function fetchScoutById(id: string) {
   try {
     const data = await getScoutById(id);
     return { success: true, data };
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    return { success: false, error: "Failed to load scout." };
+    return { success: false, error: error?.message || "Failed to load scout." };
   }
 }
 
@@ -60,9 +61,9 @@ export async function fetchCouncilScouts(councilId: string) {
   try {
     const data = await getCouncilScouts(councilId);
     return { success: true, data };
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    return { success: false, error: "Failed to load council scouts." };
+    return { success: false, error: error?.message || "Failed to load council scouts." };
   }
 }
 
@@ -71,9 +72,9 @@ export async function fetchAdministrators() {
   try {
     const data = await getAdministrators();
     return { success: true, data };
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    return { success: false, error: "Failed to load administrators." };
+    return { success: false, error: error?.message || "Failed to load administrators." };
   }
 }
 
@@ -82,9 +83,9 @@ export async function fetchAdministratorById(id: string) {
   try {
     const data = await getAdministratorById(id);
     return { success: true, data };
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    return { success: false, error: "Failed to load administrator." };
+    return { success: false, error: error?.message || "Failed to load administrator." };
   }
 }
 
@@ -93,9 +94,9 @@ export async function fetchPendingRegistrations() {
   try {
     const data = await getPendingRegistrations();
     return { success: true, data };
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    return { success: false, error: "Failed to load pending registrations." };
+    return { success: false, error: error?.message || "Failed to load pending registrations." };
   }
 }
 
@@ -103,10 +104,12 @@ export async function fetchPendingRegistrations() {
 export async function approveRegistrationAction(registrationId: string) {
   try {
     await approveMembershipReview(registrationId);
+    revalidatePath("/admin/finance");
+    revalidatePath("/admin/registrations");
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    return { success: false, error: "Failed to approve registration." };
+    return { success: false, error: error?.message || "Failed to approve registration." };
   }
 }
 
@@ -114,10 +117,12 @@ export async function approveRegistrationAction(registrationId: string) {
 export async function rejectRegistrationAction(registrationId: string, feedback: string) {
   try {
     await rejectRegistration(registrationId, feedback);
+    revalidatePath("/admin/finance");
+    revalidatePath("/admin/registrations");
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    return { success: false, error: "Failed to reject registration." };
+    return { success: false, error: error?.message || "Failed to reject registration." };
   }
 }
 
@@ -126,9 +131,9 @@ export async function fetchRegistrationsAwaitingFinance() {
   try {
     const data = await getRegistrationsAwaitingFinance();
     return { success: true, data };
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    return { success: false, error: "Failed to load registrations awaiting finance verification." };
+    return { success: false, error: error?.message || "Failed to load registrations awaiting finance verification." };
   }
 }
 
@@ -136,10 +141,12 @@ export async function fetchRegistrationsAwaitingFinance() {
 export async function verifyAndActivateRegistrationAction(registrationId: string) {
   try {
     await verifyAndActivateRegistration(registrationId);
+    revalidatePath("/admin/finance");
+    revalidatePath("/admin/scouts");
     return { success: true };
-  } catch (error) {
-    console.error(error);
-    return { success: false, error: "Failed to verify and activate registration." };
+  } catch (error: any) {
+    console.error("verifyAndActivateRegistrationAction error:", error);
+    return { success: false, error: error?.message || "Failed to verify and activate registration." };
   }
 }
 
@@ -147,50 +154,97 @@ export async function verifyAndActivateRegistrationAction(registrationId: string
 export async function updatePaymentStatusAction(registrationId: string, status: string) {
   try {
     await updateRegistrationPaymentStatus(registrationId, status);
+    revalidatePath("/admin/finance");
     return { success: true };
-  } catch (error) {
-    console.error(error);
-    return { success: false, error: "Failed to update payment status." };
+  } catch (error: any) {
+    console.error("updatePaymentStatusAction error:", error);
+    return { success: false, error: error?.message || "Failed to update payment status." };
   }
 }
 
-// Direct live gateway check with PayMongo/payment provider API
+// Direct live gateway check with PayMongo API (Supports PI, CS, Pay, Link, and Source IDs)
 export async function syncPaymentStatusAction(registrationId: string, paymentIntentId: string) {
   try {
-    const apiKey = process.env.PAYMONGO_SECRET_KEY;
+    const apiKey = process.env.PAYMONGO_SECRET;
     if (!apiKey) {
-      return { success: false, error: "Payment gateway secret key is not configured." };
+      return { success: false, error: "Payment gateway secret key (PAYMONGO_SECRET) is missing." };
     }
 
-    const response = await fetch(`https://api.paymongo.com/v1/payment_intents/${paymentIntentId}`, {
+    if (!paymentIntentId || paymentIntentId.trim() === "" || paymentIntentId === "—") {
+      return { success: false, error: "No Payment ID or Checkout Session ID found for this record." };
+    }
+
+    const authHeader = `Basic ${Buffer.from(`${apiKey}:`).toString("base64")}`;
+    const id = paymentIntentId.trim();
+
+    // Determine correct PayMongo API endpoint based on ID prefix
+    let endpoint = `https://api.paymongo.com/v1/payment_intents/${id}`;
+    if (id.startsWith("cs_")) {
+      endpoint = `https://api.paymongo.com/v1/checkout_sessions/${id}`;
+    } else if (id.startsWith("pay_")) {
+      endpoint = `https://api.paymongo.com/v1/payments/${id}`;
+    } else if (id.startsWith("link_")) {
+      endpoint = `https://api.paymongo.com/v1/links/${id}`;
+    } else if (id.startsWith("src_")) {
+      endpoint = `https://api.paymongo.com/v1/sources/${id}`;
+    }
+
+    const response = await fetch(endpoint, {
       method: "GET",
       headers: {
         accept: "application/json",
-        authorization: `Basic ${Buffer.from(`${apiKey}:`).toString("base64")}`,
+        authorization: authHeader,
       },
       cache: "no-store",
     });
 
     if (!response.ok) {
-      return { success: false, error: "Failed to retrieve status from payment gateway." };
+      const errBody = await response.json().catch(() => ({}));
+      const detail = errBody?.errors?.[0]?.detail ?? `HTTP ${response.status} ${response.statusText}`;
+      return { success: false, error: `PayMongo API Error: ${detail}` };
     }
 
     const body = await response.json();
-    const intentStatus = body?.data?.attributes?.status;
+    const attributes = body?.data?.attributes;
 
-    // Check if gateway confirms payment success
-    if (intentStatus === "succeeded") {
+    // Check payment status across different PayMongo object structures
+    let isPaid = false;
+    let currentStatus = attributes?.status;
+
+    if (id.startsWith("cs_")) {
+      const paymentStatus = attributes?.payment_intent?.attributes?.status || attributes?.payments?.[0]?.attributes?.status;
+      if (attributes?.status === "active" && paymentStatus === "succeeded") {
+        isPaid = true;
+      } else if (paymentStatus) {
+        currentStatus = paymentStatus;
+      }
+    } else if (id.startsWith("src_")) {
+      if (attributes?.status === "chargeable" || attributes?.status === "paid") {
+        isPaid = true;
+      }
+    } else if (id.startsWith("pay_")) {
+      if (attributes?.status === "paid") {
+        isPaid = true;
+      }
+    } else {
+      if (attributes?.status === "succeeded" || attributes?.status === "paid") {
+        isPaid = true;
+      }
+    }
+
+    if (isPaid) {
       await updateRegistrationPaymentStatus(registrationId, "paid");
+      revalidatePath("/admin/finance");
       return { success: true, paymentStatus: "paid" };
     }
 
     return {
       success: false,
-      error: `Gateway status is currently '${intentStatus ?? "unknown"}'. Payment is not settled yet.`,
+      error: `Gateway status is currently '${currentStatus ?? "unpaid"}'. Payment is not confirmed.`,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("syncPaymentStatusAction error:", error);
-    return { success: false, error: "An unexpected error occurred while re-checking payment status." };
+    return { success: false, error: error?.message || "An unexpected error occurred while re-checking payment status." };
   }
 }
 
@@ -199,9 +253,9 @@ export async function fetchRegistrationStatusBreakdown() {
   try {
     const data = await getRegistrationStatusBreakdown();
     return { success: true, data };
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    return { success: false, error: "Failed to load registration status breakdown." };
+    return { success: false, error: error?.message || "Failed to load registration status breakdown." };
   }
 }
 
@@ -210,9 +264,9 @@ export async function fetchPaymentTotals() {
   try {
     const data = await getPaymentTotals();
     return { success: true, data };
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    return { success: false, error: "Failed to load payment totals." };
+    return { success: false, error: error?.message || "Failed to load payment totals." };
   }
 }
 
@@ -221,9 +275,9 @@ export async function fetchCouncilRegionBreakdown() {
   try {
     const data = await getCouncilRegionBreakdown();
     return { success: true, data };
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    return { success: false, error: "Failed to load council/region breakdown." };
+    return { success: false, error: error?.message || "Failed to load council/region breakdown." };
   }
 }
 
@@ -232,9 +286,9 @@ export async function fetchScoutRankBreakdown() {
   try {
     const data = await getScoutRankBreakdown();
     return { success: true, data };
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    return { success: false, error: "Failed to load scout rank breakdown." };
+    return { success: false, error: error?.message || "Failed to load scout rank breakdown." };
   }
 }
 
@@ -243,9 +297,9 @@ export async function fetchActivityParticipationStats() {
   try {
     const data = await getActivityParticipationStats();
     return { success: true, data };
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    return { success: false, error: "Failed to load activity participation stats." };
+    return { success: false, error: error?.message || "Failed to load activity participation stats." };
   }
 }
 
@@ -254,8 +308,8 @@ export async function fetchSexBreakdown() {
   try {
     const data = await getSexBreakdown();
     return { success: true, data };
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
-    return { success: false, error: "Failed to load sex breakdown." };
+    return { success: false, error: error?.message || "Failed to load sex breakdown." };
   }
 }

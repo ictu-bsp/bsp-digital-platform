@@ -23,27 +23,37 @@ export async function seedScouts(
     );
   }
 
-  await db.insert(schema.scouts).values({
-    userId: marc.id,
-
-    councilId: council.id,
-
-    membershipNumber: "2026-00-00-0001-6967",
-
-    rank: "BOY",
-
-    status: "ACTIVE",
-
-    verificationStatus: "active",
-
-    joinedAt: new Date(),
-
-    approvedBy: null,
-
-    approvedAt: new Date(),
-
-    isActive: true,
+  // Idempotency check: verify if the scout profile already exists
+  const existingScout = await db.query.scouts.findFirst({
+    where: eq(schema.scouts.userId, marc.id),
   });
 
-  console.log("✅ Seeded scout profile.");
+  if (!existingScout) {
+    await db.insert(schema.scouts).values({
+      userId: marc.id,
+
+      councilId: council.id,
+
+      membershipNumber: "2026-00-00-0001-6967",
+
+      // Must be a valid scout_rank enum value: "KID" | "KAB" | "BOY" | "SENIOR" | "ROVER"
+      rank: "BOY",
+
+      status: "ACTIVE",
+
+      verificationStatus: "active",
+
+      joinedAt: new Date(),
+
+      approvedBy: null,
+
+      approvedAt: new Date(),
+
+      isActive: true,
+    });
+
+    console.log("✅ Seeded scout profile.");
+  } else {
+    console.log("⚠️ Scout profile already exists. Skipping.");
+  }
 }

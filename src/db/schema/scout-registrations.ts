@@ -11,6 +11,7 @@ import {
 
 import { scouts } from "./scouts";
 import { councils } from "./councils";
+import { scoutApplications } from "./scoutApplications";
 import { registrationStatusEnum } from "./enums";
 
 export const registrations = pgTable("scout_registrations", {
@@ -19,6 +20,9 @@ export const registrations = pgTable("scout_registrations", {
   scoutId: uuid("scout_id")
     .references(() => scouts.id)
     .notNull(),
+
+  applicationId: uuid("application_id")
+    .references(() => scoutApplications.id),
 
   councilId: uuid("council_id")
     .references(() => councils.id),

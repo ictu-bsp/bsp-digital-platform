@@ -1,6 +1,5 @@
 // src/db/seeds/notifications.seed.ts
-
-import { eq } from "drizzle-orm";
+import { eq, and, isNotNull } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 
 import * as schema from "../schema";
@@ -18,7 +17,10 @@ export async function seedNotifications(
   });
 
   const regionalAdmin = await db.query.users.findFirst({
-    where: eq(schema.users.email, "centralluzon.regionaladmin@bsp.ph"),
+    where: and(
+      eq(schema.users.role, "REGIONAL_ADMIN"),
+      isNotNull(schema.users.regionId)
+    ),
   });
 
   if (!superAdmin || !andrei || !regionalAdmin || !andrei.councilId || !regionalAdmin.regionId) {
@@ -48,8 +50,8 @@ export async function seedNotifications(
       authorId: andrei.id,
     },
     {
-      title: "Central Luzon Regional Camporee",
-      message: "Registration for the regional camporee is now open for all Central Luzon councils.",
+      title: "Regional Camporee",
+      message: "Registration for the regional camporee is now open for all regional councils.",
       visibility: "REGIONAL",
       regionId: regionalAdmin.regionId,
       link: "/scout/activities",

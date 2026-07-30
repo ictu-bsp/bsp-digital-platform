@@ -55,7 +55,7 @@ export const ADMIN_MENU: AdminMenuItem[] = [
     roles: ["CHIEF_EXECUTIVE"],
   },
   {
-    label: "Announcement Hub", // (TODO) folder not built yet
+    label: "Announcement Hub",
     href: "/admin/announcements",
     roles: ["CHIEF_EXECUTIVE"],
   },
