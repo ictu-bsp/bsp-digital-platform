@@ -48,7 +48,7 @@ const ADVANCEMENT_RANKS_BY_SECTION: Record<string, { value: string; label: strin
   ],
 };
 
-// Read value safely from localStorage
+// Read string value safely from localStorage
 const readSaved = (key: string) => (typeof window === "undefined" ? "" : localStorage.getItem(key) ?? "");
 // Read boolean value safely from localStorage
 const readSavedBool = (key: string) => (typeof window === "undefined" ? false : localStorage.getItem(key) === "true");
@@ -71,7 +71,9 @@ export default function RegisterPage() {
 
   // Fetch user age and compute eligible positions
   useEffect(() => {
-    getCurrentUserAction().then((result) => setEligiblePositions(result.success && result.user?.birthdate ? getEligibleScoutPositions(calculateAge(result.user.birthdate)) : []));
+    getCurrentUserAction().then((result) =>
+      setEligiblePositions(result.success && result.user?.birthdate ? getEligibleScoutPositions(calculateAge(result.user.birthdate)) : [])
+    );
   }, []);
 
   const [advancementRank, setAdvancementRank] = useState("");
@@ -91,6 +93,7 @@ export default function RegisterPage() {
   const [submitError, setSubmitError] = useState("");
 
   const rankOptions = scoutingPosition ? ADVANCEMENT_RANKS_BY_SECTION[scoutingPosition] || [] : [];
+  const isKidScout = scoutingPosition === "kid_scout";
 
   // Update scouting position state and clear dependent rank
   const handlePositionChange = (position: string) => {
@@ -165,7 +168,7 @@ export default function RegisterPage() {
     if (council?.regionId) setRegionId(council.regionId);
   };
 
-  // Helper function to sanitize string values: returns null if value is empty/whitespace-only
+  // Helper function to sanitize string values
   const cleanNull = (val?: string | null) => (!val || val.trim() === "" ? null : val.trim());
 
   // Form submission handler
@@ -187,7 +190,7 @@ export default function RegisterPage() {
       councilId: cleanNull(councilId),
       scoutingPosition: cleanNull(scoutingPosition),
       scoutSection: cleanNull(scoutingPosition),
-      advancementRank: cleanNull(advancementRank),
+      advancementRank: isKidScout ? null : cleanNull(advancementRank),
       tenure: Number(tenure) || 0,
       region: cleanNull(regionName),
       communityBased: isCommunityBased,
@@ -261,14 +264,14 @@ export default function RegisterPage() {
         {/* Advancement Rank */}
         <div className="relative">
           <select
-            value={advancementRank}
+            value={isKidScout ? "" : advancementRank}
             onChange={(e) => setAdvancementRank(e.target.value)}
-            className={`${fieldShellClass(advancementRank !== "", !scoutingPosition)} appearance-none pl-4 pr-16`}
-            disabled={!scoutingPosition}
-            required
+            className={`${fieldShellClass(advancementRank !== "", !scoutingPosition || isKidScout)} appearance-none pl-4 pr-16`}
+            disabled={!scoutingPosition || isKidScout}
+            required={!isKidScout}
           >
             <option value="" disabled className="text-zinc-400">
-              {!scoutingPosition ? "Select Scouting Position First" : "Advancement Rank"}
+              {!scoutingPosition ? "Select Scouting Position First" : isKidScout ? "No Advancement Rank (Kid Scout)" : "Advancement Rank"}
             </option>
             {rankOptions.map((rank) => (
               <option key={rank.value} value={rank.value} className="text-zinc-900">
@@ -276,7 +279,7 @@ export default function RegisterPage() {
               </option>
             ))}
           </select>
-          {!scoutingPosition ? (
+          {!scoutingPosition || isKidScout ? (
             <LockClosedIcon className="w-5 h-5 text-zinc-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
           ) : (
             <>
