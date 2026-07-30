@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 
 import Header from "./components/Header";
 import BottomNav from "./components/BottomNav";
-import ProgressSection from "./components/ProgressSection";
 import NotificationSection from "./components/NotificationSection";
 import AnnouncementSection from "./components/AnnouncementSection";
 import PromoCarousel, {
@@ -113,8 +112,6 @@ export default async function DashboardPage() {
             <NotificationSection notifications={notifications} />
 
             <AnnouncementSection announcements={announcements} />
-
-            {isScout && <ProgressSection />}
 
           </div>
         </div>
