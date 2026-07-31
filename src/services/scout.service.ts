@@ -1,3 +1,5 @@
+// src/services/scout.service.ts
+
 import { db } from "@/db";
 import { eq, inArray } from "drizzle-orm";
 import { scouts, users, councils } from "@/db/schema";
@@ -6,6 +8,7 @@ import { payments } from "@/db/schema/payments";
 import { scoutApplications } from "@/db/schema/scoutApplications";
 import { activityRegistrations } from "@/db/schema/activity-registrations";
 
+// Get scout record using the authenticated user ID.
 export async function getScoutByUserId(userId: string) {
   const [scout] = await db
     .select()
@@ -15,18 +18,22 @@ export async function getScoutByUserId(userId: string) {
   return scout ?? null;
 }
 
-// Scopes content (activities, announcements) to a scout's council and,
-// transitively, their council's region. Scouts don't have a regionId of
-// their own -- it's always derived via their council.
+// Returns the council and region scope used for filtering activities,
+// announcements and other scoped resources.
 export async function getScoutScope(userId: string) {
   const scout = await getScoutByUserId(userId);
 
   if (!scout || !scout.councilId) {
-    return { councilId: null, regionId: null };
+    return {
+      councilId: null,
+      regionId: null,
+    };
   }
 
   const [council] = await db
-    .select({ regionId: councils.regionId })
+    .select({
+      regionId: councils.regionId,
+    })
     .from(councils)
     .where(eq(councils.id, scout.councilId));
 
@@ -36,26 +43,109 @@ export async function getScoutScope(userId: string) {
   };
 }
 
-
-export async function createScout(input: { userId: string; councilId: string }) {
+// Creates a scout record after membership approval.
+// Rank is REQUIRED so newly-approved scouts never default to KID.
+export async function createScout(input: {
+  userId: string;
+  councilId: string;
+  rank: typeof scouts.$inferInsert.rank;
+  status?: typeof scouts.$inferInsert.status;
+  membershipNumber?: string | null;
+  joinedAt?: Date;
+}) {
   const [scout] = await db
     .insert(scouts)
     .values({
       userId: input.userId,
       councilId: input.councilId,
+      rank: input.rank,
+      membershipNumber: input.membershipNumber ?? null,
+      status: input.status ?? "PENDING",
+      joinedAt: input.joinedAt,
     })
     .returning();
 
   return scout;
 }
 
+<<<<<<< HEAD
 // Roster view for admin: one row per scout, joined with their account
 // (name/email) and council name. Used by the Scout Roster admin page.
 // Validity is derived from the scout's most recent registration's
 // endDate (a scout may have multiple registrations from renewals),
 // fetched separately and merged in JS to avoid row-multiplying joins.
+=======
+// Updates an existing scout profile.
+export async function updateScoutProfile(
+  scoutId: string,
+  data: Partial<typeof scouts.$inferInsert>
+) {
+  const [updated] = await db
+    .update(scouts)
+    .set({
+      ...data,
+      updatedAt: new Date(),
+    })
+    .where(eq(scouts.id, scoutId))
+    .returning();
+
+  return updated ?? null;
+}
+
+// Updates only the scout rank.
+export async function updateScoutRank(
+  scoutId: string,
+  rank: typeof scouts.$inferInsert.rank
+) {
+  const [updated] = await db
+    .update(scouts)
+    .set({
+      rank,
+      updatedAt: new Date(),
+    })
+    .where(eq(scouts.id, scoutId))
+    .returning();
+
+  return updated ?? null;
+}
+
+// Activates a scout after registration approval.
+export async function activateScout(scoutId: string) {
+  const [updated] = await db
+    .update(scouts)
+    .set({
+      status: "ACTIVE",
+      isActive: true,
+      joinedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(scouts.id, scoutId))
+    .returning();
+
+  return updated ?? null;
+}
+
+// Enables or disables a scout membership.
+export async function setScoutMembershipActive(
+  scoutId: string,
+  isActive: boolean
+) {
+  const [updated] = await db
+    .update(scouts)
+    .set({
+      isActive,
+      updatedAt: new Date(),
+    })
+    .where(eq(scouts.id, scoutId))
+    .returning();
+
+  return updated ?? null;
+}
+
+// Returns the roster used by the admin scout management page.
+>>>>>>> 74efdc55341de5125842f4ff292ec287390d5716
 export async function getAllScoutsRoster() {
-  const rows = await db
+  return db
     .select({
       scoutId: scouts.id,
       userId: scouts.userId,
@@ -70,6 +160,7 @@ export async function getAllScoutsRoster() {
       joinedAt: scouts.joinedAt,
     })
     .from(scouts)
+<<<<<<< HEAD
     .innerJoin(users, eq(scouts.userId, users.id))
     .innerJoin(councils, eq(scouts.councilId, councils.id))
     .orderBy(users.lastName);
@@ -101,35 +192,19 @@ export async function getAllScoutsRoster() {
     ...row,
     validUntil: latestEndDateByScoutId.get(row.scoutId) ?? null,
   }));
+=======
+    .innerJoin(users, eq(users.id, scouts.userId))
+    .innerJoin(councils, eq(councils.id, scouts.councilId));
+>>>>>>> 74efdc55341de5125842f4ff292ec287390d5716
 }
 
-// Testing utility for admin: flips a scout's isActive flag on/off.
-// Does not touch the `status` enum (PENDING/ACTIVE/SUSPENDED/EXPIRED) —
-// that's a separate lifecycle field tied to the approval workflow.
-export async function setScoutMembershipActive(
-  scoutId: string,
-  isActive: boolean
-) {
-  const [updated] = await db
-    .update(scouts)
-    .set({ isActive, updatedAt: new Date() })
-    .where(eq(scouts.id, scoutId))
-    .returning();
-
-  return updated ?? null;
-}
-
-// TESTING ONLY â€” permanently deletes a scout's membership record,
-// their registrations, any payments tied to those registrations, AND
-// their scoutApplications rows (keyed by userId, not scoutId, so we
-// fetch userId first before the scouts row is gone). The users row
-// itself is left intact so the account could theoretically
-// re-register from scratch with a clean application history.
-// Runs in a transaction: no partial deletes if any step fails.
+// Permanently removes a scout together with every dependent record.
 export async function deleteScoutPermanently(scoutId: string) {
-  return await db.transaction(async (tx) => {
+  return db.transaction(async (tx) => {
     const [scout] = await tx
-      .select({ userId: scouts.userId })
+      .select({
+        userId: scouts.userId,
+      })
       .from(scouts)
       .where(eq(scouts.id, scoutId));
 
@@ -138,14 +213,19 @@ export async function deleteScoutPermanently(scoutId: string) {
       .where(eq(activityRegistrations.scoutId, scoutId));
 
     const scoutRegistrations = await tx
-      .select({ id: registrations.id })
+      .select({
+        id: registrations.id,
+      })
       .from(registrations)
       .where(eq(registrations.scoutId, scoutId));
+
     const registrationIds = scoutRegistrations.map((r) => r.id);
-    if (registrationIds.length > 0) {
+
+    if (registrationIds.length) {
       await tx
         .delete(payments)
         .where(inArray(payments.registrationId, registrationIds));
+
       await tx
         .delete(registrations)
         .where(inArray(registrations.id, registrationIds));
@@ -161,6 +241,7 @@ export async function deleteScoutPermanently(scoutId: string) {
       .delete(scouts)
       .where(eq(scouts.id, scoutId))
       .returning();
+
     return deleted ?? null;
   });
 }

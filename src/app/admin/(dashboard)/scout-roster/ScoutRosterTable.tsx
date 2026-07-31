@@ -1,7 +1,9 @@
 // src/app/admin/scout-roster/ScoutRosterTable.tsx
 "use client";
+
 import { useState } from "react";
 import { toggleScoutMembershipAction, deleteScoutPermanentlyAction } from "@/app/actions/scouts";
+
 type RosterRow = {
   scoutId: string;
   userId: string;
@@ -16,10 +18,12 @@ type RosterRow = {
   joinedAt: Date | null;
   validUntil: string | null;
 };
+
 interface Props {
   initialRoster: RosterRow[];
 }
 
+<<<<<<< HEAD
 function getValidityInfo(validUntil: string | null) {
   if (!validUntil) {
     return { label: "No Record", className: "bg-zinc-100 text-zinc-500", dateText: "—" };
@@ -42,39 +46,50 @@ function getValidityInfo(validUntil: string | null) {
   return { label: "Valid", className: "bg-green-100 text-green-700", dateText };
 }
 
+=======
+>>>>>>> 74efdc55341de5125842f4ff292ec287390d5716
 // Manage and display the client-side scout roster table with search filtering and toggle/delete actions.
 export function ScoutRosterTable({ initialRoster }: Props) {
   const [roster, setRoster] = useState<RosterRow[]>(initialRoster);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+
   // Toggle the active membership status of a specific scout.
   const handleToggle = async (scoutId: string, currentlyActive: boolean) => {
     setPendingId(scoutId);
     const result = await toggleScoutMembershipAction(scoutId, !currentlyActive);
     setPendingId(null);
+
     if (!result.success || !result.data) {
       alert(result.error ?? "Failed to update membership.");
       return;
     }
-    setRoster((prev) => prev.map((row) =>
-      (row.scoutId === scoutId ? { ...row, isActive: !currentlyActive } : row)));
+
+    setRoster((prev) =>
+      prev.map((row) => (row.scoutId === scoutId ? { ...row, isActive: !currentlyActive } : row))
+    );
   };
+
   // Permanently delete a scout's record and remove them from local state.
   const handleDelete = async (scoutId: string, scoutName: string) => {
     const confirmed = window.confirm(
-      `Permanently delete ${scoutName}'s scout membership, registrations,
-       and payment records? This cannot be undone. The user's account will NOT be deleted.`);
+      `Permanently delete ${scoutName}'s scout membership, registrations, and payment records? This cannot be undone. The user's account will NOT be deleted.`
+    );
     if (!confirmed) return;
+
     setDeletingId(scoutId);
     const result = await deleteScoutPermanentlyAction(scoutId);
     setDeletingId(null);
+
     if (!result.success) {
       alert(result.error ?? "Failed to delete scout.");
       return;
     }
+
     setRoster((prev) => prev.filter((row) => row.scoutId !== scoutId));
   };
+
   const filteredRoster = roster.filter((row) => {
     const query = search.trim().toLowerCase();
     if (!query) return true;
@@ -87,6 +102,7 @@ export function ScoutRosterTable({ initialRoster }: Props) {
       row.rank.toLowerCase().includes(query)
     );
   });
+
   return (
     <div className="flex flex-col gap-3">
       <input
@@ -120,6 +136,7 @@ export function ScoutRosterTable({ initialRoster }: Props) {
                   : "No scouts match your search."}
               </td>
             </tr>
+<<<<<<< HEAD
           )}
 
           {filteredRoster.map((row) => (
@@ -183,6 +200,58 @@ export function ScoutRosterTable({ initialRoster }: Props) {
                   >
                     {pendingId === row.scoutId ? "Updating..." : row.isActive ? "Revoke Membership" : "Restore Membership"}
                   </button>
+=======
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {filteredRoster.length === 0 && (
+              <tr>
+                <td colSpan={7} className="px-4 py-6 text-center text-gray-400">
+                  {roster.length === 0 ? "No scouts have registered yet." : "No scouts match your search."}
+                </td>
+              </tr>
+            )}
+            {filteredRoster.map((row) => (
+              <tr key={row.scoutId} className="hover:bg-gray-50 transition-colors">
+                <td className="px-4 py-3 font-medium text-gray-900">
+                  {row.lastName}, {row.firstName}
+                </td>
+                <td className="px-4 py-3">{row.email}</td>
+                <td className="px-4 py-3">{row.councilName}</td>
+                <td className="px-4 py-3">{row.membershipNumber ?? "—"}</td>
+                <td className="px-4 py-3">{row.rank || "—"}</td>
+                <td className="px-4 py-3">
+                  <span
+                    className={`text-xs font-bold px-2 py-1 rounded ${
+                      !row.isActive
+                        ? "bg-red-100 text-red-700"
+                        : row.status === "ACTIVE"
+                        ? "bg-green-100 text-green-700"
+                        : row.status === "PENDING"
+                        ? "bg-yellow-100 text-yellow-700"
+                        : row.status === "SUSPENDED"
+                        ? "bg-orange-100 text-orange-700"
+                        : "bg-zinc-100 text-zinc-600"
+                    }`}
+                  >
+                    {!row.isActive ? "Revoked" : row.status}
+                  </span>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-col gap-2">
+                    <button
+                      onClick={() => handleToggle(row.scoutId, row.isActive)}
+                      disabled={pendingId === row.scoutId || deletingId === row.scoutId}
+                      className={`text-xs font-bold px-3 py-1.5 rounded transition-all shadow-sm text-white disabled:opacity-50 ${
+                        row.isActive ? "bg-red-600 hover:bg-red-700" : "bg-green-700 hover:bg-green-600"
+                      }`}
+                    >
+                      {pendingId === row.scoutId
+                        ? "Updating..."
+                        : row.isActive
+                        ? "Revoke Membership"
+                        : "Restore Membership"}
+                    </button>
+>>>>>>> 74efdc55341de5125842f4ff292ec287390d5716
                     <button
                       onClick={() => handleDelete(row.scoutId, `${row.firstName} ${row.lastName}`)}
                       disabled={deletingId === row.scoutId || pendingId === row.scoutId}

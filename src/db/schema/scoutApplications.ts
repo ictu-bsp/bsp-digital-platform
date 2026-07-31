@@ -11,7 +11,7 @@ import {
 
 import { users } from "./users";
 import { councils } from "./councils";
-import { applicationStatusEnum } from "./enums";
+import { applicationStatusEnum, scoutRankEnum } from "./enums";
 
 export const scoutApplications = pgTable("scout_applications", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -21,31 +21,29 @@ export const scoutApplications = pgTable("scout_applications", {
     .notNull(),
 
   preferredCouncilId: uuid("preferred_council_id")
-    .references(() => councils.id)
-    .notNull(),
+    .references(() => councils.id),
 
-  scoutingPosition: text("scouting_position").notNull(),
+  scoutingPosition: text("scouting_position"),
 
-  advancementRank: text("advancement_rank").notNull(),
+  // Scout rank and section selected by the applicant.
+  scoutSection: scoutRankEnum("scout_section"), // KID | KAB | BOY | SENIOR | ROVER
+  advancementRank: text("advancement_rank"),    // "Tenderfoot", "Eagle", etc.
 
-  tenure: integer("tenure").notNull(),
+  tenure: integer("tenure").default(0),
 
-  region: text("region").notNull(),
+  region: text("region"),
 
   communityBased: boolean("community_based")
     .default(false)
     .notNull(),
 
-  sponsoringInstitution: text("sponsoring_institution"),
+  sponsoringInstitution: text("sponsoring_institution"), // Nullable,
 
   requestedRegistrationYears: integer("requested_registration_years")
+    .default(1)
     .notNull(),
 
-  // Personal & emergency-contact info — added to replace the temporary
-  // JSON-in-remarks workaround. Existing approved applications created
-  // before this migration still have this data only inside `remarks`;
-  // getMembershipCardData() falls back to parsing that JSON when these
-  // columns are empty.
+  // Personal & emergency-contact info
   bloodType: text("blood_type"),
   address: text("address"),
   telephoneNumber: text("telephone_number"),
