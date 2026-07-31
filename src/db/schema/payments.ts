@@ -22,8 +22,6 @@ export const payments = pgTable("payments", {
 
   // Added missing fields used by updateRegistrationPaymentStatus in admin.service
   amount: integer("amount").default(0).notNull(),
-  paymentMethod: text("payment_method"),
-
   paymentStatus: paymentStatusEnum("payment_status")
     .default("awaiting_payment")
     .notNull(),
