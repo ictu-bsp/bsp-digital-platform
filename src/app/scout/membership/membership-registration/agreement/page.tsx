@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import BackButton from "@/components-general/ui/BackButton";
 
+
+
 export default function AgreementPage() {
   const router = useRouter();
   const [termsConsent, setTermsConsent] = useState(false);
@@ -21,37 +23,18 @@ export default function AgreementPage() {
     if (reachedBottom) setHasReadTerms(true);
   };
 
-  // Reaching this page means the user is starting a fresh application —
-  // clear out anything left over from a previous attempt (whether they
-  // finished, abandoned mid-payment, or got rejected) so stale personal
-  // info / registration details never leak into a new submission.
+// Warn before an actual page reload or tab close (not on in-app Back
+  // navigation, which doesn't trigger beforeunload).
   useEffect(() => {
-    const wizardKeys = [
-      "personalBloodType",
-      "personalAddress",
-      "personalTelephone",
-      "personalEmergencyContactName",
-      "personalEmergencyContactRelationship",
-      "personalEmergencyContactNumber",
-      "registerScoutingPosition",
-      "registerAdvancementRank",
-      "registerTenure",
-      "registerRegion",
-      "registerCouncilId",
-      "registerIsCommunityBased",
-      "registerSponsoringInstitution",
-      "registerMembershipValidity",
-      "registrationId",
-      "paymentAmount",
-      "paymentDescription",
-      "paymentYears",
-      "paymentCouncil",
-      "paymentCouncilId",
-      "paymentIsCommunityBased",
-      "paymentSponsoringInstitution",
-    ];
-    wizardKeys.forEach((key) => localStorage.removeItem(key));
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, []);
+
+  
 
   const onNext = () => {
     if (!hasReadTerms || !termsConsent || !parentalConsent) return;

@@ -14,7 +14,8 @@ export async function GET() {
     return NextResponse.json({ status: null }, { status: 401 });
   }
 
-  const application = await getApplicationByUser(user.id);
+  const applications = await getApplicationByUser(user.id);
+  const application = applications?.[0];
 
   return NextResponse.json({ status: application?.status ?? null });
 }

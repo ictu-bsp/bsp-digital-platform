@@ -79,6 +79,9 @@ export default async function VerifiedMemberPage() {
     council: council?.name ?? "N/A",
     idNumber: scout.membershipNumber ?? "N/A",
     validUntil: formatDate(registration?.endDate),
+    validUntilRaw: registration?.endDate
+      ? new Date(registration.endDate).toISOString()
+      : null,
     status: scout.verificationStatus === "active" ? "VALID" : "PENDING",
     dob: formatDate(user.birthdate),
     sex: user.sex ?? "N/A",

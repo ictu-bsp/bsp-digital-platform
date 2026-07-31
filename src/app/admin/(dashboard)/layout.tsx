@@ -22,7 +22,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const roleLabel = officerRole === "CHIEF_EXECUTIVE" ? "Local Council Admin" : officerRole.replaceAll("_", " ");
   return (
     <div className="min-h-screen bg-zinc-100 p-4">
-      <div className="mb-4 flex items-center justify-between">
+      <div className="sticky top-0 z-20 -mx-4 -mt-4 mb-4 flex items-center justify-between bg-zinc-100 px-4 pt-4 pb-2">
         <div className="rounded-full bg-white px-5 py-2 shadow-sm">
           <span className="text-xl font-bold text-green-800">
             eScout
@@ -42,7 +42,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       </div>
       <div className="flex gap-4">
         <AdminSidebar role={officerRole as AdminRole} />
-        <main className="flex-1 min-w-0">{children}</main>
+        <main className="flex-1 min-w-0 overflow-x-auto">{children}</main>
       </div>
     </div>
   );

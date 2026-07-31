@@ -67,7 +67,8 @@ export async function POST(request: Request) {
         metadata
       );
     } else {
-      const result = await verifyScoutPayment(paymentRecordId, "paid");
+      const paymentMethod = data.attributes.data.attributes.source?.type;
+      const result = await verifyScoutPayment(paymentRecordId, "paid", paymentMethod);
       console.log("verifyScoutPayment result:", result);
     }
   }

@@ -1,4 +1,9 @@
 // src/app/admin/reports/components/StatCard.tsx
+//
+// Reusable shell for the admin reports page. Displays a title, an optional
+// primary value, an optional breakdown list, an optional note (e.g.
+// data-limitation disclaimers), and arbitrary content (typically a
+// ReportTable) via children.
 type BreakdownRow = {
   label: string;
   value: string | number;
@@ -6,15 +11,22 @@ type BreakdownRow = {
 type StatCardProps = {
   title: string;
   value?: string | number;
-  valueLabel?: string;
+  valueLabel?: string; // e.g. "Total Applications"
   breakdown?: BreakdownRow[];
   breakdownLabel?: string;
-  note?: string;
+  note?: string; // e.g. data limitation disclaimer
   children?: React.ReactNode;
 };
 // Render a report statistic card displaying metrics, breakdowns, or custom children.
 export default function StatCard({
-  title, value, valueLabel, breakdown, breakdownLabel, note, children }: StatCardProps) {
+  title,
+  value,
+  valueLabel,
+  breakdown,
+  breakdownLabel,
+  note,
+  children,
+}: StatCardProps) {
   return (
     <div className="bg-white rounded-2xl shadow p-6 text-zinc-900 flex flex-col gap-4">
       <h3 className="text-lg font-semibold text-green-800">{title}</h3>

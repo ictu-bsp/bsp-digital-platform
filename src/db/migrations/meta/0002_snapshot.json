@@ -1,6 +1,6 @@
 {
-  "id": "430272a6-8fbd-4319-a9e4-0e2d06ce7b8f",
-  "prevId": "e86a7f9f-9c68-4ecb-b9c9-ccfb948bb359",
+  "id": "e0e6ce83-92a1-444f-9bf1-2900099d0a1e",
+  "prevId": "8434b4eb-790d-4832-864b-48db8a5b5476",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1930,6 +1930,117 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.notifications": {
+      "name": "notifications",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "title": {
+          "name": "title",
+          "type": "varchar(150)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "message": {
+          "name": "message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "link": {
+          "name": "link",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "visibility": {
+          "name": "visibility",
+          "type": "notification_visibility",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PUBLIC'"
+        },
+        "council_id": {
+          "name": "council_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "region_id": {
+          "name": "region_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "author_id": {
+          "name": "author_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "notifications_council_id_councils_id_fk": {
+          "name": "notifications_council_id_councils_id_fk",
+          "tableFrom": "notifications",
+          "tableTo": "councils",
+          "columnsFrom": [
+            "council_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "notifications_region_id_regions_id_fk": {
+          "name": "notifications_region_id_regions_id_fk",
+          "tableFrom": "notifications",
+          "tableTo": "regions",
+          "columnsFrom": [
+            "region_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "notifications_author_id_users_id_fk": {
+          "name": "notifications_author_id_users_id_fk",
+          "tableFrom": "notifications",
+          "tableTo": "users",
+          "columnsFrom": [
+            "author_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.merit_badges": {
       "name": "merit_badges",
       "schema": "",
@@ -2013,6 +2124,19 @@
           "primaryKey": false,
           "notNull": false
         },
+        "amount": {
+          "name": "amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "payment_method": {
+          "name": "payment_method",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "payment_status": {
           "name": "payment_status",
           "type": "payment_status",
@@ -2023,6 +2147,13 @@
         },
         "created_at": {
           "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
@@ -2237,6 +2368,16 @@
         "unverified",
         "pending",
         "active"
+      ]
+    },
+    "public.notification_visibility": {
+      "name": "notification_visibility",
+      "schema": "public",
+      "values": [
+        "PUBLIC",
+        "SCOUTS",
+        "COUNCIL",
+        "REGIONAL"
       ]
     }
   },

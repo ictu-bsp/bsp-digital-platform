@@ -34,6 +34,14 @@ export interface SubmitApplicationInput {
   [key: string]: any;
 }
 
+
+
+
+
+ 
+
+
+
 // Maps section inputs to valid scoutSection Enum values ('KID' | 'KAB' | 'BOY' | 'SENIOR' | 'ROVER')
 function resolveScoutSectionEnum(
   sectionInput?: string | null,

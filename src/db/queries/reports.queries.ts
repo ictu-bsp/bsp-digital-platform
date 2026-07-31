@@ -13,7 +13,7 @@
 // ₱50/year.
 
 import { db } from "@/db";
-import { sql, eq, and, inArray } from "drizzle-orm";
+import { sql, eq, and, inArray, gte, lte } from "drizzle-orm";
 import {
   scoutApplications,
   payments,
@@ -26,18 +26,44 @@ import {
   users,
 } from "@/db/schema";
 
+
+
+
+// ---------------------------------------------------------------------------
+// Shared report filters — applied across queries where the underlying table
+// has a matching column. Not every filter applies to every report (e.g.
+// "rank" has no meaning for payment collections) — each function below
+// only consumes the filters it can actually use.
+// ---------------------------------------------------------------------------
+export type ReportFilters = {
+  dateFrom?: Date;
+  dateTo?: Date;
+  councilId?: string;
+  scoutStatus?: string; // matches scoutStatusEnum values
+  rank?: string; // matches scoutRankEnum values
+};
+
+
+
+
 const FEE_PER_YEAR = 50;
 
 // ---------------------------------------------------------------------------
 // 1. Registration Summary — scoutApplications grouped by status
 // ---------------------------------------------------------------------------
-export async function getRegistrationSummary() {
+export async function getRegistrationSummary(filters: ReportFilters = {}) {
+  const conditions = [];
+  if (filters.dateFrom) conditions.push(gte(scoutApplications.createdAt, filters.dateFrom));
+  if (filters.dateTo) conditions.push(lte(scoutApplications.createdAt, filters.dateTo));
+  if (filters.councilId) conditions.push(eq(scoutApplications.preferredCouncilId, filters.councilId));
+
   const rows = await db
     .select({
       status: scoutApplications.status,
       count: sql<number>`count(*)`.mapWith(Number),
     })
     .from(scoutApplications)
+    .where(conditions.length ? and(...conditions) : undefined)
     .groupBy(scoutApplications.status);
 
   const total = rows.reduce((sum, r) => sum + r.count, 0);
@@ -118,7 +144,12 @@ export async function getPaymentCollectionsSummary() {
 // ---------------------------------------------------------------------------
 // 3. Registrations by Region/Council
 // ---------------------------------------------------------------------------
-export async function getRegistrationsByRegionCouncil() {
+export async function getRegistrationsByRegionCouncil(filters: ReportFilters = {}) {
+  const conditions = [];
+  if (filters.councilId) conditions.push(eq(registrations.councilId, filters.councilId));
+  if (filters.dateFrom) conditions.push(gte(registrations.createdAt, filters.dateFrom));
+  if (filters.dateTo) conditions.push(lte(registrations.createdAt, filters.dateTo));
+
   const rows = await db
     .select({
       regionName: regions.name,
@@ -128,6 +159,7 @@ export async function getRegistrationsByRegionCouncil() {
     .from(registrations)
     .innerJoin(councils, eq(registrations.councilId, councils.id))
     .leftJoin(regions, eq(councils.regionId, regions.id))
+    .where(conditions.length ? and(...conditions) : undefined)
     .groupBy(regions.name, councils.name)
     .orderBy(regions.name, councils.name);
 
@@ -176,8 +208,52 @@ export async function getRevenueByTenure() {
   return rows;
 }
 
+
 // ---------------------------------------------------------------------------
-// 6a. Activities & Enrollment counts — one row per activity
+// 5b. Registration Type Breakdown — New vs Renewal.
+//    A registration counts as a "Renewal" if the same scout already has an
+//    earlier registration row (by createdAt). This mirrors the same logic
+//    admin.service.ts uses for isExistingScout, so the numbers here match
+//    what Membership Review / Finance show — just aggregated.
+// ---------------------------------------------------------------------------
+export async function getRegistrationTypeBreakdown() {
+  const rows = await db
+    .select({
+      scoutId: registrations.scoutId,
+      createdAt: registrations.createdAt,
+    })
+    .from(registrations)
+    .orderBy(registrations.scoutId, registrations.createdAt);
+
+  const seenScouts = new Set<string>();
+  let newCount = 0;
+  let renewalCount = 0;
+
+  for (const row of rows) {
+    if (seenScouts.has(row.scoutId)) {
+      renewalCount += 1;
+    } else {
+      newCount += 1;
+      seenScouts.add(row.scoutId);
+    }
+  }
+
+  return {
+    new: newCount,
+    renewal: renewalCount,
+    total: rows.length,
+  };
+}
+
+
+
+// ---------------------------------------------------------------------------
+// 6a. Activities & Enrollment counts — one row per activity.
+//    organizerName is left-joined since activities.createdBy is currently
+//    null for older rows (not yet wired to the logged-in admin's session —
+//    flagged separately). computedStatus is DERIVED from startDate/endDate
+//    vs. today; there is no status/cancelled column in the schema, so
+//    "cancelled" is not representable here.
 // ---------------------------------------------------------------------------
 export async function getActivitiesSummary() {
   const rows = await db
@@ -190,10 +266,13 @@ export async function getActivitiesSummary() {
       location: activities.location,
       maxParticipants: activities.maxParticipants,
       isPublished: activities.isPublished,
+      organizerFirstName: users.firstName,
+      organizerLastName: users.lastName,
       enrolledCount: sql<number>`count(${activityRegistrations.id})`.mapWith(Number),
     })
     .from(activities)
     .leftJoin(activityRegistrations, eq(activityRegistrations.activityId, activities.id))
+    .leftJoin(users, eq(activities.createdBy, users.id))
     .groupBy(
       activities.id,
       activities.title,
@@ -202,11 +281,40 @@ export async function getActivitiesSummary() {
       activities.endDate,
       activities.location,
       activities.maxParticipants,
-      activities.isPublished
+      activities.isPublished,
+      users.firstName,
+      users.lastName
     )
     .orderBy(activities.startDate);
 
-  return rows;
+  const now = new Date();
+
+  return rows.map((row) => {
+    const start = new Date(row.startDate);
+    const end = row.endDate ? new Date(row.endDate) : start;
+
+    let computedStatus: "upcoming" | "ongoing" | "completed";
+    if (now < start) computedStatus = "upcoming";
+    else if (now > end) computedStatus = "completed";
+    else computedStatus = "ongoing";
+
+    return {
+      activityId: row.activityId,
+      title: row.title,
+      category: row.category,
+      startDate: row.startDate,
+      endDate: row.endDate,
+      location: row.location,
+      maxParticipants: row.maxParticipants,
+      isPublished: row.isPublished,
+      organizerName:
+        row.organizerFirstName && row.organizerLastName
+          ? `${row.organizerFirstName} ${row.organizerLastName}`
+          : "Unknown / System",
+      computedStatus,
+      enrolledCount: row.enrolledCount,
+    };
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -258,6 +366,7 @@ export async function getEnrolleeDetailsReport() {
       regionName: regions.name,
       registrationYears: registrations.registrationYears,
       registrationStatus: registrations.status,
+      registrationCreatedAt: registrations.createdAt,
     })
     .from(registrations)
     .innerJoin(scouts, eq(registrations.scoutId, scouts.id))
@@ -269,19 +378,24 @@ export async function getEnrolleeDetailsReport() {
   const registrationIds = baseRows.map((r) => r.registrationId);
   const scoutIds = baseRows.map((r) => r.scoutId);
 
-  // One payment per registration — prefer most recent "paid", else most recent overall.
   const rawPayments = registrationIds.length
     ? await db
         .select({
           registrationId: payments.registrationId,
           paymentStatus: payments.paymentStatus,
+          paymentMethod: payments.paymentMethod,
           createdAt: payments.createdAt,
         })
         .from(payments)
         .where(inArray(payments.registrationId, registrationIds))
     : [];
 
-  const bestPaymentByReg = new Map<string, { paymentStatus: string; createdAt: Date }>();
+  // One payment per registration — prefer most recent "paid", else most recent overall.
+
+  const bestPaymentByReg = new Map<
+    string,
+    { paymentStatus: string; paymentMethod: string | null; createdAt: Date }
+  >();
   for (const row of rawPayments) {
     const existing = bestPaymentByReg.get(row.registrationId);
     if (!existing) {
@@ -316,9 +430,29 @@ export async function getEnrolleeDetailsReport() {
     activitiesByScout.set(row.scoutId, list);
   }
 
+  // Determine, per scout, which registrationId was their earliest — that
+  // one is "New", everything else for the same scout is a "Renewal".
+  const earliestRegByScout = new Map<string, string>();
+  const sortedByScoutThenDate = [...baseRows].sort((a, b) => {
+    if (a.scoutId !== b.scoutId) return a.scoutId < b.scoutId ? -1 : 1;
+    return (
+      new Date(a.registrationCreatedAt).getTime() -
+      new Date(b.registrationCreatedAt).getTime()
+    );
+  });
+  for (const row of sortedByScoutThenDate) {
+    if (!earliestRegByScout.has(row.scoutId)) {
+      earliestRegByScout.set(row.scoutId, row.registrationId);
+    }
+  }
+
   return baseRows.map((row) => {
     const bestPayment = bestPaymentByReg.get(row.registrationId);
     const isPaid = bestPayment?.paymentStatus === "paid";
+    const registrationType =
+      earliestRegByScout.get(row.scoutId) === row.registrationId
+        ? "New"
+        : "Renewal";
 
     return {
       scoutId: row.scoutId,
@@ -331,42 +465,239 @@ export async function getEnrolleeDetailsReport() {
       regionName: row.regionName,
       registrationYears: row.registrationYears,
       registrationStatus: row.registrationStatus,
+      registrationType: registrationType,
       paymentStatus: bestPayment?.paymentStatus ?? "no_payment",
+      paymentMethod: bestPayment?.paymentMethod ?? null,
       estimatedAmountPaid: isPaid ? row.registrationYears * FEE_PER_YEAR : 0,
+      paymentDate: bestPayment?.createdAt ? bestPayment.createdAt.toISOString() : null,
       activitiesEnrolled: activitiesByScout.get(row.scoutId) ?? [],
     };
   });
 }
 
 
+
+// ---------------------------------------------------------------------------
+// 8. Membership Summary — scouts grouped by status (PENDING/ACTIVE/SUSPENDED/
+//    EXPIRED) with an active/inactive split via scouts.isActive.
+//    NOTE: no "leaders" breakdown is possible — there is no leaders table or
+//    persistent scoutingPosition column on `scouts`. Flagged to Reuben.
+// ---------------------------------------------------------------------------
+export async function getMembershipSummary(filters: ReportFilters = {}) {
+  const conditions = [];
+  if (filters.councilId) conditions.push(eq(scouts.councilId, filters.councilId));
+  if (filters.scoutStatus) conditions.push(eq(scouts.status, filters.scoutStatus as any));
+  if (filters.rank) conditions.push(eq(scouts.rank, filters.rank as any));
+  if (filters.dateFrom) conditions.push(gte(scouts.createdAt, filters.dateFrom));
+  if (filters.dateTo) conditions.push(lte(scouts.createdAt, filters.dateTo));
+
+  const rows = await db
+    .select({
+      status: scouts.status,
+      isActive: scouts.isActive,
+      count: sql<number>`count(*)`.mapWith(Number),
+    })
+    .from(scouts)
+    .where(conditions.length ? and(...conditions) : undefined)
+    .groupBy(scouts.status, scouts.isActive);
+
+  const byStatusMap = new Map<string, number>();
+  for (const row of rows) {
+    byStatusMap.set(row.status, (byStatusMap.get(row.status) ?? 0) + row.count);
+  }
+
+  const total = rows.reduce((sum, r) => sum + r.count, 0);
+  const activeCount = rows.filter((r) => r.isActive).reduce((sum, r) => sum + r.count, 0);
+  const inactiveCount = total - activeCount;
+
+  return {
+    byStatus: Array.from(byStatusMap.entries()).map(([status, count]) => ({ status, count })),
+    total,
+    activeCount,
+    inactiveCount,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// 9. Membership Trends — new scouts per month, based on scouts.createdAt
+// ---------------------------------------------------------------------------
+export async function getMembershipTrends(filters: ReportFilters = {}) {
+  const conditions = [];
+  if (filters.councilId) conditions.push(eq(scouts.councilId, filters.councilId));
+  if (filters.scoutStatus) conditions.push(eq(scouts.status, filters.scoutStatus as any));
+  if (filters.rank) conditions.push(eq(scouts.rank, filters.rank as any));
+  if (filters.dateFrom) conditions.push(gte(scouts.createdAt, filters.dateFrom));
+  if (filters.dateTo) conditions.push(lte(scouts.createdAt, filters.dateTo));
+
+  const rows = await db
+    .select({
+      month: sql<string>`to_char(date_trunc('month', ${scouts.createdAt}), 'YYYY-MM')`,
+      count: sql<number>`count(*)`.mapWith(Number),
+    })
+    .from(scouts)
+    .where(conditions.length ? and(...conditions) : undefined)
+    .groupBy(sql`date_trunc('month', ${scouts.createdAt})`)
+    .orderBy(sql`date_trunc('month', ${scouts.createdAt})`);
+
+  return rows;
+}
+
+
+
+// ---------------------------------------------------------------------------
+// 10. Scout Profiles — one row per scout with core identity, current status,
+//    council/region, and a computed age. Registration history and activities
+//    are attached separately to avoid row-duplication (same join-then-map
+//    pattern as getEnrolleeDetailsReport()).
+//    NOTE: no School, Scout Unit, or Leader fields exist in this schema —
+//    intentionally omitted rather than faked. Flagged as a schema gap.
+// ---------------------------------------------------------------------------
+export async function getScoutProfilesReport(filters: ReportFilters = {}) {
+  const conditions = [];
+  if (filters.councilId) conditions.push(eq(scouts.councilId, filters.councilId));
+  if (filters.scoutStatus) conditions.push(eq(scouts.status, filters.scoutStatus as any));
+  if (filters.rank) conditions.push(eq(scouts.rank, filters.rank as any));
+  if (filters.dateFrom) conditions.push(gte(scouts.createdAt, filters.dateFrom));
+  if (filters.dateTo) conditions.push(lte(scouts.createdAt, filters.dateTo));
+
+  const baseRows = await db
+    .select({
+      scoutId: scouts.id,
+      membershipNumber: scouts.membershipNumber,
+      rank: scouts.rank,
+      status: scouts.status,
+      isActive: scouts.isActive,
+      joinedAt: scouts.joinedAt,
+      firstName: users.firstName,
+      middleName: users.middleName,
+      lastName: users.lastName,
+      email: users.email,
+      birthdate: users.birthdate,
+      councilName: councils.name,
+      regionName: regions.name,
+    })
+    .from(scouts)
+    .innerJoin(users, eq(scouts.userId, users.id))
+    .innerJoin(councils, eq(scouts.councilId, councils.id))
+    .leftJoin(regions, eq(councils.regionId, regions.id))
+    .where(conditions.length ? and(...conditions) : undefined)
+    .orderBy(users.lastName);
+
+  const scoutIds = baseRows.map((r) => r.scoutId);
+
+  // Registration history per scout (most recent first).
+  const rawRegistrations = scoutIds.length
+    ? await db
+        .select({
+          scoutId: registrations.scoutId,
+          registrationId: registrations.id,
+          status: registrations.status,
+          registrationYears: registrations.registrationYears,
+          startDate: registrations.startDate,
+          endDate: registrations.endDate,
+          createdAt: registrations.createdAt,
+        })
+        .from(registrations)
+        .where(inArray(registrations.scoutId, scoutIds))
+        .orderBy(registrations.scoutId, registrations.createdAt)
+    : [];
+
+  const registrationsByScout = new Map<string, typeof rawRegistrations>();
+  for (const row of rawRegistrations) {
+    const list = registrationsByScout.get(row.scoutId) ?? [];
+    list.push(row);
+    registrationsByScout.set(row.scoutId, list);
+  }
+
+  // Activities per scout (reusing the same lookup pattern already in this file).
+  const rawActivityRegs = scoutIds.length
+    ? await db
+        .select({
+          scoutId: activityRegistrations.scoutId,
+          title: activities.title,
+          registeredAt: activityRegistrations.registeredAt,
+        })
+        .from(activityRegistrations)
+        .innerJoin(activities, eq(activityRegistrations.activityId, activities.id))
+        .where(inArray(activityRegistrations.scoutId, scoutIds))
+    : [];
+
+  const activitiesByScout = new Map<string, { title: string; registeredAt: Date }[]>();
+  for (const row of rawActivityRegs) {
+    const list = activitiesByScout.get(row.scoutId) ?? [];
+    list.push({ title: row.title, registeredAt: row.registeredAt });
+    activitiesByScout.set(row.scoutId, list);
+  }
+
+  const calculateAge = (birthdate: Date): number => {
+    const today = new Date();
+    let age = today.getFullYear() - birthdate.getFullYear();
+    const monthDiff = today.getMonth() - birthdate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthdate.getDate())) {
+      age -= 1;
+    }
+    return age;
+  };
+
+  return baseRows.map((row) => ({
+    scoutId: row.scoutId,
+    membershipNumber: row.membershipNumber,
+    firstName: row.firstName,
+    middleName: row.middleName,
+    lastName: row.lastName,
+    email: row.email,
+    age: calculateAge(new Date(row.birthdate)),
+    rank: row.rank,
+    status: row.status,
+    isActive: row.isActive,
+    councilName: row.councilName,
+    regionName: row.regionName,
+    joinedAt: row.joinedAt,
+    registrationHistory: registrationsByScout.get(row.scoutId) ?? [],
+    activitiesEnrolled: activitiesByScout.get(row.scoutId) ?? [],
+  }));
+}
+
 // ---------------------------------------------------------------------------
 // Convenience: fetch all 6 reports at once for the main reports page
 // ---------------------------------------------------------------------------
-export async function getAllReports() {
+export async function getAllReports(filters: ReportFilters = {}) {
   const [
+    membershipSummary,
+    membershipTrends,
+    scoutProfiles,
     registrationSummary,
     paymentCollections,
     registrationsByRegionCouncil,
     registrationsOverTime,
     revenueByTenure,
+    registrationTypeBreakdown,
     activitiesSummary,
     enrolleeDetails,
   ] = await Promise.all([
-    getRegistrationSummary(),
+    getMembershipSummary(filters),
+    getMembershipTrends(filters),
+    getScoutProfilesReport(filters),
+    getRegistrationSummary(filters),
     getPaymentCollectionsSummary(),
-    getRegistrationsByRegionCouncil(),
-    getRegistrationsOverTime(),
+    getRegistrationsByRegionCouncil(filters),
+    getRegistrationsOverTime(filters.dateFrom, filters.dateTo),
     getRevenueByTenure(),
+    getRegistrationTypeBreakdown(),
     getActivitiesSummary(),
     getEnrolleeDetailsReport(),
   ]);
 
   return {
+    membershipSummary,
+    membershipTrends,
+    scoutProfiles,
     registrationSummary,
     paymentCollections,
     registrationsByRegionCouncil,
     registrationsOverTime,
     revenueByTenure,
+    registrationTypeBreakdown,
     activitiesSummary,
     enrolleeDetails,
   };

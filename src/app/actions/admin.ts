@@ -10,6 +10,8 @@ import {
   getAdministrators,
   getAdministratorById,
   getPendingRegistrations,
+  getApplicationsAwaitingPayment,
+  cancelAbandonedApplication,
   approveMembershipReview,
   rejectRegistration,
   getRegistrationsAwaitingFinance,
@@ -97,6 +99,18 @@ export async function fetchPendingRegistrations() {
   } catch (error: any) {
     console.error(error);
     return { success: false, error: error?.message || "Failed to load pending registrations." };
+  }
+}
+
+// Retrieves applications submitted but not yet linked to a registration
+// (i.e. the scout has not reached the payment step yet). Read-only.
+export async function fetchApplicationsAwaitingPayment() {
+  try {
+    const data = await getApplicationsAwaitingPayment();
+    return { success: true, data };
+  } catch (error: any) {
+    console.error(error);
+    return { success: false, error: error?.message || "Failed to load applications awaiting payment." };
   }
 }
 
@@ -311,5 +325,18 @@ export async function fetchSexBreakdown() {
   } catch (error: any) {
     console.error(error);
     return { success: false, error: error?.message || "Failed to load sex breakdown." };
+  }
+}
+
+
+// Cancels an abandoned application that never reached the payment step.
+export async function cancelAbandonedApplicationAction(applicationId: string) {
+  try {
+    await cancelAbandonedApplication(applicationId);
+    revalidatePath("/admin/membership-review");
+    return { success: true };
+  } catch (error: any) {
+    console.error(error);
+    return { success: false, error: error?.message || "Failed to cancel application." };
   }
 }

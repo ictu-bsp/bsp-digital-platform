@@ -135,9 +135,13 @@ export async function setScoutMembershipActive(
   return updated ?? null;
 }
 
-// Returns the roster used by the admin scout management page.
+// Roster view for admin: one row per scout, joined with their account
+// (name/email) and council name. Used by the Scout Roster admin page.
+// Validity is derived from the scout's most recent registration's
+// endDate (a scout may have multiple registrations from renewals),
+// fetched separately and merged in JS to avoid row-multiplying joins.
 export async function getAllScoutsRoster() {
-  return db
+  const rows = await db
     .select({
       scoutId: scouts.id,
       userId: scouts.userId,
@@ -152,8 +156,37 @@ export async function getAllScoutsRoster() {
       joinedAt: scouts.joinedAt,
     })
     .from(scouts)
-    .innerJoin(users, eq(users.id, scouts.userId))
-    .innerJoin(councils, eq(councils.id, scouts.councilId));
+    .innerJoin(users, eq(scouts.userId, users.id))
+    .innerJoin(councils, eq(scouts.councilId, councils.id))
+    .orderBy(users.lastName);
+
+  const scoutIds = rows.map((r) => r.scoutId);
+
+  const regRows =
+    scoutIds.length > 0
+      ? await db
+          .select({
+            scoutId: registrations.scoutId,
+            endDate: registrations.endDate,
+          })
+          .from(registrations)
+          .where(inArray(registrations.scoutId, scoutIds))
+      : [];
+
+  // Pick the latest endDate per scout — that's the current coverage,
+  // even if earlier renewals/registrations also exist for that scout.
+  const latestEndDateByScoutId = new Map<string, string>();
+  for (const reg of regRows) {
+    const existing = latestEndDateByScoutId.get(reg.scoutId);
+    if (!existing || reg.endDate > existing) {
+      latestEndDateByScoutId.set(reg.scoutId, reg.endDate);
+    }
+  }
+
+  return rows.map((row) => ({
+    ...row,
+    validUntil: latestEndDateByScoutId.get(row.scoutId) ?? null,
+  }));
 }
 
 // Permanently removes a scout together with every dependent record.

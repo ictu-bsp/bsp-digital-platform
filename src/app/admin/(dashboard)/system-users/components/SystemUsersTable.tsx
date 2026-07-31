@@ -1,9 +1,11 @@
 ﻿// src/app/admin/(dashboard)/system-users/components/SystemUsersTable.tsx
 "use client";
-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { AdminUserRecord } from "@/services/admin.service";
+// The admin service does not export AdminUserRecord in some setups —
+// declare a local type to keep this component self-contained.
+// Replace `any` with a stricter shape if you add or import a shared type later.
+type AdminUserRecord = any;
 import EditSystemUserModal from "./EditSystemUserModal";
 
 const ROLE_LABELS: Record<string, string> = {

@@ -1,5 +1,5 @@
 {
-  "id": "e86a7f9f-9c68-4ecb-b9c9-ccfb948bb359",
+  "id": "8434b4eb-790d-4832-864b-48db8a5b5476",
   "prevId": "b9d7e76e-bf9b-410c-97a5-2f8ad85061f9",
   "version": "7",
   "dialect": "postgresql",
@@ -171,104 +171,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.activity_payments": {
-      "name": "activity_payments",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "registration_id": {
-          "name": "registration_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "amount": {
-          "name": "amount",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "payment_intent_id": {
-          "name": "payment_intent_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "payment_method": {
-          "name": "payment_method",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "receipt_number": {
-          "name": "receipt_number",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "payment_status": {
-          "name": "payment_status",
-          "type": "payment_status",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'awaiting_payment'"
-        },
-        "refunded_at": {
-          "name": "refunded_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "refund_reference": {
-          "name": "refund_reference",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "activity_payments_registration_id_activity_registrations_id_fk": {
-          "name": "activity_payments_registration_id_activity_registrations_id_fk",
-          "tableFrom": "activity_payments",
-          "tableTo": "activity_registrations",
-          "columnsFrom": [
-            "registration_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.activity_registrations": {
       "name": "activity_registrations",
       "schema": "",
@@ -302,139 +204,6 @@
         "remarks": {
           "name": "remarks",
           "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "registration_status": {
-          "name": "registration_status",
-          "type": "application_status",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'PENDING'"
-        },
-        "parent_consent_file": {
-          "name": "parent_consent_file",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "parent_guardian_id_file": {
-          "name": "parent_guardian_id_file",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "medical_certificate_file": {
-          "name": "medical_certificate_file",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "medical_waiver_file": {
-          "name": "medical_waiver_file",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "requirements_submitted": {
-          "name": "requirements_submitted",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "payment_status": {
-          "name": "payment_status",
-          "type": "payment_status",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'awaiting_payment'"
-        },
-        "payment_reference_id": {
-          "name": "payment_reference_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "registration_fee": {
-          "name": "registration_fee",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "refunded_at": {
-          "name": "refunded_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "unit_leader_approved": {
-          "name": "unit_leader_approved",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "unit_leader_approved_by": {
-          "name": "unit_leader_approved_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "unit_leader_approved_at": {
-          "name": "unit_leader_approved_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "admin_approved": {
-          "name": "admin_approved",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "admin_approved_by": {
-          "name": "admin_approved_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "admin_approved_at": {
-          "name": "admin_approved_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "joined_at": {
-          "name": "joined_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "left_at": {
-          "name": "left_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "rejection_reason": {
-          "name": "rejection_reason",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "rejected_by": {
-          "name": "rejected_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "rejected_at": {
-          "name": "rejected_at",
-          "type": "timestamp",
           "primaryKey": false,
           "notNull": false
         }
@@ -2012,6 +1781,12 @@
           "notNull": true,
           "default": "'awaiting_payment'"
         },
+        "payment_method": {
+          "name": "payment_method",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -2133,20 +1908,6 @@
         "COUNCIL",
         "REGIONAL",
         "NATIONAL"
-      ]
-    },
-    "public.activity_registration_status": {
-      "name": "activity_registration_status",
-      "schema": "public",
-      "values": [
-        "PENDING_REQUIREMENTS",
-        "PENDING_PAYMENT",
-        "PENDING_UNIT_APPROVAL",
-        "PENDING_ADMIN_APPROVAL",
-        "APPROVED",
-        "REJECTED",
-        "LEFT",
-        "CANCELLED"
       ]
     },
     "public.admin_role": {

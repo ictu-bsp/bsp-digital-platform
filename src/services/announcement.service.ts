@@ -182,16 +182,21 @@ export async function getAnnouncementsForAdmin(scope: {
 }
 
 export async function createAnnouncement(data: CreateAnnouncementInput) {
-  return db.insert(announcements).values({
-    title: data.title,
-    content: data.content,
-    imageUrl: data.imageUrl ?? null,
-    visibility: data.visibility,
-    councilId: data.councilId ?? null,
-    regionId: data.regionId ?? null,
-    authorId: data.authorId,
-    isPinned: data.isPinned ?? false,
-  });
+  const [created] = await db
+    .insert(announcements)
+    .values({
+      title: data.title,
+      content: data.content,
+      imageUrl: data.imageUrl ?? null,
+      visibility: data.visibility,
+      councilId: data.councilId ?? null,
+      regionId: data.regionId ?? null,
+      authorId: data.authorId,
+      isPinned: data.isPinned ?? false,
+    })
+    .returning();
+
+  return created;
 }
 
 export async function updateAnnouncement(

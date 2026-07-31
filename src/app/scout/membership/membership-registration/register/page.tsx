@@ -15,6 +15,7 @@ import BackButton from "@/components-general/ui/BackButton";
 import { useWizard } from "../WizardContext";
 import RegistrationStepper from "../components/RegistrationStepper";
 
+
 const FEE_PER_YEAR = 50;
 
 // Rank Options mapped by Scouting Section / Position
@@ -66,6 +67,7 @@ const fieldShellClass = (filled: boolean, locked?: boolean) =>
 export default function RegisterPage() {
   const router = useRouter();
   const { bloodType, address, telephone, emergencyContactName, emergencyContactRelationship, emergencyContactNumber } = useWizard();
+  const [hasHydrated, setHasHydrated] = useState(false);
   const [scoutingPosition, setScoutingPosition] = useState("");
   const [eligiblePositions, setEligiblePositions] = useState<typeof SCOUT_POSITION_AGE_BRACKETS[number][] | null>(null);
 
@@ -101,7 +103,11 @@ export default function RegisterPage() {
     setAdvancementRank("");
   };
 
-  // Hydrate initial state values from localStorage
+  // Hydrate initial state values from localStorage. Stale data from a
+  // previous session/attempt is now cleared centrally in the wizard's
+  // layout.tsx on mount (hard reload or fresh entry from outside the
+  // wizard), so this effect can simply always hydrate — Back/Forward
+  // navigation within the wizard preserves data as expected.
   useEffect(() => {
     const savedType = (readSaved("registerMembershipType") as "single" | "multi" | "") || "";
     setScoutingPosition(readSaved("registerScoutingPosition"));
@@ -113,17 +119,37 @@ export default function RegisterPage() {
     setSponsoringInstitution(readSaved("registerSponsoringInstitution"));
     setMembershipType(savedType);
     setMembershipValidity(savedType === "single" ? "1" : savedType === "multi" ? readSaved("registerMembershipValidity") : "");
+    setHasHydrated(true);
   }, []);
 
-  // Adjust validity default selection based on membership type selection
+  // Warn the user before an actual page reload or tab close — this does
+  // NOT fire on in-app router navigation (e.g. clicking Back), only on
+  // real browser reload/close, so Back-button data persistence is unaffected.
   useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
+
+  // Adjust validity default selection based on membership type selection.
+  // Skipped until hydration has actually completed and this component has
+  // re-rendered with the restored values — otherwise this fires on mount
+  // with stale blank state and clobbers a just-restored multi-year value.
+  useEffect(() => {
+    if (!hasHydrated) return;
     if (membershipType === "single") setMembershipValidity("1");
     else if (membershipType === "multi" && membershipValidity === "1") setMembershipValidity("");
     else if (membershipType === "") setMembershipValidity("");
-  }, [membershipType, membershipValidity]);
+  }, [hasHydrated, membershipType, membershipValidity]);
 
-  // Sync state variables to localStorage
+  // Sync state variables to localStorage — skipped until hydration (the
+  // effect above) has actually run, so this never overwrites saved data
+  // with blank initial state on mount/remount.
   useEffect(() => {
+    if (!hasHydrated) return;
     localStorage.setItem("registerScoutingPosition", scoutingPosition);
     localStorage.setItem("registerAdvancementRank", advancementRank);
     localStorage.setItem("registerTenure", tenure);
@@ -133,7 +159,7 @@ export default function RegisterPage() {
     localStorage.setItem("registerSponsoringInstitution", sponsoringInstitution);
     localStorage.setItem("registerMembershipType", membershipType);
     localStorage.setItem("registerMembershipValidity", membershipValidity);
-  }, [scoutingPosition, advancementRank, tenure, regionId, councilId, isCommunityBased, sponsoringInstitution, membershipType, membershipValidity]);
+  }, [hasHydrated, scoutingPosition, advancementRank, tenure, regionId, councilId, isCommunityBased, sponsoringInstitution, membershipType, membershipValidity]);
 
   // Load councils and regions concurrently on load
   useEffect(() => {
@@ -172,7 +198,7 @@ export default function RegisterPage() {
   const cleanNull = (val?: string | null) => (!val || val.trim() === "" ? null : val.trim());
 
   // Form submission handler
-  const onNext = async (event: React.FormEvent) => {
+  const onNext = (event: React.FormEvent) => {
     event.preventDefault();
     setSubmitError("");
 
@@ -181,11 +207,16 @@ export default function RegisterPage() {
       return;
     }
 
-    setIsSubmitting(true);
+const tenureNum = Number(tenure);
+    if (!Number.isInteger(tenureNum) || tenureNum < 1 || tenureNum > 99) {
+      setSubmitError("Please enter a valid tenure between 1 and 99 years.");
+      return;
+    }
+
     const years = Number(membershipValidity);
     const resolvedSponsoringInstitution = isCommunityBased ? null : cleanNull(sponsoringInstitution);
 
-    const result = await submitApplicationAction({
+    const applicationPayload = {
       preferredCouncilId: cleanNull(councilId),
       councilId: cleanNull(councilId),
       scoutingPosition: cleanNull(scoutingPosition),
@@ -204,15 +235,14 @@ export default function RegisterPage() {
       emergencyContactNumber: cleanNull(emergencyContactNumber),
       remarks: null,
       status: "PENDING",
-    });
+    };
 
-    if (!result.success || !result.data) {
-      setSubmitError(result.error ?? "Failed to create registration.");
-      setIsSubmitting(false);
-      return;
-    }
+    // No DB write here anymore. The actual submitApplication() +
+    // createPaymentRecord() calls happen together once the scout reaches
+    // a /method/* page, via submitApplicationAndCreatePaymentAction.
+    localStorage.setItem("pendingApplicationPayload", JSON.stringify(applicationPayload));
+    localStorage.removeItem("registrationId"); // stale from any earlier attempt
 
-    localStorage.setItem("registrationId", result.data.id);
     localStorage.setItem("paymentAmount", String(amount));
     localStorage.setItem("paymentDescription", `Scout Membership Registration (${years} year${years > 1 ? "s" : ""})`);
     localStorage.setItem("paymentYears", String(years));
@@ -220,6 +250,7 @@ export default function RegisterPage() {
     localStorage.setItem("paymentCouncilId", councilId);
     localStorage.setItem("paymentIsCommunityBased", String(isCommunityBased));
     localStorage.setItem("paymentSponsoringInstitution", resolvedSponsoringInstitution ?? "community_based");
+
     router.push("/scout/membership/membership-registration/method");
   };
 
@@ -292,10 +323,17 @@ export default function RegisterPage() {
         {/* Tenure in Scouting */}
         <div className="relative">
           <input
+            type="text"
+            inputMode="numeric"
             placeholder="Tenure in Scouting (years)"
             className={`${fieldShellClass(tenure !== "")} pl-4 pr-10`}
             value={tenure}
-            onChange={(e) => setTenure(e.target.value)}
+            onChange={(e) => {
+              // Only allow digits, cap at 2 characters (max 99 years)
+              const digitsOnly = e.target.value.replace(/\D/g, "").slice(0, 2);
+              setTenure(digitsOnly);
+            }}
+            maxLength={2}
             required
           />
           {tenure !== "" && <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />}
@@ -346,23 +384,15 @@ export default function RegisterPage() {
         <hr className="my-2" />
         <label className="block text-lg font-medium">Membership Validity</label>
         <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={() => setMembershipType("single")}
-            className={`flex-1 rounded-lg py-3 text-base font-medium border transition-colors ${
-              membershipType === "single" ? "bg-green-800 text-white border-green-800" : "bg-white text-zinc-500 border-zinc-300 hover:border-green-800"
-            }`}
-          >
-            Single Year
-          </button>
+          <button type="button" onClick={() => setMembershipType("single")} className={`flex-1 rounded-lg py-3 text-base font-medium border transition-colors ${membershipType === "single" ? "bg-green-800 text-white border-green-800" : "bg-white text-zinc-500 border-zinc-300 hover:border-green-800"}`}>Single Year</button>
           <button
             type="button"
             onClick={() => setMembershipType("multi")}
-            className={`flex-1 rounded-lg py-3 text-base font-medium border transition-colors ${
-              membershipType === "multi" ? "bg-green-800 text-white border-green-800" : "bg-white text-zinc-500 border-zinc-300 hover:border-green-800"
-            }`}
+            disabled
+            title="Multi-Year registration is coming soon"
+            className="flex-1 rounded-lg py-3 text-base font-medium border transition-colors bg-zinc-100 text-zinc-400 border-zinc-200 cursor-not-allowed"
           >
-            Multi-Year
+            Multi-Year <span className="text-xs">(Coming Soon)</span>
           </button>
         </div>
 
@@ -388,8 +418,14 @@ export default function RegisterPage() {
           </div>
         )}
 
-        <p className="text-zinc-600 text-lg">Amount to pay: ₱{amount} (₱{FEE_PER_YEAR}/year — placeholder fee)</p>
-        {submitError && <p className="text-red-600 text-base">{submitError}</p>}
+        <p className="text-zinc-600 text-lg">
+          Amount to pay: ₱{amount} (₱{FEE_PER_YEAR} registration fee per year)
+        </p>
+
+        {submitError && (
+          <p className="text-red-600 text-base">{submitError}</p>
+        )}
+
         <button
           type="submit"
           disabled={isSubmitting}

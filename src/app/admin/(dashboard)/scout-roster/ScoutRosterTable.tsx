@@ -16,10 +16,33 @@ type RosterRow = {
   status: string;
   isActive: boolean;
   joinedAt: Date | null;
+  validUntil: string | null;
 };
 
 interface Props {
   initialRoster: RosterRow[];
+}
+
+function getValidityInfo(validUntil: string | null) {
+  if (!validUntil) {
+    return { label: "No Record", className: "bg-zinc-100 text-zinc-500", dateText: "—" };
+  }
+
+  const endDate = new Date(validUntil);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const dateText = endDate.toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  });
+
+  if (endDate < today) {
+    return { label: "Expired", className: "bg-red-100 text-red-700", dateText };
+  }
+
+  return { label: "Valid", className: "bg-green-100 text-green-700", dateText };
 }
 
 // Manage and display the client-side scout roster table with search filtering and toggle/delete actions.
@@ -88,66 +111,91 @@ export function ScoutRosterTable({ initialRoster }: Props) {
       />
       <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-md p-4 bg-white">
         <table className="w-full text-left text-sm text-gray-500">
-          <thead className="bg-green-800 text-xs text-white uppercase font-semibold">
+        <thead className="bg-green-800 text-xs text-white uppercase font-semibold">
+          <tr>
+            <th className="px-4 py-3">Scout Name</th>
+            <th className="px-4 py-3">Email Address</th>
+            <th className="px-4 py-3">Council</th>
+            <th className="px-4 py-3">Membership No.</th>
+            <th className="px-4 py-3">Scout Type</th>
+            <th className="px-4 py-3">Status</th>
+            <th className="px-4 py-3">Validity</th>
+            <th className="px-4 py-3">Action</th>
+          </tr>
+        </thead>
+
+        <tbody className="divide-y divide-gray-100">
+          {filteredRoster.length === 0 && (
             <tr>
-              <th className="px-4 py-3">Scout Name</th>
-              <th className="px-4 py-3">Email Address</th>
-              <th className="px-4 py-3">Council</th>
-              <th className="px-4 py-3">Membership No.</th>
-              <th className="px-4 py-3">Scout Type</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Action</th>
+              <td colSpan={8} className="px-4 py-6 text-center text-gray-400">
+                {roster.length === 0
+                  ? "No scouts have registered yet."
+                  : "No scouts match your search."}
+              </td>
             </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {filteredRoster.length === 0 && (
-              <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-gray-400">
-                  {roster.length === 0 ? "No scouts have registered yet." : "No scouts match your search."}
-                </td>
-              </tr>
-            )}
-            {filteredRoster.map((row) => (
-              <tr key={row.scoutId} className="hover:bg-gray-50 transition-colors">
-                <td className="px-4 py-3 font-medium text-gray-900">
-                  {row.lastName}, {row.firstName}
-                </td>
-                <td className="px-4 py-3">{row.email}</td>
-                <td className="px-4 py-3">{row.councilName}</td>
-                <td className="px-4 py-3">{row.membershipNumber ?? "—"}</td>
-                <td className="px-4 py-3">{row.rank || "—"}</td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`text-xs font-bold px-2 py-1 rounded ${
-                      !row.isActive
-                        ? "bg-red-100 text-red-700"
-                        : row.status === "ACTIVE"
-                        ? "bg-green-100 text-green-700"
-                        : row.status === "PENDING"
-                        ? "bg-yellow-100 text-yellow-700"
-                        : row.status === "SUSPENDED"
-                        ? "bg-orange-100 text-orange-700"
-                        : "bg-zinc-100 text-zinc-600"
-                    }`}
+          )}
+
+          {filteredRoster.map((row) => (
+            <tr key={row.scoutId} className="hover:bg-gray-50 transition-colors">
+              <td className="px-4 py-3 font-medium text-gray-900">
+                {row.lastName}, {row.firstName}
+              </td>
+
+              <td className="px-4 py-3">{row.email}</td>
+
+              <td className="px-4 py-3">{row.councilName}</td>
+
+              <td className="px-4 py-3">
+                {row.membershipNumber ?? "—"}
+              </td>
+
+              <td className="px-4 py-3">{row.rank || "—"}</td>
+
+              <td className="px-4 py-3">
+                <span
+                  className={`text-xs font-bold px-2 py-1 rounded ${
+                    !row.isActive
+                      ? "bg-red-100 text-red-700"
+                      : row.status === "ACTIVE"
+                      ? "bg-green-100 text-green-700"
+                      : row.status === "PENDING"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : row.status === "SUSPENDED"
+                      ? "bg-orange-100 text-orange-700"
+                      : "bg-zinc-100 text-zinc-600"
+                  }`}
+                >
+                  {!row.isActive ? "Revoked" : row.status}
+                </span>
+              </td>
+
+              <td className="px-4 py-3">
+                {(() => {
+                  const validity = getValidityInfo(row.validUntil);
+                  return (
+                    <div className="flex flex-col gap-1">
+                      <span
+                        className={`text-xs font-bold px-2 py-1 rounded w-fit ${validity.className}`}
+                      >
+                        {validity.label}
+                      </span>
+                      <span className="text-xs text-zinc-400">
+                        {validity.dateText}
+                      </span>
+                    </div>
+                  );
+                })()}
+              </td>
+
+              <td className="px-4 py-3">
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => handleToggle(row.scoutId, row.isActive)}
+                    disabled={pendingId === row.scoutId || deletingId === row.scoutId}
+                    className={`text-xs font-bold px-3 py-1.5 rounded transition-all shadow-sm text-white disabled:opacity-50 ${row.isActive ? "bg-red-600 hover:bg-red-700" : "bg-green-700 hover:bg-green-600"}`}
                   >
-                    {!row.isActive ? "Revoked" : row.status}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex flex-col gap-2">
-                    <button
-                      onClick={() => handleToggle(row.scoutId, row.isActive)}
-                      disabled={pendingId === row.scoutId || deletingId === row.scoutId}
-                      className={`text-xs font-bold px-3 py-1.5 rounded transition-all shadow-sm text-white disabled:opacity-50 ${
-                        row.isActive ? "bg-red-600 hover:bg-red-700" : "bg-green-700 hover:bg-green-600"
-                      }`}
-                    >
-                      {pendingId === row.scoutId
-                        ? "Updating..."
-                        : row.isActive
-                        ? "Revoke Membership"
-                        : "Restore Membership"}
-                    </button>
+                    {pendingId === row.scoutId ? "Updating..." : row.isActive ? "Revoke Membership" : "Restore Membership"}
+                  </button>
                     <button
                       onClick={() => handleDelete(row.scoutId, `${row.firstName} ${row.lastName}`)}
                       disabled={deletingId === row.scoutId || pendingId === row.scoutId}

@@ -8,37 +8,37 @@ function mapApplicationRank(
   advancementRank: string | null | undefined,
   scoutingPosition?: string | null | undefined
 ): typeof scouts.$inferInsert.rank {
-  const target = (advancementRank || scoutingPosition || "").trim().toUpperCase();
-
+  // scoutingPosition is the reliable, controlled value (always one of
+  // kid_scout | kab_scout | boy_scout | senior_scout | rover, derived
+  // from the applicant's age bracket in SCOUT_POSITION_AGE_BRACKETS).
+  // advancementRank is free text (e.g. "Green Quadrant", "Tenderfoot")
+  // and often won't contain a section keyword at all, especially for
+  // Senior/Rover progression ranks — so it must NOT take priority over
+  // scoutingPosition, only serve as a fallback when scoutingPosition is
+  // missing entirely (e.g. legacy rows).
+  const target = (scoutingPosition || advancementRank || "").trim().toUpperCase();
   if (!target) return "BOY";
-
   if (target.includes("KID")) return "KID";
   if (target.includes("KAB")) return "KAB";
   if (target.includes("SENIOR")) return "SENIOR";
   if (target.includes("ROVER")) return "ROVER";
   if (target.includes("BOY")) return "BOY";
-
   switch (target) {
     case "KID":
     case "KID SCOUT":
       return "KID";
-
     case "KAB":
     case "KAB SCOUT":
       return "KAB";
-
     case "BOY":
     case "BOY SCOUT":
       return "BOY";
-
     case "SENIOR":
     case "SENIOR SCOUT":
       return "SENIOR";
-
     case "ROVER":
     case "ROVER SCOUT":
       return "ROVER";
-
     default:
       console.warn(
         `Unknown rank/position "${target}". Falling back to BOY.`
@@ -242,15 +242,20 @@ export async function getPaymentByRegistrationId(registrationIdOrAppId: string) 
 }
 
 // Updates the payment status after gateway confirmation without removing the record.
+// paymentMethod is optional and only written when provided (e.g. from the
+// GCash/GrabPay webhook's data.attributes.data.attributes.source?.type),
+// so existing rows/callers that don't pass it are unaffected.
 export async function updatePaymentStatus(
   paymentRecordId: string,
-  status: "paid" | "failed" | "awaiting_payment"
+  status: "paid" | "failed" | "awaiting_payment",
+  paymentMethod?: string
 ) {
   try {
     const [updated] = await db
       .update(payments)
       .set({
         paymentStatus: status,
+        ...(paymentMethod ? { paymentMethod } : {}),
         updatedAt: new Date(),
       } as any)
       .where(eq(payments.id, paymentRecordId))

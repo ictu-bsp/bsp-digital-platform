@@ -4,16 +4,30 @@ import { updatePaymentStatus } from "@/services/payment.service";
 import {
   getAllScoutsRoster,
   setScoutMembershipActive,
-  deleteScoutPermanently
-}from "@/services/scout.service";
-// Placeholder function for retrieving scouts belonging to a specific council ID
-export async function getScoutByCouncil(_councilId: string) {
-  return { success: false, error: "Not implemented yet." }; }
-// Updates the payment verification status for a scout's payment record
-export async function verifyScoutPayment(paymentRecordId: string, status: "paid" | "failed") {
+  deleteScoutPermanently,
+} from "@/services/scout.service";
+
+export async function getScoutsByCouncil(_councilId: string) {
+  return {
+    success: false,
+    error: "Not implemented yet.",
+  };
+}
+
+export async function verifyScoutPayment(
+  paymentRecordId: string,
+  status: "paid" | "failed",
+  paymentMethod?: string
+) {
   try {
-    await updatePaymentStatus(paymentRecordId, status);
-    return { success: true, message: `Payment marked as ${status}.`, data: null, error: null };
+    await updatePaymentStatus(paymentRecordId, status, paymentMethod);
+
+    return {
+      success: true,
+      message: `Payment marked as ${status}.`,
+      data: null,
+      error: null,
+    };
   } catch (error) {
     console.error(error);
     return { success: false, message: "", data: null, error: "Failed to verify scout payment." };

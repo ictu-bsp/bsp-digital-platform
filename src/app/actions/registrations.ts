@@ -11,7 +11,11 @@ export async function createRegistrationAction(input:
     const user = await getCurrentUser();
     if (!user) return { success: false, error: "You must be logged in to register." };
     let scout = await getScoutByUserId(user.id);
-    if (!scout) scout = await createScout({ userId: user.id, councilId: input.councilId });
+    // TODO: advancementRank ("scout" | "first_class" | "eagle") from the wizard
+    // does not yet map to scouts.rank enum ("KID"|"KAB"|"BOY"|"SENIOR"|"ROVER").
+    // Hardcoding "KID" as a temp placeholder to unblock the build — confirm real
+    // mapping with Reuben before this goes anywhere near production data.
+    if (!scout) scout = await createScout({ userId: user.id, councilId: input.councilId, rank: "KID" });
     const registration = await createRegistration({ scoutId: scout.id, ...input });
     return { success: true, data: registration };
   } catch (error) {

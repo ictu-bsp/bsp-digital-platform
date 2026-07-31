@@ -78,8 +78,8 @@ export async function seedUsers(
   const councilAdminUsers: typeof schema.users.$inferInsert[] = allCouncils
     .filter((council) => council.id !== manilaCouncil.id)
     .map((council) => {
-      const slug = disambiguateSlug(slugify(council.name), usedSlugs);
       const { orgName, orgSuffix } = splitCouncilName(council.name);
+      const slug = disambiguateSlug(slugify(orgName), usedSlugs);
 
       return {
         email: `${slug}.counciladmin@bsp.ph`,
@@ -102,8 +102,8 @@ export async function seedUsers(
   const regionalAdminUsers: typeof schema.users.$inferInsert[] = allRegions
     .filter((region) => region.name !== "National Office")
     .map((region) => {
-      const slug = disambiguateSlug(slugify(region.name), usedSlugs);
       const { orgName, orgSuffix } = splitRegionName(region.name);
+      const slug = disambiguateSlug(slugify(orgName), usedSlugs);
 
       return {
         email: `${slug}.regionaladmin@bsp.ph`,
