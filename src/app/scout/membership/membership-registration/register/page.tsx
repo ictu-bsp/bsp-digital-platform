@@ -195,7 +195,7 @@ export default function RegisterPage() {
   const cleanNull = (val?: string | null) => (!val || val.trim() === "" ? null : val.trim());
 
   // Form submission handler
-  const onNext = async (event: React.FormEvent) => {
+  const onNext = (event: React.FormEvent) => {
     event.preventDefault();
     setSubmitError("");
 
@@ -204,11 +204,16 @@ export default function RegisterPage() {
       return;
     }
 
-    setIsSubmitting(true);
+const tenureNum = Number(tenure);
+    if (!Number.isInteger(tenureNum) || tenureNum < 1 || tenureNum > 99) {
+      setSubmitError("Please enter a valid tenure between 1 and 99 years.");
+      return;
+    }
+
     const years = Number(membershipValidity);
     const resolvedSponsoringInstitution = isCommunityBased ? null : cleanNull(sponsoringInstitution);
 
-    const result = await submitApplicationAction({
+    const applicationPayload = {
       preferredCouncilId: cleanNull(councilId),
       councilId: cleanNull(councilId),
       scoutingPosition: cleanNull(scoutingPosition),
@@ -227,15 +232,14 @@ export default function RegisterPage() {
       emergencyContactNumber: cleanNull(emergencyContactNumber),
       remarks: null,
       status: "PENDING",
-    });
+    };
 
-    if (!result.success || !result.data) {
-      setSubmitError(result.error ?? "Failed to create registration.");
-      setIsSubmitting(false);
-      return;
-    }
+    // No DB write here anymore. The actual submitApplication() +
+    // createPaymentRecord() calls happen together once the scout reaches
+    // a /method/* page, via submitApplicationAndCreatePaymentAction.
+    localStorage.setItem("pendingApplicationPayload", JSON.stringify(applicationPayload));
+    localStorage.removeItem("registrationId"); // stale from any earlier attempt
 
-    localStorage.setItem("registrationId", result.data.id);
     localStorage.setItem("paymentAmount", String(amount));
     localStorage.setItem("paymentDescription", `Scout Membership Registration (${years} year${years > 1 ? "s" : ""})`);
     localStorage.setItem("paymentYears", String(years));
@@ -243,6 +247,7 @@ export default function RegisterPage() {
     localStorage.setItem("paymentCouncilId", councilId);
     localStorage.setItem("paymentIsCommunityBased", String(isCommunityBased));
     localStorage.setItem("paymentSponsoringInstitution", resolvedSponsoringInstitution ?? "community_based");
+
     router.push("/scout/membership/membership-registration/method");
   };
 
@@ -315,10 +320,17 @@ export default function RegisterPage() {
         {/* Tenure in Scouting */}
         <div className="relative">
           <input
+            type="text"
+            inputMode="numeric"
             placeholder="Tenure in Scouting (years)"
             className={`${fieldShellClass(tenure !== "")} pl-4 pr-10`}
             value={tenure}
-            onChange={(e) => setTenure(e.target.value)}
+            onChange={(e) => {
+              // Only allow digits, cap at 2 characters (max 99 years)
+              const digitsOnly = e.target.value.replace(/\D/g, "").slice(0, 2);
+              setTenure(digitsOnly);
+            }}
+            maxLength={2}
             required
           />
           {tenure !== "" && <CheckCircleIcon className="w-5 h-5 text-green-600 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />}

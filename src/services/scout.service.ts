@@ -68,13 +68,6 @@ export async function createScout(input: {
   return scout;
 }
 
-<<<<<<< HEAD
-// Roster view for admin: one row per scout, joined with their account
-// (name/email) and council name. Used by the Scout Roster admin page.
-// Validity is derived from the scout's most recent registration's
-// endDate (a scout may have multiple registrations from renewals),
-// fetched separately and merged in JS to avoid row-multiplying joins.
-=======
 // Updates an existing scout profile.
 export async function updateScoutProfile(
   scoutId: string,
@@ -142,10 +135,13 @@ export async function setScoutMembershipActive(
   return updated ?? null;
 }
 
-// Returns the roster used by the admin scout management page.
->>>>>>> 74efdc55341de5125842f4ff292ec287390d5716
+// Roster view for admin: one row per scout, joined with their account
+// (name/email) and council name. Used by the Scout Roster admin page.
+// Validity is derived from the scout's most recent registration's
+// endDate (a scout may have multiple registrations from renewals),
+// fetched separately and merged in JS to avoid row-multiplying joins.
 export async function getAllScoutsRoster() {
-  return db
+  const rows = await db
     .select({
       scoutId: scouts.id,
       userId: scouts.userId,
@@ -160,7 +156,6 @@ export async function getAllScoutsRoster() {
       joinedAt: scouts.joinedAt,
     })
     .from(scouts)
-<<<<<<< HEAD
     .innerJoin(users, eq(scouts.userId, users.id))
     .innerJoin(councils, eq(scouts.councilId, councils.id))
     .orderBy(users.lastName);
@@ -192,10 +187,6 @@ export async function getAllScoutsRoster() {
     ...row,
     validUntil: latestEndDateByScoutId.get(row.scoutId) ?? null,
   }));
-=======
-    .innerJoin(users, eq(users.id, scouts.userId))
-    .innerJoin(councils, eq(councils.id, scouts.councilId));
->>>>>>> 74efdc55341de5125842f4ff292ec287390d5716
 }
 
 // Permanently removes a scout together with every dependent record.

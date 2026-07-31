@@ -11,6 +11,7 @@ import {
 } from "@/services/application.service";
 import PendingStatusPoller from "./PendingStatusPoller";
 
+
 export default async function MembershipPage() {
   const user = await getCurrentUser();
 
@@ -37,7 +38,7 @@ export default async function MembershipPage() {
   const isOrphanedApproval =
     application?.status === "APPROVED" && !hasActiveScout;
 
-  const hasPendingApplication = application?.status === "PENDING";
+  const hasPendingApplication = application?.status === "PENDING";  
   const hasRejectedApplication = application?.status === "REJECTED";
   const hasCancelledApplication = application?.status === "CANCELLED";
 
@@ -248,8 +249,9 @@ export default async function MembershipPage() {
                         Application Submitted
                       </p>
                       <p className="mt-2 text-sm text-slate-600">
-                        Your application has been forwarded to your selected
-                        council and is currently awaiting review.
+                        Your application has been forwarded to your
+                        selected council and is currently awaiting
+                        review.
                       </p>
                     </div>
 

@@ -1,36 +1,11 @@
 // src/services/admin.service.ts
 import { db } from "@/db";
-import { count, eq, inArray, desc, asc } from "drizzle-orm";
+import { count, eq, inArray, desc, asc, and, isNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { hashPassword } from "@/lib/auth/hash";
-<<<<<<< HEAD
-import { assignMembershipIdToScout } from "./application.service";
-
-import {
-  scouts,
-  administrators,
-  councils,
-  users,
-  roles,
-  registrations,
-  payments,
-  regions,
-  activities,
-  activityRegistrations,
-  adminUsers,
-  scoutApplications,
-} from "@/db/schema";
-
-import type {
-  DashboardStats,
-  AdminScoutRecord,
-  AdministratorRecord,
-} from "@/types/admin";
-=======
 import { assignMembershipIdToScout } from "@/services/application.service";
 import { scouts, administrators, councils, users, roles, registrations, payments, regions, activities, activityRegistrations, adminUsers, scoutApplications } from "@/db/schema";
 import type { DashboardStats, AdminScoutRecord, AdministratorRecord } from "@/types/admin";
->>>>>>> 74efdc55341de5125842f4ff292ec287390d5716
 
 const REGISTRATION_FEE_PER_YEAR = 50;
 
@@ -53,21 +28,27 @@ export type PendingRegistrationRecord = {
   isExistingScout: boolean;
   paymentStatus: string | null;
   paymentIntentId: string | null;
-<<<<<<< HEAD
   paymentMethod: string | null;
-  extraDetails: {
-    scoutingPosition?: string;
-    advancementRank?: string;
-    tenure?: string;
-    region?: string;
-    sponsoringInstitution?: string;
-  };
-=======
   extraDetails: { scoutingPosition?: string; advancementRank?: string; scoutSection?: string; tenure?: string; region?: string; sponsoringInstitution?: string; };
->>>>>>> 74efdc55341de5125842f4ff292ec287390d5716
   createdAt: Date;
 };
 
+
+// Applications submitted by a scout that have NOT yet reached the payment
+// step (no scout_registrations row exists yet). Read-only view — does not
+// create or modify any records. Lets admins see applications that would
+// otherwise be invisible if the scout abandons the flow before paying.
+export type AwaitingPaymentRecord = {
+  id: string;
+  userId: string;
+  fullName: string;
+  email: string;
+  council: string;
+  scoutingPosition: string | null;
+  advancementRank: string | null;
+  requestedRegistrationYears: number;
+  createdAt: Date;
+};
 export type AdminUserRecord = {
   id: string;
   username: string;
@@ -123,63 +104,6 @@ export type UpdateAdminUserInput = Partial<Omit<CreateAdminUserInput, "password"
 
 export type CouncilOption = { id: string; name: string };
 
-<<<<<<< HEAD
-function mapAdminScoutRecord(scout: {
-  id: string;
-  userId: string;
-  scoutIdNumber: string | null;
-  firstName: string;
-  lastName: string;
-  email: string;
-  councilId: string;
-  council: string;
-  verificationStatus: string;
-  createdAt: Date;
-  updatedAt: Date;
-}): AdminScoutRecord {
-  return {
-    id: scout.id,
-    userId: scout.userId,
-    scoutIdNumber: scout.scoutIdNumber,
-    fullName: `${scout.lastName}, ${scout.firstName}`,
-    email: scout.email,
-    councilId: scout.councilId,
-    council: scout.council,
-    verificationStatus: scout.verificationStatus,
-    createdAt: scout.createdAt,
-    lastUpdated: scout.updatedAt,
-  };
-}
-
-function mapAdministratorRecord(admin: {
-  id: string;
-  userId: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  roleId: string;
-  role: string;
-  position: string | null;
-  office: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}): AdministratorRecord {
-  return {
-    id: admin.id,
-    userId: admin.userId,
-    fullName: `${admin.lastName}, ${admin.firstName}`,
-    email: admin.email,
-    roleId: admin.roleId,
-    role: admin.role,
-    position: admin.position,
-    office: admin.office,
-    createdAt: admin.createdAt,
-    lastUpdated: admin.updatedAt,
-  };
-}
-
-// Fetches high-level system dashboard counts
-=======
 // Maps raw database scout records into the standardized AdminScoutRecord object interface
 function mapAdminScoutRecord(scout: { id: string; userId: string; scoutIdNumber: string | null; firstName: string; lastName: string; email: string; councilId: string; council: string; rank: string; verificationStatus: string; createdAt: Date; updatedAt: Date; }): AdminScoutRecord {
   const { rank, ...scoutData } = scout;
@@ -192,7 +116,6 @@ function mapAdministratorRecord(admin: { id: string; userId: string; firstName: 
 }
 
 // Queries database counts to compile aggregate metrics for the primary admin dashboard
->>>>>>> 74efdc55341de5125842f4ff292ec287390d5716
 export async function getDashboardStats(): Promise<DashboardStats> {
   const [scoutCount] = await db.select({ value: count() }).from(scouts);
   const [adminCount] = await db.select({ value: count() }).from(administrators);
@@ -267,34 +190,9 @@ export async function getPendingRegistrations(): Promise<PendingRegistrationReco
     const current = latestApplicationByUserId.get(application.userId);
     if (!current || application.createdAt > current.createdAt) latestApplicationByUserId.set(application.userId, application);
   }
-<<<<<<< HEAD
-  const pendingRegIds = pendingRecords.map((r) => r.id);
-
-  const relatedPayments = pendingRegIds.length
-    ? await db
-        .select({
-          registrationId: payments.registrationId,
-          paymentStatus: payments.paymentStatus,
-          paymentIntentId: payments.paymentIntentId,
-          paymentMethod: payments.paymentMethod,
-          createdAt: payments.createdAt,
-        })
-        .from(payments)
-        .where(inArray(payments.registrationId, pendingRegIds))
-    : [];
-
-  // Pick one payment per registration: prefer the most recent "paid" one,
-  // falling back to the most recent payment of any status if none paid.
-  const bestPaymentByRegId = new Map<
-    string,
-    { paymentStatus: string; paymentIntentId: string | null; paymentMethod: string | null; createdAt: Date }
-  >();
-
-=======
   const pendingRegIds = pendingRecords.map((r) => r.id).filter(Boolean);
-  const relatedPayments = pendingRegIds.length ? await db.select({ id: payments.id, registrationId: payments.registrationId, paymentStatus: payments.paymentStatus, paymentIntentId: payments.paymentIntentId, createdAt: payments.createdAt }).from(payments).where(inArray(payments.registrationId, pendingRegIds)) : [];
-  const bestPaymentByRegId = new Map<string, { paymentStatus: string; paymentIntentId: string | null; createdAt: Date }>();
->>>>>>> 74efdc55341de5125842f4ff292ec287390d5716
+  const relatedPayments = pendingRegIds.length ? await db.select({ registrationId: payments.registrationId, paymentStatus: payments.paymentStatus, paymentIntentId: payments.paymentIntentId, paymentMethod: payments.paymentMethod, createdAt: payments.createdAt }).from(payments).where(inArray(payments.registrationId, pendingRegIds)) : [];
+  const bestPaymentByRegId = new Map<string, { paymentStatus: string; paymentIntentId: string | null; paymentMethod: string | null; createdAt: Date }>();
   for (const payment of relatedPayments) {
     if (!payment.registrationId) continue;
     const current = bestPaymentByRegId.get(payment.registrationId);
@@ -304,67 +202,87 @@ export async function getPendingRegistrations(): Promise<PendingRegistrationReco
     if (candidateIsPaid && !currentIsPaid) bestPaymentByRegId.set(payment.registrationId, payment);
     else if (candidateIsPaid === currentIsPaid && payment.createdAt > current.createdAt) bestPaymentByRegId.set(payment.registrationId, payment);
   }
-<<<<<<< HEAD
-
-  return pendingRecords
-    .filter((record) => {
-      // Only show registrations that have actually been paid for.
-      const bestPayment = bestPaymentByRegId.get(record.id);
-      return bestPayment?.paymentStatus === "paid";
-    })
-    .map((record) => {
-      const bestPayment = bestPaymentByRegId.get(record.id);
-      const application = latestApplicationByUserId.get(record.userId);
-
-      const extraDetails: PendingRegistrationRecord["extraDetails"] = {
-        scoutingPosition: application?.scoutingPosition ?? undefined,
-        advancementRank: application?.advancementRank ?? undefined,
-        tenure:
-          application?.tenure !== null && application?.tenure !== undefined
-            ? String(application.tenure)
-            : undefined,
-        region: application?.region ?? undefined,
-        sponsoringInstitution: application?.sponsoringInstitution ?? undefined,
-      };
-
-      return {
-        id: record.id,
-        scoutId: record.scoutId,
-        scoutIdNumber: record.scoutIdNumber,
-
-        fullName: `${record.lastName}, ${record.firstName}`,
-        email: record.email,
-        birthdate: record.birthdate,
-        sex: record.sex,
-
-        address: application?.address ?? null,
-        telephoneNumber: application?.telephoneNumber ?? null,
-
-        council: record.council,
-        registrationYears: record.registrationYears,
-        amount: record.registrationYears * REGISTRATION_FEE_PER_YEAR,
-        startDate: record.startDate,
-        endDate: record.endDate,
-        status: record.status,
-        isExistingScout: activeScoutIds.has(record.scoutId),
-
-        paymentStatus: bestPayment?.paymentStatus ?? null,
-        paymentIntentId: bestPayment?.paymentIntentId ?? null,
-        paymentMethod: bestPayment?.paymentMethod ?? null,
-
-        extraDetails,
-
-        createdAt: record.createdAt,
-      };
-    });
-=======
+  // NOTE: intentionally NOT filtered to paid-only here — unpaid pending
+  // registrations must still surface so admins can use the cash-payment
+  // path (approveRegistration with confirmCashPayment: true), which
+  // approves and confirms payment in the same transaction.
   return pendingRecords.map((record) => {
     const bestPayment = bestPaymentByRegId.get(record.id) ?? null;
     const application = latestApplicationByUserId.get(record.userId);
     const extraDetails: PendingRegistrationRecord["extraDetails"] = { scoutingPosition: application?.scoutingPosition ?? undefined, advancementRank: application?.advancementRank ?? undefined, scoutSection: application?.scoutSection || application?.scoutingPosition || undefined, tenure: application?.tenure !== null && application?.tenure !== undefined ? String(application.tenure) : undefined, region: application?.region ?? undefined, sponsoringInstitution: application?.sponsoringInstitution ?? undefined };
-    return { id: record.id, scoutId: record.scoutId, scoutIdNumber: record.scoutIdNumber, fullName: `${record.lastName}, ${record.firstName}`, email: record.email, birthdate: record.birthdate, sex: record.sex, address: application?.address ?? null, telephoneNumber: application?.telephoneNumber ?? null, council: record.council, registrationYears: record.registrationYears, amount: record.registrationYears * REGISTRATION_FEE_PER_YEAR, startDate: record.startDate, endDate: record.endDate, status: record.status, isExistingScout: activeScoutIds.has(record.scoutId), paymentStatus: bestPayment?.paymentStatus ?? null, paymentIntentId: bestPayment?.paymentIntentId ?? null, extraDetails, createdAt: record.createdAt };
+    return { id: record.id, scoutId: record.scoutId, scoutIdNumber: record.scoutIdNumber, fullName: `${record.lastName}, ${record.firstName}`, email: record.email, birthdate: record.birthdate, sex: record.sex, address: application?.address ?? null, telephoneNumber: application?.telephoneNumber ?? null, council: record.council, registrationYears: record.registrationYears, amount: record.registrationYears * REGISTRATION_FEE_PER_YEAR, startDate: record.startDate, endDate: record.endDate, status: record.status, isExistingScout: activeScoutIds.has(record.scoutId), paymentStatus: bestPayment?.paymentStatus ?? null, paymentIntentId: bestPayment?.paymentIntentId ?? null, paymentMethod: bestPayment?.paymentMethod ?? null, extraDetails, createdAt: record.createdAt };
   });
->>>>>>> 74efdc55341de5125842f4ff292ec287390d5716
+}
+
+
+
+// Cancels an application that was submitted but never reached the payment
+// step, allowing the scout to submit a fresh application. Refuses to run
+// if a scout profile already exists for this user (meaning payment was
+// already started) — this is NOT a general-purpose cancellation.
+export async function cancelAbandonedApplication(applicationId: string) {
+  if (!applicationId) throw new Error("Missing applicationId.");
+  const [application] = await db
+    .select({ id: scoutApplications.id, userId: scoutApplications.userId })
+    .from(scoutApplications)
+    .where(eq(scoutApplications.id, applicationId));
+  if (!application) throw new Error("Application not found.");
+
+  const [scout] = await db
+    .select({ id: scouts.id })
+    .from(scouts)
+    .where(eq(scouts.userId, application.userId))
+    .limit(1);
+  if (scout) throw new Error("This application has already reached the payment step and cannot be cancelled this way.");
+
+  const [updated] = await db
+    .update(scoutApplications)
+    .set({ status: "CANCELLED", updatedAt: new Date() })
+    .where(eq(scoutApplications.id, applicationId))
+    .returning();
+  return updated;
+}
+
+
+
+// Fetches scout applications that have been submitted but have not reached
+// the payment step (no linked scout_registrations row exists yet).
+// Read-only — no inserts/updates. Surfaces applications that would
+// otherwise be invisible to admin if the scout abandons the wizard before
+// initiating payment.
+export async function getApplicationsAwaitingPayment(): Promise<AwaitingPaymentRecord[]> {
+  const records = await db
+    .select({
+      id: scoutApplications.id,
+      userId: scoutApplications.userId,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      email: users.email,
+      council: councils.name,
+      scoutingPosition: scoutApplications.scoutingPosition,
+      advancementRank: scoutApplications.advancementRank,
+      requestedRegistrationYears: scoutApplications.requestedRegistrationYears,
+      createdAt: scoutApplications.createdAt,
+    })
+    .from(scoutApplications)
+    .innerJoin(users, eq(scoutApplications.userId, users.id))
+    .leftJoin(councils, eq(scoutApplications.preferredCouncilId, councils.id))
+    .leftJoin(scouts, eq(scoutApplications.userId, scouts.userId))
+    .leftJoin(registrations, eq(registrations.scoutId, scouts.id))
+    .where(and(eq(scoutApplications.status, "PENDING"), isNull(registrations.id)))
+    .orderBy(desc(scoutApplications.createdAt));
+
+  return records.map((r) => ({
+    id: r.id,
+    userId: r.userId,
+    fullName: `${r.lastName}, ${r.firstName}`,
+    email: r.email,
+    council: r.council ?? "—",
+    scoutingPosition: r.scoutingPosition,
+    advancementRank: r.advancementRank,
+    requestedRegistrationYears: r.requestedRegistrationYears,
+    createdAt: r.createdAt,
+  }));
 }
 
 // Marks a pending registration as approved for membership moving it to the next workflow stage
@@ -389,29 +307,9 @@ export async function getRegistrationsAwaitingFinance(): Promise<PendingRegistra
     const current = latestApplicationByUserId.get(application.userId);
     if (!current || application.createdAt > current.createdAt) latestApplicationByUserId.set(application.userId, application);
   }
-<<<<<<< HEAD
-  const regIds = records.map((r) => r.id);
-
-  const relatedPayments = regIds.length
-    ? await db
-        .select({
-          registrationId: payments.registrationId,
-          paymentStatus: payments.paymentStatus,
-          paymentIntentId: payments.paymentIntentId,
-          paymentMethod: payments.paymentMethod,
-          createdAt: payments.createdAt,
-        })
-        .from(payments)
-        .where(inArray(payments.registrationId, regIds))
-    : [];
-
- const bestPaymentByRegId = new Map<string, { paymentStatus: string; paymentIntentId: string | null; paymentMethod: string | null; createdAt: Date }>();
-
-=======
   const regIds = records.map((r) => r.id).filter(Boolean);
-  const relatedPayments = regIds.length ? await db.select({ registrationId: payments.registrationId, paymentStatus: payments.paymentStatus, paymentIntentId: payments.paymentIntentId, createdAt: payments.createdAt }).from(payments).where(inArray(payments.registrationId, regIds)) : [];
-  const bestPaymentByRegId = new Map<string, { paymentStatus: string; paymentIntentId: string | null; createdAt: Date }>();
->>>>>>> 74efdc55341de5125842f4ff292ec287390d5716
+  const relatedPayments = regIds.length ? await db.select({ registrationId: payments.registrationId, paymentStatus: payments.paymentStatus, paymentIntentId: payments.paymentIntentId, paymentMethod: payments.paymentMethod, createdAt: payments.createdAt }).from(payments).where(inArray(payments.registrationId, regIds)) : [];
+  const bestPaymentByRegId = new Map<string, { paymentStatus: string; paymentIntentId: string | null; paymentMethod: string | null; createdAt: Date }>();
   for (const payment of relatedPayments) {
     if (!payment.registrationId) continue;
     const current = bestPaymentByRegId.get(payment.registrationId);
@@ -424,53 +322,8 @@ export async function getRegistrationsAwaitingFinance(): Promise<PendingRegistra
   return records.map((record) => {
     const bestPayment = bestPaymentByRegId.get(record.id);
     const application = latestApplicationByUserId.get(record.userId);
-<<<<<<< HEAD
-
-    const extraDetails: PendingRegistrationRecord["extraDetails"] = {
-      scoutingPosition: application?.scoutingPosition,
-      advancementRank: application?.advancementRank,
-      tenure:
-        application?.tenure !== undefined
-          ? String(application.tenure)
-          : undefined,
-      region: application?.region,
-      sponsoringInstitution: application?.sponsoringInstitution ?? undefined,
-    };
-
-    return {
-      id: record.id,
-      scoutId: record.scoutId,
-      scoutIdNumber: record.scoutIdNumber,
-
-      fullName: `${record.lastName}, ${record.firstName}`,
-      email: record.email,
-      birthdate: record.birthdate,
-      sex: record.sex,
-
-      address: application?.address ?? null,
-      telephoneNumber: application?.telephoneNumber ?? null,
-
-      council: record.council,
-      registrationYears: record.registrationYears,
-      amount: record.registrationYears * REGISTRATION_FEE_PER_YEAR,
-      startDate: record.startDate,
-      endDate: record.endDate,
-      status: record.status,
-
-      isExistingScout: activeScoutIds.has(record.scoutId),
-
-      paymentStatus: bestPayment?.paymentStatus ?? null,
-      paymentIntentId: bestPayment?.paymentIntentId ?? null,
-      paymentMethod: bestPayment?.paymentMethod ?? null,
-
-      extraDetails,
-
-      createdAt: record.createdAt,
-    };
-=======
     const extraDetails: PendingRegistrationRecord["extraDetails"] = { scoutingPosition: application?.scoutingPosition ?? undefined, advancementRank: application?.advancementRank ?? undefined, scoutSection: application?.scoutSection || application?.scoutingPosition || undefined, tenure: application?.tenure !== undefined ? String(application.tenure) : undefined, region: application?.region ?? undefined, sponsoringInstitution: application?.sponsoringInstitution ?? undefined };
-    return { id: record.id, scoutId: record.scoutId, scoutIdNumber: record.scoutIdNumber, fullName: `${record.lastName}, ${record.firstName}`, email: record.email, birthdate: record.birthdate, sex: record.sex, address: application?.address ?? null, telephoneNumber: application?.telephoneNumber ?? null, council: record.council, registrationYears: record.registrationYears, amount: record.registrationYears * REGISTRATION_FEE_PER_YEAR, startDate: record.startDate, endDate: record.endDate, status: record.status, isExistingScout: activeScoutIds.has(record.scoutId), paymentStatus: bestPayment?.paymentStatus ?? null, paymentIntentId: bestPayment?.paymentIntentId ?? null, extraDetails, createdAt: record.createdAt };
->>>>>>> 74efdc55341de5125842f4ff292ec287390d5716
+    return { id: record.id, scoutId: record.scoutId, scoutIdNumber: record.scoutIdNumber, fullName: `${record.lastName}, ${record.firstName}`, email: record.email, birthdate: record.birthdate, sex: record.sex, address: application?.address ?? null, telephoneNumber: application?.telephoneNumber ?? null, council: record.council, registrationYears: record.registrationYears, amount: record.registrationYears * REGISTRATION_FEE_PER_YEAR, startDate: record.startDate, endDate: record.endDate, status: record.status, isExistingScout: activeScoutIds.has(record.scoutId), paymentStatus: bestPayment?.paymentStatus ?? null, paymentIntentId: bestPayment?.paymentIntentId ?? null, paymentMethod: bestPayment?.paymentMethod ?? null, extraDetails, createdAt: record.createdAt };
   });
 }
 

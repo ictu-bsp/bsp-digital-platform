@@ -6,7 +6,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import BackButton from "@/components-general/ui/BackButton";
 import EWallet, { WalletType } from "../../components/EWallet";
-import { createPaymentRecordAction } from "@/app/actions/payment";
+import { submitApplicationAndCreatePaymentAction } from "@/app/actions/payment";
+import { SubmitApplicationInput } from "@/services/application.service";
 
 const WALLET_TITLES: Record<WalletType, string> = {
   gcash: "GCash",
@@ -20,6 +21,7 @@ export default function EWalletMethodPage() {
   const [amount, setAmount] = useState<number | null>(null);
   const [description, setDescription] = useState("");
   const [walletType, setWalletType] = useState<WalletType | null>(null);
+  const [registrationId, setRegistrationId] = useState<string | null>(null);
   const [paymentRecordId, setPaymentRecordId] = useState<string | null>(null);
   const [paymentError, setPaymentError] = useState("");
 
@@ -28,9 +30,9 @@ export default function EWalletMethodPage() {
       const storedAmount = localStorage.getItem("paymentAmount");
       const storedDescription = localStorage.getItem("paymentDescription");
       const storedWalletType = localStorage.getItem("paymentWalletType") as WalletType | null;
-      const registrationId = localStorage.getItem("registrationId");
+      const storedPayload = localStorage.getItem("pendingApplicationPayload");
 
-      if (!storedAmount || !registrationId) {
+      if (!storedAmount || !storedPayload) {
         router.replace("/scout/membership/membership-registration/register");
         return;
       }
@@ -47,15 +49,20 @@ export default function EWalletMethodPage() {
       setDescription(storedDescription ?? "Scout Membership Registration");
       setWalletType(storedWalletType);
 
-      const result = await createPaymentRecordAction(registrationId);
+      const payload: SubmitApplicationInput = JSON.parse(storedPayload);
+      const result = await submitApplicationAndCreatePaymentAction(payload);
 
       if (!result.success || !result.data) {
         setPaymentError(result.error ?? "Failed to set up payment.");
         return;
       }
 
-      localStorage.setItem("paymentRecordId", result.data.id);
-      setPaymentRecordId(result.data.id);
+      localStorage.setItem("registrationId", result.data.applicationId);
+      localStorage.setItem("paymentRecordId", result.data.paymentRecord.id);
+      localStorage.removeItem("pendingApplicationPayload");
+
+      setRegistrationId(result.data.applicationId);
+      setPaymentRecordId(result.data.paymentRecord.id);
     };
 
     setup();
@@ -69,7 +76,7 @@ export default function EWalletMethodPage() {
     );
   }
 
-  if (amount === null || walletType === null || paymentRecordId === null) {
+  if (amount === null || walletType === null || registrationId === null || paymentRecordId === null) {
     return (
       <div className="flex flex-col items-center justify-center py-10 px-6 bg-zinc-50 min-h-screen">
         <p className="text-zinc-500 text-lg">Loading payment details...</p>
@@ -90,7 +97,7 @@ export default function EWalletMethodPage() {
           amount={amount}
           description={description}
           walletType={walletType}
-          registrationId={localStorage.getItem("registrationId")!}
+          registrationId={registrationId}
           paymentRecordId={paymentRecordId}
         />
       </div>

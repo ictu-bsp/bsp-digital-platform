@@ -65,3 +65,4 @@ export async function getLatestApplicationAction() {
     return null;
   }
 }
+
