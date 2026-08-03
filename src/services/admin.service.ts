@@ -6,6 +6,8 @@ import { hashPassword } from "@/lib/auth/hash";
 import { assignMembershipIdToScout } from "@/services/application.service";
 import { scouts, administrators, councils, users, roles, registrations, payments, regions, activities, activityRegistrations, adminUsers, scoutApplications } from "@/db/schema";
 import type { DashboardStats, AdminScoutRecord, AdministratorRecord } from "@/types/admin";
+import type { ScoutSection } from "@/lib/utils/scout-section";
+import { type ScoutAdvancementRank, ADVANCEMENT_RANK_LABELS } from "@/lib/utils/scout-advancement-rank";
 
 const REGISTRATION_FEE_PER_YEAR = 50;
 
@@ -105,8 +107,8 @@ export type UpdateAdminUserInput = Partial<Omit<CreateAdminUserInput, "password"
 export type CouncilOption = { id: string; name: string };
 
 // Maps raw database scout records into the standardized AdminScoutRecord object interface
-function mapAdminScoutRecord(scout: { id: string; userId: string; scoutIdNumber: string | null; firstName: string; lastName: string; email: string; councilId: string; council: string; rank: string; verificationStatus: string; createdAt: Date; updatedAt: Date; }): AdminScoutRecord {
-  const { rank, ...scoutData } = scout;
+function mapAdminScoutRecord(scout: { id: string; userId: string; scoutIdNumber: string | null; firstName: string; lastName: string; email: string; councilId: string; council: string; section: string; verificationStatus: string; createdAt: Date; updatedAt: Date; }): AdminScoutRecord {
+  const { section, ...scoutData } = scout;
   return { id: scoutData.id, userId: scoutData.userId, scoutIdNumber: scoutData.scoutIdNumber, fullName: `${scoutData.lastName}, ${scoutData.firstName}`, email: scoutData.email, councilId: scoutData.councilId, council: scoutData.council, verificationStatus: scoutData.verificationStatus, createdAt: scoutData.createdAt, lastUpdated: scoutData.updatedAt };
 }
 
@@ -127,21 +129,21 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
 // Fetches full details for all registered scout accounts joining user and council data
 export async function getAllScouts(): Promise<AdminScoutRecord[]> {
-  const records = await db.select({ id: scouts.id, userId: scouts.userId, scoutIdNumber: scouts.membershipNumber, firstName: users.firstName, lastName: users.lastName, email: users.email, councilId: councils.id, council: councils.name, rank: scouts.rank, verificationStatus: scouts.verificationStatus, createdAt: scouts.createdAt, updatedAt: scouts.updatedAt }).from(scouts).innerJoin(users, eq(scouts.userId, users.id)).innerJoin(councils, eq(scouts.councilId, councils.id));
+  const records = await db.select({ id: scouts.id, userId: scouts.userId, scoutIdNumber: scouts.membershipNumber, firstName: users.firstName, lastName: users.lastName, email: users.email, councilId: councils.id, council: councils.name, section: scouts.section, verificationStatus: scouts.verificationStatus, createdAt: scouts.createdAt, updatedAt: scouts.updatedAt }).from(scouts).innerJoin(users, eq(scouts.userId, users.id)).innerJoin(councils, eq(scouts.councilId, councils.id));
   return records.map(mapAdminScoutRecord);
 }
 
 // Retrieves all registered scouts filtered by a targeted local council ID
 export async function getCouncilScouts(councilId: string): Promise<AdminScoutRecord[]> {
   if (!councilId) return [];
-  const records = await db.select({ id: scouts.id, userId: scouts.userId, scoutIdNumber: scouts.membershipNumber, firstName: users.firstName, lastName: users.lastName, email: users.email, councilId: councils.id, council: councils.name, rank: scouts.rank, verificationStatus: scouts.verificationStatus, createdAt: scouts.createdAt, updatedAt: scouts.updatedAt }).from(scouts).innerJoin(users, eq(scouts.userId, users.id)).innerJoin(councils, eq(scouts.councilId, councils.id)).where(eq(scouts.councilId, councilId));
+  const records = await db.select({ id: scouts.id, userId: scouts.userId, scoutIdNumber: scouts.membershipNumber, firstName: users.firstName, lastName: users.lastName, email: users.email, councilId: councils.id, council: councils.name, section: scouts.section, verificationStatus: scouts.verificationStatus, createdAt: scouts.createdAt, updatedAt: scouts.updatedAt }).from(scouts).innerJoin(users, eq(scouts.userId, users.id)).innerJoin(councils, eq(scouts.councilId, councils.id)).where(eq(scouts.councilId, councilId));
   return records.map(mapAdminScoutRecord);
 }
 
 // Looks up a specific scout by unique identifier and maps the returned record
 export async function getScoutById(scoutId: string): Promise<AdminScoutRecord | null> {
   if (!scoutId) return null;
-  const [record] = await db.select({ id: scouts.id, userId: scouts.userId, scoutIdNumber: scouts.membershipNumber, firstName: users.firstName, lastName: users.lastName, email: users.email, councilId: councils.id, council: councils.name, rank: scouts.rank, verificationStatus: scouts.verificationStatus, createdAt: scouts.createdAt, updatedAt: scouts.updatedAt }).from(scouts).innerJoin(users, eq(scouts.userId, users.id)).innerJoin(councils, eq(scouts.councilId, councils.id)).where(eq(scouts.id, scoutId));
+  const [record] = await db.select({ id: scouts.id, userId: scouts.userId, scoutIdNumber: scouts.membershipNumber, firstName: users.firstName, lastName: users.lastName, email: users.email, councilId: councils.id, council: councils.name, section: scouts.section, verificationStatus: scouts.verificationStatus, createdAt: scouts.createdAt, updatedAt: scouts.updatedAt }).from(scouts).innerJoin(users, eq(scouts.userId, users.id)).innerJoin(councils, eq(scouts.councilId, councils.id)).where(eq(scouts.id, scoutId));
   if (!record) return null;
   return mapAdminScoutRecord(record);
 }
@@ -366,8 +368,8 @@ export async function getCouncilRegionBreakdown() {
 }
 
 // Calculates scout count metrics aggregated across different advancement ranks
-export async function getScoutRankBreakdown() {
-  return db.select({ rank: scouts.rank, value: count() }).from(scouts).groupBy(scouts.rank);
+export async function getScoutSectionBreakdown() {
+  return db.select({ section: scouts.section, value: count() }).from(scouts).groupBy(scouts.section);
 }
 
 // Generates demographic distribution metrics based on user gender classification
@@ -460,8 +462,8 @@ export async function updateRegistrationPaymentStatus(registrationId: string, st
   }
 }
 
-// Safely map raw application section or rank values to valid database scout rank/type enums
-function mapToValidScoutRank(sectionOrRank?: string | null): string {
+// Safely map raw application section values to a valid scout_section enum value
+function mapToValidScoutSection(sectionOrRank?: string | null): ScoutSection {
   if (!sectionOrRank) return "BOY";
   const upper = sectionOrRank.toUpperCase().trim();
 
@@ -470,10 +472,23 @@ function mapToValidScoutRank(sectionOrRank?: string | null): string {
   if (upper.includes("KAB") || upper.includes("KAWAN")) return "KAB";
   if (upper.includes("SENIOR") || upper.includes("OUTFIT")) return "SENIOR";
   if (upper.includes("ROVER") || upper.includes("CIRCLE")) return "ROVER";
-  if (upper.includes("ADULT") || upper.includes("LEADER") || upper.includes("OFFICER")) return "ADULT";
   if (upper.includes("BOY") || upper.includes("TROOP")) return "BOY";
 
   return "BOY";
+}
+
+// Best-effort resolve a raw advancement-rank string (now already a proper
+// scout_advancement_rank enum value coming from scoutApplications, but
+// this stays defensive in case of stale/legacy data) into a valid enum
+// value, or null if nothing matches.
+function resolveValidAdvancementRank(
+  raw?: string | null
+): ScoutAdvancementRank | null {
+  if (!raw) return null;
+  const upper = raw.toUpperCase().trim().replace(/\s+/g, "_");
+  return (ADVANCEMENT_RANK_LABELS as Record<string, string>)[upper]
+    ? (upper as ScoutAdvancementRank)
+    : null;
 }
 
 // Verifies, generates membership ID if missing, and promotes scout to active status in database
@@ -489,7 +504,8 @@ export async function verifyAndActivateRegistration(registrationId: string) {
   const membershipNumber = scout.membershipNumber ?? (await assignMembershipIdToScout(scout.id, scout.councilId));
   const [latestApplication] = await db.select({ id: scoutApplications.id, advancementRank: scoutApplications.advancementRank, scoutSection: scoutApplications.scoutSection, scoutingPosition: scoutApplications.scoutingPosition }).from(scoutApplications).where(eq(scoutApplications.userId, scout.userId)).orderBy(desc(scoutApplications.createdAt)).limit(1);
   const rawSection = latestApplication?.scoutSection || latestApplication?.scoutingPosition || latestApplication?.advancementRank;
-  const validRank = mapToValidScoutRank(rawSection);
-  await db.update(scouts).set({ status: "ACTIVE", verificationStatus: "active", membershipNumber, rank: validRank as any, approvedAt: new Date(), updatedAt: new Date() }).where(eq(scouts.id, scout.id));
+  const validSection = mapToValidScoutSection(rawSection);
+  const validAdvancementRank = resolveValidAdvancementRank(latestApplication?.advancementRank);
+  await db.update(scouts).set({ status: "ACTIVE", verificationStatus: "active", membershipNumber, section: validSection, advancementRank: validAdvancementRank, approvedAt: new Date(), updatedAt: new Date() }).where(eq(scouts.id, scout.id));
   if (latestApplication) await db.update(scoutApplications).set({ status: "APPROVED", reviewedAt: new Date(), updatedAt: new Date() }).where(eq(scoutApplications.id, latestApplication.id));
 }

@@ -12,7 +12,7 @@ export default async function ProfilePage() {
     redirect("/login");
   }
 
-  const membershipData = await getMembershipCardData(user.id);
+  const membershipData = await getMembershipCardData();
 
   return (
     <ProfileClient

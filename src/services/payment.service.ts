@@ -3,48 +3,25 @@
 import { db } from "@/db";
 import { eq, or } from "drizzle-orm";
 import { payments, registrations, scoutApplications, scouts } from "@/db/schema";
+import { resolveScoutSection, type ScoutSection } from "@/lib/utils/scout-section";
 
-function mapApplicationRank(
-  advancementRank: string | null | undefined,
-  scoutingPosition?: string | null | undefined
-): typeof scouts.$inferInsert.rank {
+function resolveApplicationSection(
+  scoutingPosition?: string | null | undefined,
+  advancementRank?: string | null | undefined
+): ScoutSection {
   // scoutingPosition is the reliable, controlled value (always one of
   // kid_scout | kab_scout | boy_scout | senior_scout | rover, derived
-  // from the applicant's age bracket in SCOUT_POSITION_AGE_BRACKETS).
-  // advancementRank is free text (e.g. "Green Quadrant", "Tenderfoot")
-  // and often won't contain a section keyword at all, especially for
-  // Senior/Rover progression ranks — so it must NOT take priority over
-  // scoutingPosition, only serve as a fallback when scoutingPosition is
-  // missing entirely (e.g. legacy rows).
-  const target = (scoutingPosition || advancementRank || "").trim().toUpperCase();
-  if (!target) return "BOY";
-  if (target.includes("KID")) return "KID";
-  if (target.includes("KAB")) return "KAB";
-  if (target.includes("SENIOR")) return "SENIOR";
-  if (target.includes("ROVER")) return "ROVER";
-  if (target.includes("BOY")) return "BOY";
-  switch (target) {
-    case "KID":
-    case "KID SCOUT":
-      return "KID";
-    case "KAB":
-    case "KAB SCOUT":
-      return "KAB";
-    case "BOY":
-    case "BOY SCOUT":
-      return "BOY";
-    case "SENIOR":
-    case "SENIOR SCOUT":
-      return "SENIOR";
-    case "ROVER":
-    case "ROVER SCOUT":
-      return "ROVER";
-    default:
-      console.warn(
-        `Unknown rank/position "${target}". Falling back to BOY.`
-      );
-      return "BOY";
-  }
+  // from the applicant's age bracket in SCOUT_SECTION_AGE_BRACKETS).
+  // advancementRank is a real advancement-rank enum value (e.g.
+  // "TENDERFOOT_SCOUT") and usually won't contain a section keyword at
+  // all, especially for Senior/Rover progression ranks -- so it must NOT
+  // take priority over scoutingPosition, only serve as a fallback when
+  // scoutingPosition is missing entirely (e.g. legacy rows).
+  return (
+    resolveScoutSection(scoutingPosition) ??
+    resolveScoutSection(advancementRank) ??
+    "BOY"
+  );
 }
 
 // Creates (or reuses) the payment record tied to a scout registration & application.
@@ -70,10 +47,11 @@ export async function createPaymentRecord(idOrRegistrationId: string) {
         .where(eq(scouts.userId, application.userId))
         .limit(1);
 
-      const mappedRank = mapApplicationRank(
-        application.advancementRank,
-        application.scoutingPosition
+      const resolvedSection = resolveApplicationSection(
+        application.scoutingPosition,
+        application.advancementRank
       );
+      const resolvedAdvancementRank = application.advancementRank ?? null;
 
       // Create or sync the scout profile using the application's actual information.
       if (!scout) {
@@ -83,18 +61,23 @@ export async function createPaymentRecord(idOrRegistrationId: string) {
             userId: application.userId,
             councilId: application.preferredCouncilId,
 
-            // Preserve the applicant's selected rank instead of using default "KID".
-            rank: mappedRank,
+            // Preserve the applicant's selected section instead of using default "KID".
+            section: resolvedSection,
+            advancementRank: resolvedAdvancementRank,
 
             // Newly created scouts remain pending until approval.
             status: "PENDING",
           } as typeof scouts.$inferInsert)
           .returning();
-      } else if ((scout as any).rank !== mappedRank) {
+      } else if (
+        (scout as any).section !== resolvedSection ||
+        (scout as any).advancementRank !== resolvedAdvancementRank
+      ) {
         const [updatedScout] = await db
           .update(scouts)
           .set({
-            rank: mappedRank,
+            section: resolvedSection,
+            advancementRank: resolvedAdvancementRank,
             councilId: application.preferredCouncilId || scout.councilId,
             updatedAt: new Date(),
           } as any)
@@ -147,8 +130,8 @@ export async function createPaymentRecord(idOrRegistrationId: string) {
       if (targetRegistrationId) {
         conditions.push(eq(payments.registrationId, targetRegistrationId));
       }
-      if (targetApplicationId && (payments as any).applicationId) {
-        conditions.push(eq((payments as any).applicationId, targetApplicationId));
+      if (targetApplicationId) {
+        conditions.push(eq(payments.applicationId, targetApplicationId));
       }
 
       if (conditions.length > 0) {
@@ -163,31 +146,24 @@ export async function createPaymentRecord(idOrRegistrationId: string) {
 
     if (existingPayment) {
       // Ensure applicationId is preserved on existing payment if missing
-      if (
-        targetApplicationId &&
-        (payments as any).applicationId &&
-        !(existingPayment as any).applicationId
-      ) {
+      if (targetApplicationId && !existingPayment.applicationId) {
         await db
           .update(payments)
           .set({
             applicationId: targetApplicationId,
             updatedAt: new Date(),
-          } as any)
+          })
           .where(eq(payments.id, existingPayment.id));
       }
       return existingPayment;
     }
 
     // Create a new payment record.
-    const paymentPayload: any = {
+    const paymentPayload: typeof payments.$inferInsert = {
       registrationId: targetRegistrationId,
+      applicationId: targetApplicationId,
       paymentStatus: "awaiting_payment",
     };
-
-    if (targetApplicationId && (payments as any).applicationId) {
-      paymentPayload.applicationId = targetApplicationId;
-    }
 
     const [record] = await db
       .insert(payments)
@@ -223,15 +199,15 @@ export async function setPaymentProviderId(
 // Retrieves the payment associated with a registration or application.
 export async function getPaymentByRegistrationId(registrationIdOrAppId: string) {
   try {
-    const conditions = [eq(payments.registrationId, registrationIdOrAppId)];
-    if ((payments as any).applicationId) {
-      conditions.push(eq((payments as any).applicationId, registrationIdOrAppId));
-    }
-
     const [record] = await db
       .select()
       .from(payments)
-      .where(or(...conditions))
+      .where(
+        or(
+          eq(payments.registrationId, registrationIdOrAppId),
+          eq(payments.applicationId, registrationIdOrAppId)
+        )
+      )
       .limit(1);
 
     return record ?? null;

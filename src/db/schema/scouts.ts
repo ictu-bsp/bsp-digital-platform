@@ -13,7 +13,8 @@ import { councils } from "./councils";
 
 import {
   verificationStatusEnum,
-  scoutRankEnum,
+  scoutSectionEnum,
+  scoutAdvancementRankEnum,
   scoutStatusEnum,
 } from "./enums";
 
@@ -33,9 +34,15 @@ export const scouts = pgTable("scouts", {
 
   membershipNumber: text("membership_number"),
 
-  rank: scoutRankEnum("rank")
+  // Which scout section this scout belongs to (Kid/Kab/Boy/Senior/Rover).
+  // Previously named "rank" -- renamed since it's actually the section.
+  section: scoutSectionEnum("section")
     .default("KID")
     .notNull(),
+
+  // The scout's current advancement rank/badge within their section (e.g.
+  // "TENDERFOOT_SCOUT" for a Boy Scout). Null until they've earned one.
+  advancementRank: scoutAdvancementRankEnum("advancement_rank"),
 
   status: scoutStatusEnum("status")
     .default("PENDING")

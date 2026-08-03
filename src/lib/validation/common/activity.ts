@@ -22,7 +22,7 @@ export const ActivitySchema = z.object({
 
   maxParticipants: z.number().optional(),
 
-  minimumRank: z
+  minimumSection: z
     .enum(["KID", "KAB", "BOY", "SENIOR", "ROVER"])
     .optional(),
 

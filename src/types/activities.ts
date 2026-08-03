@@ -5,7 +5,7 @@ export type ActivityCategory =
   | "REGIONAL"
   | "NATIONAL";
 //Re-export or definition of scout rank types used within activity eligibility context.
-export type ScoutRank = "KID" | "KAB" | "BOY" | "SENIOR" | "ROVER";
+export type ScoutSection = "KID" | "KAB" | "BOY" | "SENIOR" | "ROVER";
 //Core entity model for a Scouting Activity or Event.
 export interface Activity {
   /** Unique identifier string for the activity */
@@ -30,7 +30,7 @@ export interface Activity {
   registeredCount: number;
   // Eligibility
   /** Minimum rank required to join, or `null` if unrestricted */
-  minimumRank?: ScoutRank | null;
+  minimumSection?: ScoutSection | null;
   // Location
   /** Physical venue or full address string */
   location: string;

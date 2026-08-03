@@ -2,12 +2,20 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { createPasswordAction } from "@/app/actions/auth";
 import { useRouter, useSearchParams } from "next/navigation";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
-// Render the password creation page component.
+
 export default function CreatePasswordPage() {
+  return (
+    <Suspense fallback={<main className="flex min-h-screen items-center justify-center bg-white">Loading...</main>}>
+      <CreatePasswordContent />
+    </Suspense>
+  );
+}
+
+function CreatePasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") ?? "";

@@ -8,6 +8,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { scouts } from "./scouts";
+import { scoutAdvancementRankEnum } from "./enums";
 
 export const advancements = pgTable("advancements", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -16,7 +17,7 @@ export const advancements = pgTable("advancements", {
     .references(() => scouts.id)
     .notNull(),
 
-  rank: text("rank").notNull(),
+  rank: scoutAdvancementRankEnum("rank").notNull(),
 
   status: text("status")
     .default("in_progress")

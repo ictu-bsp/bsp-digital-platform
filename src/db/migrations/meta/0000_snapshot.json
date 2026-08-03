@@ -1,5 +1,5 @@
 {
-  "id": "b9d7e76e-bf9b-410c-97a5-2f8ad85061f9",
+  "id": "705e4c9f-1776-4b89-b5f5-616151aa6287",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -82,9 +82,9 @@
           "primaryKey": false,
           "notNull": false
         },
-        "minimum_rank": {
-          "name": "minimum_rank",
-          "type": "scout_rank",
+        "minimum_section": {
+          "name": "minimum_section",
+          "type": "scout_section",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": false
@@ -171,6 +171,104 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.activity_payments": {
+      "name": "activity_payments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "registration_id": {
+          "name": "registration_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payment_intent_id": {
+          "name": "payment_intent_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payment_method": {
+          "name": "payment_method",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "receipt_number": {
+          "name": "receipt_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payment_status": {
+          "name": "payment_status",
+          "type": "payment_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'awaiting_payment'"
+        },
+        "refunded_at": {
+          "name": "refunded_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "refund_reference": {
+          "name": "refund_reference",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "activity_payments_registration_id_activity_registrations_id_fk": {
+          "name": "activity_payments_registration_id_activity_registrations_id_fk",
+          "tableFrom": "activity_payments",
+          "tableTo": "activity_registrations",
+          "columnsFrom": [
+            "registration_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.activity_registrations": {
       "name": "activity_registrations",
       "schema": "",
@@ -204,6 +302,139 @@
         "remarks": {
           "name": "remarks",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "registration_status": {
+          "name": "registration_status",
+          "type": "application_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PENDING'"
+        },
+        "parent_consent_file": {
+          "name": "parent_consent_file",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "parent_guardian_id_file": {
+          "name": "parent_guardian_id_file",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "medical_certificate_file": {
+          "name": "medical_certificate_file",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "medical_waiver_file": {
+          "name": "medical_waiver_file",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "requirements_submitted": {
+          "name": "requirements_submitted",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "payment_status": {
+          "name": "payment_status",
+          "type": "payment_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'awaiting_payment'"
+        },
+        "payment_reference_id": {
+          "name": "payment_reference_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "registration_fee": {
+          "name": "registration_fee",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "refunded_at": {
+          "name": "refunded_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unit_leader_approved": {
+          "name": "unit_leader_approved",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "unit_leader_approved_by": {
+          "name": "unit_leader_approved_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unit_leader_approved_at": {
+          "name": "unit_leader_approved_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "admin_approved": {
+          "name": "admin_approved",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "admin_approved_by": {
+          "name": "admin_approved_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "admin_approved_at": {
+          "name": "admin_approved_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "joined_at": {
+          "name": "joined_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "left_at": {
+          "name": "left_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rejection_reason": {
+          "name": "rejection_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rejected_by": {
+          "name": "rejected_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rejected_at": {
+          "name": "rejected_at",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false
         }
@@ -565,10 +796,19 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "admin_users_username_unique": {
-          "name": "admin_users_username_unique",
+        "admin_users_council_username_unq": {
+          "name": "admin_users_council_username_unq",
           "nullsNotDistinct": false,
           "columns": [
+            "council_id",
+            "username"
+          ]
+        },
+        "admin_users_region_username_unq": {
+          "name": "admin_users_region_username_unq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "region_id",
             "username"
           ]
         }
@@ -596,7 +836,8 @@
         },
         "rank": {
           "name": "rank",
-          "type": "text",
+          "type": "scout_advancement_rank",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -1172,13 +1413,20 @@
           "primaryKey": false,
           "notNull": false
         },
-        "rank": {
-          "name": "rank",
-          "type": "scout_rank",
+        "section": {
+          "name": "section",
+          "type": "scout_section",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
           "default": "'KID'"
+        },
+        "advancement_rank": {
+          "name": "advancement_rank",
+          "type": "scout_advancement_rank",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
         },
         "status": {
           "name": "status",
@@ -1313,31 +1561,40 @@
           "name": "preferred_council_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "scouting_position": {
           "name": "scouting_position",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
+        },
+        "scout_section": {
+          "name": "scout_section",
+          "type": "scout_section",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
         },
         "advancement_rank": {
           "name": "advancement_rank",
-          "type": "text",
+          "type": "scout_advancement_rank",
+          "typeSchema": "public",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "tenure": {
           "name": "tenure",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false,
+          "default": 0
         },
         "region": {
           "name": "region",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "community_based": {
           "name": "community_based",
@@ -1356,7 +1613,8 @@
           "name": "requested_registration_years",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": 1
         },
         "blood_type": {
           "name": "blood_type",
@@ -1500,6 +1758,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "application_id": {
+          "name": "application_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "council_id": {
           "name": "council_id",
           "type": "uuid",
@@ -1569,6 +1833,19 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
+        "scout_registrations_application_id_scout_applications_id_fk": {
+          "name": "scout_registrations_application_id_scout_applications_id_fk",
+          "tableFrom": "scout_registrations",
+          "tableTo": "scout_applications",
+          "columnsFrom": [
+            "application_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
         "scout_registrations_council_id_councils_id_fk": {
           "name": "scout_registrations_council_id_councils_id_fk",
           "tableFrom": "scout_registrations",
@@ -1605,6 +1882,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "parent_email": {
+          "name": "parent_email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "first_name": {
           "name": "first_name",
@@ -1690,6 +1973,117 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.notifications": {
+      "name": "notifications",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "title": {
+          "name": "title",
+          "type": "varchar(150)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "message": {
+          "name": "message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "link": {
+          "name": "link",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "visibility": {
+          "name": "visibility",
+          "type": "notification_visibility",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PUBLIC'"
+        },
+        "council_id": {
+          "name": "council_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "region_id": {
+          "name": "region_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "author_id": {
+          "name": "author_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "notifications_council_id_councils_id_fk": {
+          "name": "notifications_council_id_councils_id_fk",
+          "tableFrom": "notifications",
+          "tableTo": "councils",
+          "columnsFrom": [
+            "council_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "notifications_region_id_regions_id_fk": {
+          "name": "notifications_region_id_regions_id_fk",
+          "tableFrom": "notifications",
+          "tableTo": "regions",
+          "columnsFrom": [
+            "region_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "notifications_author_id_users_id_fk": {
+          "name": "notifications_author_id_users_id_fk",
+          "tableFrom": "notifications",
+          "tableTo": "users",
+          "columnsFrom": [
+            "author_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.merit_badges": {
       "name": "merit_badges",
       "schema": "",
@@ -1765,13 +2159,26 @@
           "name": "registration_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
+        },
+        "application_id": {
+          "name": "application_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
         },
         "payment_intent_id": {
           "name": "payment_intent_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "amount": {
+          "name": "amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
         },
         "payment_status": {
           "name": "payment_status",
@@ -1781,8 +2188,21 @@
           "notNull": true,
           "default": "'awaiting_payment'"
         },
+        "payment_method": {
+          "name": "payment_method",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
@@ -1797,6 +2217,19 @@
           "tableTo": "scout_registrations",
           "columnsFrom": [
             "registration_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "payments_application_id_scout_applications_id_fk": {
+          "name": "payments_application_id_scout_applications_id_fk",
+          "tableFrom": "payments",
+          "tableTo": "scout_applications",
+          "columnsFrom": [
+            "application_id"
           ],
           "columnsTo": [
             "id"
@@ -1904,6 +2337,20 @@
         "NATIONAL"
       ]
     },
+    "public.activity_registration_status": {
+      "name": "activity_registration_status",
+      "schema": "public",
+      "values": [
+        "PENDING_REQUIREMENTS",
+        "PENDING_PAYMENT",
+        "PENDING_UNIT_APPROVAL",
+        "PENDING_ADMIN_APPROVAL",
+        "APPROVED",
+        "REJECTED",
+        "LEFT",
+        "CANCELLED"
+      ]
+    },
     "public.admin_role": {
       "name": "admin_role",
       "schema": "public",
@@ -1955,8 +2402,32 @@
         "cancelled"
       ]
     },
-    "public.scout_rank": {
-      "name": "scout_rank",
+    "public.scout_advancement_rank": {
+      "name": "scout_advancement_rank",
+      "schema": "public",
+      "values": [
+        "YOUNG_USA",
+        "GROWING_USA",
+        "LEAPING_USA",
+        "MEMBERSHIP",
+        "TENDERFOOT_SCOUT",
+        "SECOND_CLASS_SCOUT",
+        "FIRST_CLASS_SCOUT",
+        "SCOUT_CITIZEN_SERVICE",
+        "EXPLORER_SCOUT",
+        "PATHFINDER_SCOUT",
+        "OUTDOORSMAN_SCOUT",
+        "VENTURER_SCOUT",
+        "EAGLE_SCOUT",
+        "YELLOW_QUADRANT",
+        "GREEN_QUADRANT",
+        "RED_QUADRANT",
+        "BLUE_QUADRANT",
+        "CHIEF_SCOUT_NATION_BUILDER"
+      ]
+    },
+    "public.scout_section": {
+      "name": "scout_section",
       "schema": "public",
       "values": [
         "KID",
@@ -1983,6 +2454,16 @@
         "unverified",
         "pending",
         "active"
+      ]
+    },
+    "public.notification_visibility": {
+      "name": "notification_visibility",
+      "schema": "public",
+      "values": [
+        "PUBLIC",
+        "SCOUTS",
+        "COUNCIL",
+        "REGIONAL"
       ]
     }
   },

@@ -3,6 +3,8 @@
 
 import { useState } from "react";
 import { toggleScoutMembershipAction, deleteScoutPermanentlyAction } from "@/app/actions/scouts";
+import { SECTION_LABELS } from "@/lib/utils/scout-section";
+import { ADVANCEMENT_RANK_LABELS, type ScoutAdvancementRank } from "@/lib/utils/scout-advancement-rank";
 
 type RosterRow = {
   scoutId: string;
@@ -12,7 +14,8 @@ type RosterRow = {
   email: string | null;
   councilName: string | null;
   membershipNumber: string | null;
-  rank: string;
+  section: string;
+  advancementRank: string | null;
   status: string;
   isActive: boolean;
   joinedAt: Date | null;
@@ -96,7 +99,7 @@ export function ScoutRosterTable({ initialRoster }: Props) {
       (row.email ?? "").toLowerCase().includes(query) ||
       (row.councilName ?? "").toLowerCase().includes(query) ||
       (row.membershipNumber ?? "").toLowerCase().includes(query) ||
-      row.rank.toLowerCase().includes(query)
+      row.section.toLowerCase().includes(query)
     );
   });
 
@@ -117,7 +120,8 @@ export function ScoutRosterTable({ initialRoster }: Props) {
             <th className="px-4 py-3">Email Address</th>
             <th className="px-4 py-3">Council</th>
             <th className="px-4 py-3">Membership No.</th>
-            <th className="px-4 py-3">Scout Type</th>
+            <th className="px-4 py-3">Section</th>
+            <th className="px-4 py-3">Advancement Rank</th>
             <th className="px-4 py-3">Status</th>
             <th className="px-4 py-3">Validity</th>
             <th className="px-4 py-3">Action</th>
@@ -127,7 +131,7 @@ export function ScoutRosterTable({ initialRoster }: Props) {
         <tbody className="divide-y divide-gray-100">
           {filteredRoster.length === 0 && (
             <tr>
-              <td colSpan={8} className="px-4 py-6 text-center text-gray-400">
+              <td colSpan={9} className="px-4 py-6 text-center text-gray-400">
                 {roster.length === 0
                   ? "No scouts have registered yet."
                   : "No scouts match your search."}
@@ -149,7 +153,14 @@ export function ScoutRosterTable({ initialRoster }: Props) {
                 {row.membershipNumber ?? "—"}
               </td>
 
-              <td className="px-4 py-3">{row.rank || "—"}</td>
+              <td className="px-4 py-3">
+                {SECTION_LABELS[row.section as keyof typeof SECTION_LABELS] ?? row.section ?? "—"}
+              </td>
+              <td className="px-4 py-3">
+                {row.advancementRank
+                  ? ADVANCEMENT_RANK_LABELS[row.advancementRank as ScoutAdvancementRank] ?? row.advancementRank
+                  : "—"}
+              </td>
 
               <td className="px-4 py-3">
                 <span

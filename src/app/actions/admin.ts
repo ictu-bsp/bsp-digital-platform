@@ -19,7 +19,7 @@ import {
   getRegistrationStatusBreakdown,
   getPaymentTotals,
   getCouncilRegionBreakdown,
-  getScoutRankBreakdown,
+  getScoutSectionBreakdown,
   getActivityParticipationStats,
   getSexBreakdown,
   updateRegistrationPaymentStatus,
@@ -296,13 +296,13 @@ export async function fetchCouncilRegionBreakdown() {
 }
 
 // Fetches distribution statistics of scouts categorized by rank
-export async function fetchScoutRankBreakdown() {
+export async function fetchScoutSectionBreakdown() {
   try {
-    const data = await getScoutRankBreakdown();
+    const data = await getScoutSectionBreakdown();
     return { success: true, data };
   } catch (error: any) {
     console.error(error);
-    return { success: false, error: error?.message || "Failed to load scout rank breakdown." };
+    return { success: false, error: error?.message || "Failed to load scout section breakdown." };
   }
 }
 

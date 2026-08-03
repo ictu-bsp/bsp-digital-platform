@@ -32,14 +32,53 @@ export const scoutStatusEnum = pgEnum(
   ]
 );
 
-export const scoutRankEnum = pgEnum(
-  "scout_rank",
+// These are the scout SECTIONS (age-based program levels/positions) --
+// Kid, Kab, Boy, Senior, Rover. Previously misnamed "scout_rank"; renamed
+// since these aren't advancement ranks at all. See scoutAdvancementRankEnum
+// below for the actual rank/badge tiers within each section.
+export const scoutSectionEnum = pgEnum(
+  "scout_section",
   [
     "KID",
     "KAB",
     "BOY",
     "SENIOR",
     "ROVER",
+  ]
+);
+
+// The real advancement ranks/badges a scout progresses through within
+// their section (e.g. a Boy Scout progresses Tenderfoot -> Second Class ->
+// First Class). Union of every section's rank ladder -- which values are
+// valid for a given section is enforced in application code
+// (see src/lib/utils/scout-advancement-rank.ts), not by the DB enum
+// itself, since Postgres enums can't be conditionally scoped per row.
+export const scoutAdvancementRankEnum = pgEnum(
+  "scout_advancement_rank",
+  [
+    // Kab Scout
+    "YOUNG_USA",
+    "GROWING_USA",
+    "LEAPING_USA",
+    // Shared starting rank (Boy Scout & Senior Scout)
+    "MEMBERSHIP",
+    // Boy Scout
+    "TENDERFOOT_SCOUT",
+    "SECOND_CLASS_SCOUT",
+    "FIRST_CLASS_SCOUT",
+    "SCOUT_CITIZEN_SERVICE",
+    // Senior Scout
+    "EXPLORER_SCOUT",
+    "PATHFINDER_SCOUT",
+    "OUTDOORSMAN_SCOUT",
+    "VENTURER_SCOUT",
+    "EAGLE_SCOUT",
+    // Rover
+    "YELLOW_QUADRANT",
+    "GREEN_QUADRANT",
+    "RED_QUADRANT",
+    "BLUE_QUADRANT",
+    "CHIEF_SCOUT_NATION_BUILDER",
   ]
 );
 

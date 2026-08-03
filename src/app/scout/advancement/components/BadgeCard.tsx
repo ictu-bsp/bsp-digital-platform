@@ -2,15 +2,29 @@ interface BadgeCardProps {
   label: string;
   isCompleted: boolean;
   subtitle?: string;
+  hasUpload?: boolean;
+  isSelected?: boolean;
+  onClick?: () => void;
 }
 
-export default function BadgeCard({ label, isCompleted, subtitle }: BadgeCardProps) {
+export default function BadgeCard({
+  label,
+  isCompleted,
+  subtitle,
+  hasUpload,
+  isSelected,
+  onClick,
+}: BadgeCardProps) {
   return (
-    <div
-      className={`flex items-start gap-3 rounded-2xl border px-3 py-3 ${
-        isCompleted
-          ? "border-emerald-200 bg-emerald-50"
-          : "border-slate-200 bg-slate-50 opacity-80"
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex w-full items-start gap-3 rounded-2xl border px-3 py-3 text-left transition ${
+        isSelected
+          ? "border-emerald-400 bg-emerald-100 shadow-sm"
+          : isCompleted
+            ? "border-emerald-200 bg-emerald-50"
+            : "border-slate-200 bg-slate-50 opacity-80"
       }`}
     >
       <div
@@ -33,10 +47,11 @@ export default function BadgeCard({ label, isCompleted, subtitle }: BadgeCardPro
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-slate-800">{label}</p>
         <p className="mt-1 text-xs text-slate-500">
-          {isCompleted ? "Completed" : "Locked / pending requirement"}
+          {isCompleted ? "Completed" : "Tap to open the requirement details"}
         </p>
         {subtitle ? <p className="mt-1 text-xs text-slate-500">{subtitle}</p> : null}
+        {hasUpload ? <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">Evidence attached</p> : null}
       </div>
-    </div>
+    </button>
   );
 }

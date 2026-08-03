@@ -97,7 +97,7 @@ type ScoutProfileRow = {
   lastName: string;
   email: string;
   age: number;
-  rank: string;
+  section: string;
   status: string;
   isActive: boolean;
   councilName: string;
@@ -334,11 +334,11 @@ export function generateReportsPdf(reports: AllReports) {
     reports.membershipTrends.map((r) => [r.month, r.count])
   );
 
-  const rankBreakdown = groupCount(reports.scoutProfiles, (s) => s.rank);
+  const sectionBreakdown = groupCount(reports.scoutProfiles, (s) => s.section);
   addSubheading("Scout Profiles — by Rank");
   addTable(
     ["Rank", "Count"],
-    rankBreakdown.map((r) => [r.label, r.count])
+    sectionBreakdown.map((r) => [r.label, r.count])
   );
 
   // ============================================================
