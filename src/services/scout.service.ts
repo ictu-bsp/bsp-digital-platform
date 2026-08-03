@@ -44,11 +44,12 @@ export async function getScoutScope(userId: string) {
 }
 
 // Creates a scout record after membership approval.
-// Rank is REQUIRED so newly-approved scouts never default to KID.
+// Section is REQUIRED so newly-approved scouts never default to KID.
 export async function createScout(input: {
   userId: string;
   councilId: string;
-  rank: typeof scouts.$inferInsert.rank;
+  section: typeof scouts.$inferInsert.section;
+  advancementRank?: typeof scouts.$inferInsert.advancementRank;
   status?: typeof scouts.$inferInsert.status;
   membershipNumber?: string | null;
   joinedAt?: Date;
@@ -58,7 +59,8 @@ export async function createScout(input: {
     .values({
       userId: input.userId,
       councilId: input.councilId,
-      rank: input.rank,
+      section: input.section,
+      advancementRank: input.advancementRank ?? null,
       membershipNumber: input.membershipNumber ?? null,
       status: input.status ?? "PENDING",
       joinedAt: input.joinedAt,
@@ -85,15 +87,15 @@ export async function updateScoutProfile(
   return updated ?? null;
 }
 
-// Updates only the scout rank.
-export async function updateScoutRank(
+// Updates only the scout section.
+export async function updateScoutSection(
   scoutId: string,
-  rank: typeof scouts.$inferInsert.rank
+  section: typeof scouts.$inferInsert.section
 ) {
   const [updated] = await db
     .update(scouts)
     .set({
-      rank,
+      section,
       updatedAt: new Date(),
     })
     .where(eq(scouts.id, scoutId))
@@ -150,7 +152,8 @@ export async function getAllScoutsRoster() {
       email: users.email,
       councilName: councils.name,
       membershipNumber: scouts.membershipNumber,
-      rank: scouts.rank,
+      section: scouts.section,
+      advancementRank: scouts.advancementRank,
       status: scouts.status,
       isActive: scouts.isActive,
       joinedAt: scouts.joinedAt,

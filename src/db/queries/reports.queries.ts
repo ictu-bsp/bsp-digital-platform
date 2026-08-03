@@ -40,7 +40,7 @@ export type ReportFilters = {
   dateTo?: Date;
   councilId?: string;
   scoutStatus?: string; // matches scoutStatusEnum values
-  rank?: string; // matches scoutRankEnum values
+  section?: string; // matches scoutSectionEnum values
 };
 
 
@@ -93,9 +93,10 @@ export async function getPaymentCollectionsSummary() {
   const winnerByRegistration = new Map<string, (typeof rawRows)[number]>();
 
   for (const row of rawRows) {
-    const existing = winnerByRegistration.get(row.registrationId);
+    const registrationId = row.registrationId ?? "";
+    const existing = winnerByRegistration.get(registrationId);
     if (!existing) {
-      winnerByRegistration.set(row.registrationId, row);
+      winnerByRegistration.set(registrationId, row);
       continue;
     }
 
@@ -104,11 +105,11 @@ export async function getPaymentCollectionsSummary() {
 
     if (rowIsPaid && !existingIsPaid) {
       // Prefer a "paid" row over a non-paid row.
-      winnerByRegistration.set(row.registrationId, row);
+      winnerByRegistration.set(registrationId, row);
     } else if (rowIsPaid === existingIsPaid) {
       // Same "paid-ness" — prefer the more recent createdAt.
       if (new Date(row.createdAt).getTime() > new Date(existing.createdAt).getTime()) {
-        winnerByRegistration.set(row.registrationId, row);
+        winnerByRegistration.set(registrationId, row);
       }
     }
     // else: existing is already "paid" and row isn't — keep existing.
@@ -328,7 +329,7 @@ export async function getActivityEnrollees(activityId: string) {
       remarks: activityRegistrations.remarks,
       scoutId: scouts.id,
       membershipNumber: scouts.membershipNumber,
-      rank: scouts.rank,
+      section: scouts.section,
       scoutStatus: scouts.status,
       firstName: users.firstName,
       middleName: users.middleName,
@@ -397,17 +398,18 @@ export async function getEnrolleeDetailsReport() {
     { paymentStatus: string; paymentMethod: string | null; createdAt: Date }
   >();
   for (const row of rawPayments) {
-    const existing = bestPaymentByReg.get(row.registrationId);
+    const registrationId = row.registrationId ?? "";
+    const existing = bestPaymentByReg.get(registrationId);
     if (!existing) {
-      bestPaymentByReg.set(row.registrationId, row);
+      bestPaymentByReg.set(registrationId, row);
       continue;
     }
     const rowPaid = row.paymentStatus === "paid";
     const existingPaid = existing.paymentStatus === "paid";
     if (rowPaid && !existingPaid) {
-      bestPaymentByReg.set(row.registrationId, row);
+      bestPaymentByReg.set(registrationId, row);
     } else if (rowPaid === existingPaid && new Date(row.createdAt) > new Date(existing.createdAt)) {
-      bestPaymentByReg.set(row.registrationId, row);
+      bestPaymentByReg.set(registrationId, row);
     }
   }
 
@@ -487,7 +489,7 @@ export async function getMembershipSummary(filters: ReportFilters = {}) {
   const conditions = [];
   if (filters.councilId) conditions.push(eq(scouts.councilId, filters.councilId));
   if (filters.scoutStatus) conditions.push(eq(scouts.status, filters.scoutStatus as any));
-  if (filters.rank) conditions.push(eq(scouts.rank, filters.rank as any));
+  if (filters.section) conditions.push(eq(scouts.section, filters.section as any));
   if (filters.dateFrom) conditions.push(gte(scouts.createdAt, filters.dateFrom));
   if (filters.dateTo) conditions.push(lte(scouts.createdAt, filters.dateTo));
 
@@ -525,7 +527,7 @@ export async function getMembershipTrends(filters: ReportFilters = {}) {
   const conditions = [];
   if (filters.councilId) conditions.push(eq(scouts.councilId, filters.councilId));
   if (filters.scoutStatus) conditions.push(eq(scouts.status, filters.scoutStatus as any));
-  if (filters.rank) conditions.push(eq(scouts.rank, filters.rank as any));
+  if (filters.section) conditions.push(eq(scouts.section, filters.section as any));
   if (filters.dateFrom) conditions.push(gte(scouts.createdAt, filters.dateFrom));
   if (filters.dateTo) conditions.push(lte(scouts.createdAt, filters.dateTo));
 
@@ -556,7 +558,7 @@ export async function getScoutProfilesReport(filters: ReportFilters = {}) {
   const conditions = [];
   if (filters.councilId) conditions.push(eq(scouts.councilId, filters.councilId));
   if (filters.scoutStatus) conditions.push(eq(scouts.status, filters.scoutStatus as any));
-  if (filters.rank) conditions.push(eq(scouts.rank, filters.rank as any));
+  if (filters.section) conditions.push(eq(scouts.section, filters.section as any));
   if (filters.dateFrom) conditions.push(gte(scouts.createdAt, filters.dateFrom));
   if (filters.dateTo) conditions.push(lte(scouts.createdAt, filters.dateTo));
 
@@ -564,7 +566,7 @@ export async function getScoutProfilesReport(filters: ReportFilters = {}) {
     .select({
       scoutId: scouts.id,
       membershipNumber: scouts.membershipNumber,
-      rank: scouts.rank,
+      section: scouts.section,
       status: scouts.status,
       isActive: scouts.isActive,
       joinedAt: scouts.joinedAt,
@@ -647,7 +649,7 @@ export async function getScoutProfilesReport(filters: ReportFilters = {}) {
     lastName: row.lastName,
     email: row.email,
     age: calculateAge(new Date(row.birthdate)),
-    rank: row.rank,
+    section: row.section,
     status: row.status,
     isActive: row.isActive,
     councilName: row.councilName,

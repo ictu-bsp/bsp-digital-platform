@@ -1,2 +1,0 @@
-ALTER TABLE "scout_applications" ALTER COLUMN "advancement_rank" SET DATA TYPE text;--> statement-breakpoint
-ALTER TABLE "scout_applications" ALTER COLUMN "scout_section" SET DATA TYPE "public"."scout_rank" USING "scout_section"::"public"."scout_rank";

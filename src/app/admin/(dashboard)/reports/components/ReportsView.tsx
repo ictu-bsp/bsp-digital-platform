@@ -105,7 +105,7 @@ type Enrollee = {
   remarks: string | null;
   scoutId: string;
   membershipNumber: string | null;
-  rank: string;
+  section: string;
   scoutStatus: string;
   firstName: string;
   middleName: string | null;
@@ -123,7 +123,7 @@ type ScoutProfileRow = {
   lastName: string;
   email: string;
   age: number;
-  rank: string;
+  section: string;
   status: string;
   isActive: boolean;
   councilName: string;
@@ -145,7 +145,7 @@ type FilterState = {
   dateTo: string;
   councilId: string;
   scoutStatus: string;
-  rank: string;
+  section: string;
 };
 
 const EMPTY_FILTERS: FilterState = {
@@ -153,7 +153,7 @@ const EMPTY_FILTERS: FilterState = {
   dateTo: "",
   councilId: "",
   scoutStatus: "",
-  rank: "",
+  section: "",
 };
 
 // Render dashboard reports view containing registration summaries, metrics, and activity enrollee details.
@@ -181,7 +181,7 @@ export default function ReportsView() {
         if (filters.dateTo) params.set("dateTo", filters.dateTo);
         if (filters.councilId) params.set("councilId", filters.councilId);
         if (filters.scoutStatus) params.set("scoutStatus", filters.scoutStatus);
-        if (filters.rank) params.set("rank", filters.rank);
+        if (filters.section) params.set("section", filters.section);
 
         const query = params.toString();
         const res = await fetch(`/admin/api/reports${query ? `?${query}` : ""}`);
@@ -344,10 +344,10 @@ export default function ReportsView() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-zinc-600">Rank</label>
+            <label className="text-xs font-medium text-zinc-600">Section</label>
             <select
-              value={pendingFilters.rank}
-              onChange={(e) => setPendingFilters((f) => ({ ...f, rank: e.target.value }))}
+              value={pendingFilters.section}
+              onChange={(e) => setPendingFilters((f) => ({ ...f, section: e.target.value }))}
               className="border rounded px-2 py-1.5 text-sm text-zinc-900"
             >
               <option value="">All</option>
@@ -427,7 +427,7 @@ export default function ReportsView() {
                 },
                 { header: "Membership #", accessor: (s) => s.membershipNumber ?? "—" },
                 { header: "Age", accessor: (s) => s.age, align: "right" },
-                { header: "Rank", accessor: (s) => s.rank },
+                { header: "Section", accessor: (s) => s.section },
                 { header: "Status", accessor: (s) => s.status },
                 { header: "Council", accessor: (s) => s.councilName },
                 {
@@ -713,7 +713,7 @@ export default function ReportsView() {
                     <tr className="border-b border-zinc-200 text-zinc-500">
                       <th className="py-2 pr-4">Name</th>
                       <th className="py-2 pr-4">Membership #</th>
-                      <th className="py-2 pr-4">Rank</th>
+                      <th className="py-2 pr-4">Section</th>
                       <th className="py-2 pr-4">Status</th>
                       <th className="py-2 pr-4">Email</th>
                       <th className="py-2 pr-4">Registered At</th>
@@ -727,7 +727,7 @@ export default function ReportsView() {
                           {e.lastName}
                         </td>
                         <td className="py-2 pr-4">{e.membershipNumber ?? "—"}</td>
-                        <td className="py-2 pr-4">{e.rank}</td>
+                        <td className="py-2 pr-4">{e.section}</td>
                         <td className="py-2 pr-4">{e.scoutStatus}</td>
                         <td className="py-2 pr-4">{e.email}</td>
                         <td className="py-2 pr-4">

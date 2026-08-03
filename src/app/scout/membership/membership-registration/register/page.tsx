@@ -9,7 +9,8 @@ import { submitApplicationAction } from "@/app/actions/application";
 import { getCouncilsAction, getRegionsAction } from "@/app/actions/councils";
 import { getCurrentUserAction } from "@/app/actions/user";
 import { calculateAge } from "@/lib/utils/age";
-import { getEligibleScoutPositions, SCOUT_POSITION_AGE_BRACKETS } from "@/lib/utils/rank";
+import { getEligibleScoutSections, SCOUT_SECTION_AGE_BRACKETS, type ScoutSection } from "@/lib/utils/scout-section";
+import { getAdvancementRanksForSection } from "@/lib/utils/scout-advancement-rank";
 import SearchableSelect from "../components/SearchableSelect";
 import BackButton from "@/components-general/ui/BackButton";
 import { useWizard } from "../WizardContext";
@@ -17,37 +18,6 @@ import RegistrationStepper from "../components/RegistrationStepper";
 
 
 const FEE_PER_YEAR = 50;
-
-// Rank Options mapped by Scouting Section / Position
-const ADVANCEMENT_RANKS_BY_SECTION: Record<string, { value: string; label: string }[]> = {
-  kab_scout: [
-    { value: "young_usa", label: "Young Usa (Initial rank)" },
-    { value: "growing_usa", label: "Growing Usa" },
-    { value: "leaping_usa", label: "Leaping Usa (Highest KAB rank)" },
-  ],
-  boy_scout: [
-    { value: "membership", label: "Membership" },
-    { value: "tenderfoot_scout", label: "Tenderfoot Scout" },
-    { value: "second_class_scout", label: "Second Class Scout" },
-    { value: "first_class_scout", label: "First Class Scout (Highest traditional Boy Scout rank)" },
-    { value: "scout_citizen_service", label: "Scout Citizen / Scout Service" },
-  ],
-  senior_scout: [
-    { value: "membership", label: "Membership" },
-    { value: "explorer_scout", label: "Explorer Scout" },
-    { value: "pathfinder_scout", label: "Pathfinder Scout" },
-    { value: "outdoorsman_scout", label: "Outdoorsman Scout (Also specialized as Airman or Seaman)" },
-    { value: "venturer_scout", label: "Venturer Scout (Also specialized as Air Venture or Sea Venture)" },
-    { value: "eagle_scout", label: "Eagle Scout (Highest Senior Scout rank)" },
-  ],
-  rover: [
-    { value: "yellow_quadrant", label: "Yellow Quadrant" },
-    { value: "green_quadrant", label: "Green Quadrant" },
-    { value: "red_quadrant", label: "Red Quadrant" },
-    { value: "blue_quadrant", label: "Blue Quadrant" },
-    { value: "chief_scout_nation_builder", label: "Chief Scout's Nation Builder (Highest Rover rank)" },
-  ],
-};
 
 // Read string value safely from localStorage
 const readSaved = (key: string) => (typeof window === "undefined" ? "" : localStorage.getItem(key) ?? "");
@@ -69,12 +39,14 @@ export default function RegisterPage() {
   const { bloodType, address, telephone, emergencyContactName, emergencyContactRelationship, emergencyContactNumber } = useWizard();
   const [hasHydrated, setHasHydrated] = useState(false);
   const [scoutingPosition, setScoutingPosition] = useState("");
-  const [eligiblePositions, setEligiblePositions] = useState<typeof SCOUT_POSITION_AGE_BRACKETS[number][] | null>(null);
+  const [eligiblePositions, setEligiblePositions] = useState<
+    typeof SCOUT_SECTION_AGE_BRACKETS[number][] | null
+  >(null);
 
-  // Fetch user age and compute eligible positions
+  // Fetch user age and compute eligible sections
   useEffect(() => {
     getCurrentUserAction().then((result) =>
-      setEligiblePositions(result.success && result.user?.birthdate ? getEligibleScoutPositions(calculateAge(result.user.birthdate)) : [])
+      setEligiblePositions(result.success && result.user?.birthdate ? getEligibleScoutSections(calculateAge(result.user.birthdate)) : [])
     );
   }, []);
 
@@ -94,8 +66,8 @@ export default function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
-  const rankOptions = scoutingPosition ? ADVANCEMENT_RANKS_BY_SECTION[scoutingPosition] || [] : [];
-  const isKidScout = scoutingPosition === "kid_scout";
+  const rankOptions = getAdvancementRanksForSection((scoutingPosition || null) as ScoutSection | null);
+  const isKidScout = scoutingPosition === "KID";
 
   // Update scouting position state and clear dependent rank
   const handlePositionChange = (position: string) => {

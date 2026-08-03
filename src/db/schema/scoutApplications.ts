@@ -11,7 +11,7 @@ import {
 
 import { users } from "./users";
 import { councils } from "./councils";
-import { applicationStatusEnum, scoutRankEnum } from "./enums";
+import { applicationStatusEnum, scoutSectionEnum, scoutAdvancementRankEnum } from "./enums";
 
 export const scoutApplications = pgTable("scout_applications", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -25,9 +25,9 @@ export const scoutApplications = pgTable("scout_applications", {
 
   scoutingPosition: text("scouting_position"),
 
-  // Scout rank and section selected by the applicant.
-  scoutSection: scoutRankEnum("scout_section"), // KID | KAB | BOY | SENIOR | ROVER
-  advancementRank: text("advancement_rank"),    // "Tenderfoot", "Eagle", etc.
+  // Scout section and advancement rank selected by the applicant.
+  scoutSection: scoutSectionEnum("scout_section"), // KID | KAB | BOY | SENIOR | ROVER
+  advancementRank: scoutAdvancementRankEnum("advancement_rank"), // e.g. TENDERFOOT_SCOUT
 
   tenure: integer("tenure").default(0),
 

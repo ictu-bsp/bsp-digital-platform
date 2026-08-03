@@ -9,6 +9,7 @@ import { councils } from "@/db/schema/councils";
 import { regions } from "@/db/schema/regions";
 import { payments } from "@/db/schema/payments";
 import { getCurrentUser } from "@/lib/auth/current-user";
+import { resolveScoutSection, type ScoutSection } from "@/lib/utils/scout-section";
 
 export interface SubmitApplicationInput {
   userId?: string | null;
@@ -42,20 +43,12 @@ export interface SubmitApplicationInput {
 
 
 
-// Maps section inputs to valid scoutSection Enum values ('KID' | 'KAB' | 'BOY' | 'SENIOR' | 'ROVER')
+// Maps section inputs to valid ScoutSection enum values
 function resolveScoutSectionEnum(
   sectionInput?: string | null,
   positionInput?: string | null
-): "KID" | "KAB" | "BOY" | "SENIOR" | "ROVER" | null {
-  const value = (sectionInput || positionInput || "").toUpperCase().trim();
-
-  if (value.includes("KID")) return "KID";
-  if (value.includes("KAB")) return "KAB";
-  if (value.includes("BOY")) return "BOY";
-  if (value.includes("SENIOR")) return "SENIOR";
-  if (value.includes("ROVER")) return "ROVER";
-
-  return null;
+): ScoutSection | null {
+  return resolveScoutSection(sectionInput) ?? resolveScoutSection(positionInput);
 }
 
 // Helper to convert empty string inputs into real SQL NULL
@@ -190,13 +183,12 @@ export async function getMembershipCardData() {
   const resolvedSection =
     application?.scoutSection ||
     application?.scoutingPosition ||
-    (scout as any)?.scoutSection ||
+    (scout as any)?.section ||
     "Unassigned";
 
   const resolvedRank =
     application?.advancementRank ||
-    scout?.rank ||
-    (scout as any)?.advancementRank ||
+    scout?.advancementRank ||
     "Unranked";
 
   return {
@@ -290,7 +282,7 @@ export async function linkPaymentToApplication(
     .set({
       applicationId: applicationId,
       updatedAt: new Date(),
-    } as any)
+    })
     .where(eq(payments.id, paymentId));
 }
 
@@ -329,6 +321,10 @@ export async function approveScoutApplication(
 
   const membershipId = await assignMembershipIdToScout(scout.id, councilId);
 
+  const resolvedSection =
+    resolveScoutSectionEnum(application.scoutSection, application.scoutingPosition) ??
+    "BOY";
+
   await db.transaction(async (tx) => {
     await tx
       .update(scoutApplications)
@@ -345,13 +341,13 @@ export async function approveScoutApplication(
       .set({
         councilId: councilId,
         membershipNumber: membershipId,
-        rank: application.advancementRank as any,
-        scoutSection: application.scoutSection,
+        section: resolvedSection,
+        advancementRank: application.advancementRank,
         status: "ACTIVE",
         verificationStatus: "active",
         approvedAt: new Date(),
         updatedAt: new Date(),
-      } as any)
+      })
       .where(eq(scouts.userId, application.userId));
   });
 

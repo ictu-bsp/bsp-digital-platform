@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Upload, CheckCircle2 } from "lucide-react";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -43,7 +42,11 @@ export default function ImageUploadButton() {
     <div className="rounded-[1.5rem] border border-emerald-100 bg-white p-4 shadow-sm">
       <div className="flex items-start gap-3">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
-          <Upload className="h-5 w-5" />
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 3v10" />
+            <path d="m7 8 5-5 5 5" />
+            <path d="M5 14v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3" />
+          </svg>
         </div>
 
         <div className="min-w-0 flex-1">
@@ -87,7 +90,11 @@ export default function ImageUploadButton() {
 
       {message ? (
         <div className="mt-3 flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-600">
-          {message.includes("Ready") ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : null}
+          {message.includes("Ready") ? (
+            <svg viewBox="0 0 24 24" className="h-4 w-4 text-emerald-600" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 6 9 17l-5-5" />
+            </svg>
+          ) : null}
           <span>{message}</span>
         </div>
       ) : null}

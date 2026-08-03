@@ -36,8 +36,11 @@ export async function seedScouts(
 
       membershipNumber: "2026-00-00-0001-6967",
 
-      // Must be a valid scout_rank enum value: "KID" | "KAB" | "BOY" | "SENIOR" | "ROVER"
-      rank: "BOY",
+      // Must be a valid scout_section enum value: "KID" | "KAB" | "BOY" | "SENIOR" | "ROVER"
+      section: "BOY",
+
+      // Must be a valid scout_advancement_rank enum value for the BOY section.
+      advancementRank: "SECOND_CLASS_SCOUT",
 
       status: "ACTIVE",
 

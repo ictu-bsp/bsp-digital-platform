@@ -7,7 +7,7 @@ import {
 import { 
   getScoutByUserId, isScoutRegistered, registerScoutForActivity,
   unregisterScoutFromActivity, getRegisteredCount } from "@/services/activity-registration.service";
-import { meetsRankRequirement } from "@/lib/utils/rank";
+import { meetsSectionRequirement } from "@/lib/utils/scout-section";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import type { AdminScope } from "@/lib/utils/admin-scope";
@@ -138,7 +138,7 @@ Promise<ActionResult> {
       redirectTo: `/scout/activities/${activityId}?joined=1` };
     if (activity.registrationDeadline && activity.registrationDeadline < new Date()) return {
       success: false, error: "Registration is closed for this activity.", redirectTo: null };
-    if (!meetsRankRequirement(scout.rank, activity.minimumRank)) return {
+    if (!meetsSectionRequirement(scout.section, activity.minimumSection)) return {
       success: false, error: "You don't meet the rank requirement for this activity.", redirectTo: null };
     if (activity.maxParticipants != null) {
       const currentCount = await getRegisteredCount(activityId);

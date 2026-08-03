@@ -53,7 +53,7 @@ export async function seedScoutApplications(
       // Scout Information
       scoutingPosition: "Scout",
       scoutSection: "BOY", // Section enum: KID | KAB | BOY | SENIOR | ROVER
-      advancementRank: "First Class Scout", // Specific rank text string
+      advancementRank: "FIRST_CLASS_SCOUT", // Must be a valid scout_advancement_rank enum value
       tenure: 5,
 
       // Location

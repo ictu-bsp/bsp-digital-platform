@@ -7,7 +7,7 @@ import { getCurrentUser } from "@/lib/auth/current-user";
 import { getActivityById } from "@/services/activity.service";
 import { getScoutByUserId, isScoutRegistered, getRegisteredCount }
   from "@/services/activity-registration.service";
-import { meetsRankRequirement, RANK_LABELS } from "@/lib/utils/rank";
+import { meetsSectionRequirement, SECTION_LABELS } from "@/lib/utils/scout-section";
 import ConfirmJoinForm from "./ConfirmJoinForm";
 interface Props {
   params: Promise<{ id: string }>;
@@ -27,7 +27,7 @@ export default async function JoinActivityPage({ params }: Props) {
     activity.registrationDeadline != null && activity.registrationDeadline < new Date();
   const registeredCount = await getRegisteredCount(activityId);
   const isFull = activity.maxParticipants != null && registeredCount >= activity.maxParticipants;
-  const isEligible = meetsRankRequirement(scout.rank, activity.minimumRank);
+  const isEligible = meetsSectionRequirement(scout.section, activity.minimumSection);
   return (
     <main className="min-h-screen bg-gradient-to-b from-white via-[#f7fdf8] to-[#e7f6ea] text-slate-900">
       <div className="mx-auto flex min-h-screen max-w-md flex-col">
@@ -42,12 +42,12 @@ export default async function JoinActivityPage({ params }: Props) {
           <h1 className="mt-1 text-xl font-bold text-green-900">{activity.title}</h1>
           {!isEligible && (
             <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4">
-              <p className="font-bold text-red-700">Rank Requirement Not Met</p>
+              <p className="font-bold text-red-700">Section Requirement Not Met</p>
               <p className="mt-2 text-sm leading-relaxed text-slate-700">
                 This activity requires at least
-                <strong>{activity.minimumRank ? RANK_LABELS[activity.minimumRank] : "—"}</strong>
-                rank to join. Your current rank is
-                <strong>{RANK_LABELS[scout.rank]}</strong>,
+                <strong>{activity.minimumSection ? SECTION_LABELS[activity.minimumSection] : "—"}</strong>
+                section to join. Your current section is
+                <strong>{SECTION_LABELS[scout.section]}</strong>,
                 so you're not yet eligible to register for this activity.
               </p>
             </div>
@@ -73,8 +73,8 @@ export default async function JoinActivityPage({ params }: Props) {
             <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
               <p className="font-bold text-emerald-800">You're Eligible!</p>
               <p className="mt-2 text-sm leading-relaxed text-slate-700">
-                Your rank ({RANK_LABELS[scout.rank]}) meets the requirement for this activity
-                {activity.minimumRank ? ` (${RANK_LABELS[activity.minimumRank]} or higher)` : ""}.
+                Your section ({SECTION_LABELS[scout.section]}) meets the requirement for this activity
+                {activity.minimumSection ? ` (${SECTION_LABELS[activity.minimumSection]} or higher)` : ""}.
                 Confirm below to register.
               </p>
               <ConfirmJoinForm activityId={activityId} activityTitle={activity.title} />

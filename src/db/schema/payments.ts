@@ -10,13 +10,20 @@ import {
 
 import { paymentStatusEnum } from "./enums";
 import { registrations } from "./scout-registrations";
+import { scoutApplications } from "./scoutApplications";
 
 export const payments = pgTable("payments", {
   id: uuid("id").defaultRandom().primaryKey(),
 
+  // Nullable -- a payment can exist for a brand-new application before any
+  // registration record has been created yet. At least one of
+  // registrationId/applicationId should always be set (enforced in
+  // application code, not a DB constraint).
   registrationId: uuid("registration_id")
-    .references(() => registrations.id)
-    .notNull(),
+    .references(() => registrations.id),
+
+  applicationId: uuid("application_id")
+    .references(() => scoutApplications.id),
 
   paymentIntentId: text("payment_intent_id"),
 

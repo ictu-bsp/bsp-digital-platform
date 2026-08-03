@@ -1,1 +1,0 @@
-ALTER TABLE "pending_user_registrations" RENAME COLUMN "emai" TO "parent_email";

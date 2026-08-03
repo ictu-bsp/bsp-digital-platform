@@ -1,6 +1,6 @@
 // src/app/admin/page.tsx
 import { fetchDashboardStats, fetchSexBreakdown, fetchRegistrationStatusBreakdown,
-  fetchScoutRankBreakdown, fetchCouncilRegionBreakdown } from "@/app/actions/admin";
+  fetchScoutSectionBreakdown, fetchCouncilRegionBreakdown } from "@/app/actions/admin";
 import MonthRangePicker from "./components/MonthRangePicker";
 // Renders the main admin dashboard page with scout statistics,
 // demographics, and regional breakdown analytics
@@ -11,8 +11,8 @@ export default async function AdminDashboardPage() {
   const sexBreakdown = sexResult.success ? sexResult.data ?? [] : [];
   const statusResult = await fetchRegistrationStatusBreakdown();
   const statusBreakdown = statusResult.success ? statusResult.data ?? [] : [];
-  const rankResult = await fetchScoutRankBreakdown();
-  const rankBreakdown = rankResult.success ? rankResult.data ?? [] : [];
+  const sectionResult = await fetchScoutSectionBreakdown();
+  const sectionBreakdown = sectionResult.success ? sectionResult.data ?? [] : [];
   const regionResult = await fetchCouncilRegionBreakdown();
   const regionBreakdown = regionResult.success ? regionResult.data?.regionCounts ?? [] : [];
   const totalScoutsForBars = stats?.totalScouts || 1;
@@ -68,12 +68,12 @@ export default async function AdminDashboardPage() {
         <h2 className="text-lg font-bold text-green-800 mb-4">Scout Distribution</h2>
         <div className="grid grid-cols-2 gap-6">
           <div>
-            <p className="text-sm font-semibold text-zinc-600 mb-2">By Scout Type / Rank</p>
+            <p className="text-sm font-semibold text-zinc-600 mb-2">By Scout Section</p>
             <div className="flex flex-col gap-1">
-              {rankBreakdown.length === 0 && <p className="text-sm text-zinc-400">No data available.</p>}
-              {rankBreakdown.map((row) => (
-                <div key={row.rank} className="flex justify-between text-sm text-zinc-700">
-                  <span>{row.rank}</span>
+              {sectionBreakdown.length === 0 && <p className="text-sm text-zinc-400">No data available.</p>}
+              {sectionBreakdown.map((row) => (
+                <div key={row.section} className="flex justify-between text-sm text-zinc-700">
+                  <span>{row.section}</span>
                   <span className="font-semibold">{row.value}</span>
                 </div>
               ))}
