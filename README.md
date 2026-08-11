@@ -110,7 +110,3 @@ npx drizzle-kit studio
 ## 📄 License
 
 Copyright © 2026 Boy Scouts of the Philippines (BSP). All rights reserved.
-
-```
-
-```
