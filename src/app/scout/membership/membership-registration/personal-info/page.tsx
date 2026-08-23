@@ -129,7 +129,7 @@ export default function PersonalInfoPage() {
             <option value="" disabled className="text-zinc-400">
               Blood Type
             </option>
-            {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "N/A"].map((bt) => (
+            {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "Rh+", "Rh-", "N/A"].map((bt) => (
               <option key={bt} value={bt} className="text-zinc-900">
                 {bt}
               </option>

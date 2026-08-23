@@ -7,6 +7,8 @@ import { getScoutByUserId } from "@/services/scout.service";
 import { getAdvancementRanksForSection } from "@/lib/utils/scout-advancement-rank";
 import { SECTION_LABELS, type ScoutSection } from "@/lib/utils/scout-section";
 
+import ComingSoonCard from "./components/ComingSoon";
+
 export default async function AdvancementPage() {
   const user = await getCurrentUser();
 
@@ -49,7 +51,8 @@ export default async function AdvancementPage() {
           <Header userName={user.firstName} avatarUrl={user.avatarUrl ?? undefined} />
 
           <div className="space-y-5 px-4 py-4 sm:px-5">
-            <RankCarousel ranks={ranks} activeRankId={activeRankId} sectionLabel={SECTION_LABELS[section]} />
+            {/* <RankCarousel ranks={ranks} activeRankId={activeRankId} sectionLabel={SECTION_LABELS[section]} /> */}
+            <ComingSoonCard />
           </div>
         </div>
 

@@ -1,18 +1,34 @@
 // src/app/scout/activities/page.tsx
-
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import type { Activity, FeaturedBanner } from "@/types/activities";
-import { getPublishedActivities, getPublishedActivitiesForScope } from "@/services/activity.service";
 import {
-  getScoutByUserId,
-  getScoutScope,
-} from "@/services/scout.service";
+  getPublishedActivities,
+  getPublishedActivitiesForScope,
+} from "@/services/activity.service";
+import { getScoutByUserId, getScoutScope } from "@/services/scout.service";
 import ScoutingActivitiesScreen from "./components/ScoutingActivitiesScreen";
 import {
   getRegisteredActivities,
   getRegisteredCounts,
 } from "@/services/activity-registration.service";
+
+// Explicitly lock timezone and locale formatting for predictable SSR output
+function formatDateTime(date: Date | string | null): string {
+  if (!date) return "";
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (isNaN(d.getTime())) return "";
+
+  return new Intl.DateTimeFormat("en-PH", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: "Asia/Manila",
+  }).format(d);
+}
 
 export default async function ActivitiesPage() {
   const user = await getCurrentUser();
@@ -36,9 +52,7 @@ export default async function ActivitiesPage() {
 
   const dbActivities =
     user.role === "SCOUT"
-      ? await getPublishedActivitiesForScope(
-          await getScoutScope(user.id)
-        )
+      ? await getPublishedActivitiesForScope(await getScoutScope(user.id))
       : await getPublishedActivities();
 
   const now = new Date();
@@ -48,22 +62,16 @@ export default async function ActivitiesPage() {
     : [];
 
   const registrationCounts = await getRegisteredCounts(
-    dbActivities.map((a) => a.id)
+    dbActivities.map((a) => a.id),
   );
 
-  const bannerColors = [
-    "#daf5e7",
-    "#e7f2df",
-    "#d7f0fc",
-    "#f1f8e7",
-    "#e9f6ea",
-  ];
+  const bannerColors = ["#daf5e7", "#e7f2df", "#d7f0fc", "#f1f8e7", "#e9f6ea"];
 
   const banners: FeaturedBanner[] = dbActivities
     .filter(
       (activity) =>
         !activity.registrationDeadline ||
-        activity.registrationDeadline > now
+        new Date(activity.registrationDeadline) > now,
     )
     .slice(0, 3)
     .map((activity, index) => ({
@@ -77,15 +85,6 @@ export default async function ActivitiesPage() {
           : null,
     }));
 
-  const formatDateTime = (date: Date | null) => {
-    if (!date) return "";
-
-    return date.toLocaleString("en-PH", {
-      dateStyle: "long",
-      timeStyle: "short",
-    });
-  };
-
   const activities: Activity[] = dbActivities
     .map((activity) => ({
       id: activity.id,
@@ -95,7 +94,7 @@ export default async function ActivitiesPage() {
       endDate: formatDateTime(activity.endDate),
       registrationOpen:
         !activity.registrationDeadline ||
-        activity.registrationDeadline > now,
+        new Date(activity.registrationDeadline) > now,
       maxParticipants: activity.maxParticipants,
       registeredCount: registrationCounts[activity.id] ?? 0,
       minimumSection: activity.minimumSection,
@@ -103,8 +102,8 @@ export default async function ActivitiesPage() {
       category: activity.category,
       councilId: activity.councilId,
       imageUrl: activity.imageUrl,
-      createdAt: activity.createdAt.toISOString(),
-      updatedAt: activity.updatedAt.toISOString(),
+      createdAt: new Date(activity.createdAt).toISOString(),
+      updatedAt: new Date(activity.updatedAt).toISOString(),
     }))
     .sort((a, b) => Number(b.registrationOpen) - Number(a.registrationOpen));
 
@@ -117,7 +116,7 @@ export default async function ActivitiesPage() {
       endDate: formatDateTime(activity.endDate),
       registrationOpen:
         !activity.registrationDeadline ||
-        activity.registrationDeadline > now,
+        new Date(activity.registrationDeadline) > now,
       maxParticipants: activity.maxParticipants,
       registeredCount: registrationCounts[activity.id] ?? 0,
       minimumSection: activity.minimumSection,
@@ -125,8 +124,8 @@ export default async function ActivitiesPage() {
       category: activity.category,
       councilId: activity.councilId,
       imageUrl: activity.imageUrl,
-      createdAt: activity.createdAt.toISOString(),
-      updatedAt: activity.updatedAt.toISOString(),
+      createdAt: new Date(activity.createdAt).toISOString(),
+      updatedAt: new Date(activity.updatedAt).toISOString(),
     }))
     .sort((a, b) => Number(b.registrationOpen) - Number(a.registrationOpen));
 

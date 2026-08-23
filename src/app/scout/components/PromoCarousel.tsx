@@ -39,7 +39,7 @@ export default function PromoCarousel({
 
   return (
     <section className="space-y-4 px-4">
-      <div className="overflow-hidden rounded-[2rem] shadow-lg">
+      <div className="overflow-hidden rounded-4xl shadow-lg">
         <div
           className="flex transition-transform duration-500 ease-out"
           style={{

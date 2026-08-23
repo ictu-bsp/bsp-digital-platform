@@ -35,29 +35,8 @@ export async function seedNotifications(
       message: "Track your Scouting journey, join activities, and stay updated -- all in one place.",
       visibility: "PUBLIC",
       authorId: superAdmin.id,
-    },
-    {
-      title: "Advancement Tracking Now Live",
-      message: "Verified scouts can now track their rank advancement directly from the dashboard.",
-      visibility: "SCOUTS",
-      authorId: superAdmin.id,
-    },
-    {
-      title: "Manila Council Investiture Ceremony",
-      message: "Join us this weekend for the quarterly investiture ceremony at the Manila Council office.",
-      visibility: "COUNCIL",
-      councilId: andrei.councilId,
-      authorId: andrei.id,
-    },
-    {
-      title: "Regional Camporee",
-      message: "Registration for the regional camporee is now open for all regional councils.",
-      visibility: "REGIONAL",
-      regionId: regionalAdmin.regionId,
-      link: "/scout/activities",
-      authorId: regionalAdmin.id,
-    },
+    }
   ]);
 
-  console.log("✅ Seeded 4 notifications across PUBLIC, SCOUTS, COUNCIL, and REGIONAL visibility.");
+  console.log("✅ Seeded notification for public - default welcome message");
 }

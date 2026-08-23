@@ -2,11 +2,16 @@
 
 import { db } from "@/db";
 import { eq } from "drizzle-orm";
+import crypto from "crypto";
 import { sendVerificationEmail } from "@/lib/email";
 import { getSessionCookie, setSessionCookie } from "@/lib/auth/cookies";
 import { users, pendingUserRegistrations } from "@/db/schema";
 import { hashPassword, verifyPassword } from "@/lib/auth/hash";
-import { createSession, deleteExpiredSessions, getSession } from "@/lib/auth/session";
+import {
+  createSession,
+  deleteExpiredSessions,
+  getSession,
+} from "@/lib/auth/session";
 
 export interface CreatePendingRegistrationInput {
   email: string;
@@ -33,7 +38,9 @@ function mapDatabaseError(error: unknown): never {
       message.includes("database") ||
       message.includes("timeout")
     ) {
-      throw new Error("The database is currently unavailable. Please try again later.");
+      throw new Error(
+        "The database is currently unavailable. Please try again later.",
+      );
     }
   }
   throw error;
@@ -75,9 +82,17 @@ export async function loginUser(email: string, password: string) {
 
 // Fetches a user record by primary email
 export async function findUserByEmail(email: string) {
-  const cleanEmail = email.trim().toLowerCase();
-  const usersFound = await db.select().from(users).where(eq(users.email, cleanEmail)).limit(1);
-  return usersFound[0] ?? null;
+  try {
+    const cleanEmail = email.trim().toLowerCase();
+    const usersFound = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, cleanEmail))
+      .limit(1);
+    return usersFound[0] ?? null;
+  } catch (error) {
+    mapDatabaseError(error);
+  }
 }
 
 // Fetches a user record by unique identifier
@@ -95,14 +110,20 @@ export async function findUserById(id: string) {
 export async function changePassword(userId: string, newPassword: string) {
   try {
     const passwordHash = await hashPassword(newPassword);
-    await db.update(users).set({ passwordHash, updatedAt: new Date() }).where(eq(users.id, userId));
+    await db
+      .update(users)
+      .set({ passwordHash, updatedAt: new Date() })
+      .where(eq(users.id, userId));
   } catch (error) {
     mapDatabaseError(error);
   }
 }
 
 // Validates active user password prior to sensitive mutations
-export async function verifyCurrentPassword(userId: string, currentPassword: string) {
+export async function verifyCurrentPassword(
+  userId: string,
+  currentPassword: string,
+) {
   try {
     const user = await findUserById(userId);
     if (!user) throw new Error("User not found.");
@@ -119,15 +140,18 @@ export async function verifyCurrentPassword(userId: string, currentPassword: str
 // Marks user email address as verified in the users table
 export async function verifyUserEmail(userId: string) {
   try {
-    await db.update(users).set({ emailVerified: new Date(), updatedAt: new Date() }).where(eq(users.id, userId));
+    await db
+      .update(users)
+      .set({ emailVerified: new Date(), updatedAt: new Date() })
+      .where(eq(users.id, userId));
   } catch (error) {
     mapDatabaseError(error);
   }
 }
 
-// Generates a 6-digit verification code string
+// Generates a cryptographically secure 6-digit verification code string
 function generateVerificationCode(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return crypto.randomInt(100000, 999999).toString();
 }
 
 // Sanitizes optional input strings into clean value or null
@@ -136,108 +160,137 @@ function cleanOptionalString(val?: string | null): string | null {
   return val.trim();
 }
 
-// Creates or updates a pending registration state and sends verification code
-export async function createPendingUserRegistration(data: {
-  firstName: string;
-  middleName?: string | null;
-  lastName: string;
-  suffix?: string | null;
-  birthdate: Date;
-  sex: string;
-  role: "VISITOR" | "SCOUT";
-  email: string;
-  parentEmail?: string | null;
-}) {
-  const cleanEmail = data.email.trim().toLowerCase();
-  const existingUser = await findUserByEmail(cleanEmail);
-  if (existingUser) throw new Error("An account with this email already exists.");
-
-  const existingPending = await db.query.pendingUserRegistrations.findFirst({
-    where: eq(pendingUserRegistrations.email, cleanEmail),
-  });
-
-  const verificationCode = generateVerificationCode();
-  const verificationExpires = new Date(Date.now() + 10 * 60 * 1000);
-
-  const sanitizedMiddleName = cleanOptionalString(data.middleName);
-  const sanitizedSuffix = cleanOptionalString(data.suffix);
-  const sanitizedParentEmail = cleanOptionalString(data.parentEmail)?.toLowerCase() ?? null;
-
-  let registration;
-
-  if (existingPending) {
-    [registration] = await db
-      .update(pendingUserRegistrations)
-      .set({
-        firstName: data.firstName,
-        middleName: sanitizedMiddleName,
-        lastName: data.lastName,
-        suffix: sanitizedSuffix,
-        parentEmail: sanitizedParentEmail,
-        birthdate: data.birthdate,
-        sex: data.sex,
-        role: data.role,
-        verificationCode,
-        verificationExpires,
-        emailVerifiedAt: null,
-      })
-      .where(eq(pendingUserRegistrations.id, existingPending.id))
-      .returning();
-  } else {
-    [registration] = await db
-      .insert(pendingUserRegistrations)
-      .values({
-        ...data,
-        email: cleanEmail,
-        middleName: sanitizedMiddleName,
-        suffix: sanitizedSuffix,
-        parentEmail: sanitizedParentEmail,
-        verificationCode,
-        verificationExpires,
-      })
-      .returning();
+// Calculates exact age based on birthdate
+function calculateAge(birthdate: Date): number {
+  const today = new Date();
+  const birth = new Date(birthdate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+    age--;
   }
+  return age;
+}
 
-  const recipient = sanitizedParentEmail ?? registration.email;
-  const isMinorWithoutParent = !sanitizedParentEmail && (new Date().getFullYear() - new Date(data.birthdate).getFullYear() < 18);
+// Creates or updates a pending registration state and sends verification code
+export async function createPendingUserRegistration(
+  data: CreatePendingRegistrationInput,
+) {
+  try {
+    const cleanEmail = data.email.trim().toLowerCase();
+    const existingUser = await findUserByEmail(cleanEmail);
+    if (existingUser)
+      throw new Error("An account with this email already exists.");
 
-  if (!isMinorWithoutParent) {
-    const emailResult = await sendVerificationEmail(recipient, verificationCode);
+    const existingPending = await db.query.pendingUserRegistrations.findFirst({
+      where: eq(pendingUserRegistrations.email, cleanEmail),
+    });
+
+    const verificationCode = generateVerificationCode();
+    const verificationExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
+
+    const sanitizedMiddleName = cleanOptionalString(data.middleName);
+    const sanitizedSuffix = cleanOptionalString(data.suffix);
+    const sanitizedParentEmail =
+      cleanOptionalString(data.parentEmail)?.toLowerCase() ?? null;
+
+    let registration;
+
+    if (existingPending) {
+      [registration] = await db
+        .update(pendingUserRegistrations)
+        .set({
+          firstName: data.firstName,
+          middleName: sanitizedMiddleName,
+          lastName: data.lastName,
+          suffix: sanitizedSuffix,
+          parentEmail: sanitizedParentEmail,
+          birthdate: data.birthdate,
+          sex: data.sex,
+          role: data.role,
+          verificationCode,
+          verificationExpires,
+          emailVerifiedAt: null,
+        })
+        .where(eq(pendingUserRegistrations.id, existingPending.id))
+        .returning();
+    } else {
+      [registration] = await db
+        .insert(pendingUserRegistrations)
+        .values({
+          ...data,
+          email: cleanEmail,
+          middleName: sanitizedMiddleName,
+          suffix: sanitizedSuffix,
+          parentEmail: sanitizedParentEmail,
+          verificationCode,
+          verificationExpires,
+        })
+        .returning();
+    }
+
+    // Determine target recipient (parent email for minors with parent provided, otherwise primary email)
+    const isMinor = calculateAge(data.birthdate) < 18;
+    const recipient =
+      isMinor && sanitizedParentEmail
+        ? sanitizedParentEmail
+        : registration.email;
+
+    const emailResult = await sendVerificationEmail(
+      recipient,
+      verificationCode,
+    );
     if (!emailResult.success) {
       console.error("Email delivery failed:", emailResult);
-      throw new Error("Failed to send verification email. Please check the email address.");
+      throw new Error(
+        "Failed to send verification email. Please verify your email address.",
+      );
     }
-  }
 
-  return registration;
+    return registration;
+  } catch (error) {
+    mapDatabaseError(error);
+  }
 }
 
 // Validates pending registration code and marks record as email verified
-export async function verifyPendingUserRegistration(email: string, code: string) {
-  const cleanEmail = email.trim().toLowerCase();
-  const registration = await db.query.pendingUserRegistrations.findFirst({
-    where: eq(pendingUserRegistrations.email, cleanEmail),
-  });
+export async function verifyPendingUserRegistration(
+  email: string,
+  code: string,
+) {
+  try {
+    const cleanEmail = email.trim().toLowerCase();
+    const registration = await db.query.pendingUserRegistrations.findFirst({
+      where: eq(pendingUserRegistrations.email, cleanEmail),
+    });
 
-  if (!registration) throw new Error("Registration not found.");
+    if (!registration) throw new Error("Registration not found.");
 
-  const expectedRecipient = registration.parentEmail ?? registration.email;
-  if (registration.verificationCode !== code) throw new Error("Invalid verification code.");
-  if (registration.verificationExpires < new Date()) throw new Error("Verification code has expired.");
+    const expectedRecipient = registration.parentEmail ?? registration.email;
+    if (registration.verificationCode !== code)
+      throw new Error("Invalid verification code.");
+    if (registration.verificationExpires < new Date())
+      throw new Error("Verification code has expired.");
 
-  await db
-    .update(pendingUserRegistrations)
-    .set({ emailVerifiedAt: new Date() })
-    .where(eq(pendingUserRegistrations.id, registration.id));
+    await db
+      .update(pendingUserRegistrations)
+      .set({ emailVerifiedAt: new Date() })
+      .where(eq(pendingUserRegistrations.id, registration.id));
 
-  return {
-    verifiedEmail: registration.email,
-    sentToEmail: expectedRecipient,
-  };
+    return {
+      verifiedEmail: registration.email,
+      sentToEmail: expectedRecipient,
+    };
+  } catch (error) {
+    mapDatabaseError(error);
+  }
 }
 
 // Regenerates verification code and persists optional updated parent email
-export async function resendPendingVerification(registrationEmail: string, parentEmail?: string) {
+export async function resendPendingVerification(
+  registrationEmail: string,
+  parentEmail?: string,
+) {
   try {
     const cleanEmail = registrationEmail.trim().toLowerCase();
     const registration = await db.query.pendingUserRegistrations.findFirst({
@@ -246,7 +299,8 @@ export async function resendPendingVerification(registrationEmail: string, paren
 
     if (!registration) throw new Error("Registration not found.");
 
-    const sanitizedParentEmail = cleanOptionalString(parentEmail)?.toLowerCase() ?? null;
+    const sanitizedParentEmail =
+      cleanOptionalString(parentEmail)?.toLowerCase() ?? null;
     const verificationCode = generateVerificationCode();
     const verificationExpires = new Date(Date.now() + 10 * 60 * 1000);
 
@@ -260,8 +314,12 @@ export async function resendPendingVerification(registrationEmail: string, paren
       .where(eq(pendingUserRegistrations.id, registration.id))
       .returning();
 
-    const recipient = sanitizedParentEmail ?? updated.parentEmail ?? updated.email;
-    const emailResult = await sendVerificationEmail(recipient, verificationCode);
+    const recipient =
+      sanitizedParentEmail ?? updated.parentEmail ?? updated.email;
+    const emailResult = await sendVerificationEmail(
+      recipient,
+      verificationCode,
+    );
 
     if (!emailResult.success) {
       console.error("Resend Email Failure:", emailResult);
@@ -275,7 +333,10 @@ export async function resendPendingVerification(registrationEmail: string, paren
 }
 
 // Finalizes user account creation from a verified pending registration
-export async function completePendingRegistration(email: string, password: string) {
+export async function completePendingRegistration(
+  email: string,
+  password: string,
+) {
   try {
     const cleanEmail = email.trim().toLowerCase();
     const registration = await db.query.pendingUserRegistrations.findFirst({
@@ -285,8 +346,10 @@ export async function completePendingRegistration(email: string, password: strin
     if (!registration) throw new Error("Registration not found.");
 
     const existingUser = await findUserByEmail(cleanEmail);
-    if (existingUser) throw new Error("An account with this email already exists.");
-    if (!registration.emailVerifiedAt) throw new Error("Email has not been verified.");
+    if (existingUser)
+      throw new Error("An account with this email already exists.");
+    if (!registration.emailVerifiedAt)
+      throw new Error("Email has not been verified.");
 
     const passwordHash = await hashPassword(password);
     const [user] = await db
@@ -305,7 +368,9 @@ export async function completePendingRegistration(email: string, password: strin
       })
       .returning();
 
-    await db.delete(pendingUserRegistrations).where(eq(pendingUserRegistrations.id, registration.id));
+    await db
+      .delete(pendingUserRegistrations)
+      .where(eq(pendingUserRegistrations.id, registration.id));
     return user;
   } catch (error) {
     mapDatabaseError(error);

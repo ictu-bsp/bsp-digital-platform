@@ -1,11 +1,9 @@
 // src/types/activities.ts
 //Scope classifications for scouting activities and events.
-export type ActivityCategory =
-  | "COUNCIL"
-  | "REGIONAL"
-  | "NATIONAL";
+export type ActivityCategory = "COUNCIL" | "REGIONAL" | "NATIONAL";
 //Re-export or definition of scout rank types used within activity eligibility context.
 export type ScoutSection = "KID" | "KAB" | "BOY" | "SENIOR" | "ROVER";
+
 //Core entity model for a Scouting Activity or Event.
 export interface Activity {
   /** Unique identifier string for the activity */

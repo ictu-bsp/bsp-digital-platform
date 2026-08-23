@@ -1,11 +1,11 @@
 // src/services/application.service.ts
 
 import { db } from "@/db";
-import { desc, eq, count, and, gte, lte } from "drizzle-orm";
-import { scoutApplications } from "@/db/schema";
+import { desc, eq, count, and, gte, lte, sql} from "drizzle-orm";
+import { scoutApplications, users } from "@/db/schema";
 import { scouts } from "@/db/schema/scouts";
 import { registrations } from "@/db/schema/scout-registrations";
-import { councils } from "@/db/schema/councils";
+import { councils, nationalSequences } from "@/db/schema/councils";
 import { regions } from "@/db/schema/regions";
 import { payments } from "@/db/schema/payments";
 import { getCurrentUser } from "@/lib/auth/current-user";
@@ -35,37 +35,107 @@ export interface SubmitApplicationInput {
   [key: string]: any;
 }
 
+// ---------------------------------------------------------
+// Helper Utilities & Generator Functions (Defined first)
+// ---------------------------------------------------------
 
-
-
-
- 
-
-
-
-// Maps section inputs to valid ScoutSection enum values
-function resolveScoutSectionEnum(
+export function resolveScoutSectionEnum(
   sectionInput?: string | null,
   positionInput?: string | null
 ): ScoutSection | null {
   return resolveScoutSection(sectionInput) ?? resolveScoutSection(positionInput);
 }
 
-// Helper to convert empty string inputs into real SQL NULL
-const cleanValue = (val?: unknown): string | null => {
+export const cleanValue = (val?: unknown): string | null => {
   if (typeof val !== "string") return null;
   const trimmed = val.trim();
   return trimmed === "" ? null : trimmed;
 };
+
+const NATIONAL_SEQUENCE_KEY = "SCOUT_MEMBERSHIP_NATIONAL";
+
+/**
+ * Formats the Membership ID as: <Year Prefix>-<Council Number>-<8-digit national sequence>
+ * Example: 23-05-00000003
+ */
+export function generateMembershipNumber(
+  councilCode: string | number,
+  orderNumber: number | string
+): string {
+  const yearPrefix = String(new Date().getFullYear()).slice(-2);
+  const council = String(councilCode).trim();
+  const sequence = String(orderNumber).padStart(8, "0");
+  return `${yearPrefix}-${council}-${sequence}`;
+}
+
+/**
+ * Atomically increments the national sequence counter and formats the full Membership ID.
+ */
+export async function assignMembershipIdToScout(
+  scoutId: string,
+  councilId: string,
+  txClient: any = db
+) {
+  // 1. Fetch the scout's specific council code
+  const [councilRecord] = await txClient
+    .select({
+      id: councils.id,
+      councilNumber: councils.councilNumber,
+    })
+    .from(councils)
+    .where(eq(councils.id, councilId))
+    .limit(1);
+
+  if (!councilRecord) {
+    throw new Error("Council not found.");
+  }
+
+  const councilCode = councilRecord.councilNumber || "00";
+
+  // 2. Atomically increment the single national sequence
+  const [seqRecord] = await txClient
+    .insert(nationalSequences)
+    .values({
+      id: NATIONAL_SEQUENCE_KEY,
+      lastSequence: 1,
+    })
+    .onConflictDoUpdate({
+      target: nationalSequences.id,
+      set: {
+        lastSequence: sql`${nationalSequences.lastSequence} + 1`,
+      },
+    })
+    .returning({ sequence: nationalSequences.lastSequence });
+
+  const nationalOrderNumber = seqRecord.sequence;
+
+  // 3. Format ID: YY-COUNCIL-00000000
+  return generateMembershipNumber(councilCode, nationalOrderNumber);
+}
+
+export async function linkPaymentToApplication(
+  paymentId: string,
+  applicationId: string
+) {
+  await db
+    .update(payments)
+    .set({
+      applicationId: applicationId,
+      updatedAt: new Date(),
+    })
+    .where(eq(payments.id, paymentId));
+}
+
+// ---------------------------------------------------------
+// Core Application Query & Submission Handlers
+// ---------------------------------------------------------
 
 export async function submitApplication(data: SubmitApplicationInput) {
   let userId = data.userId;
   if (!userId) {
     const user = await getCurrentUser();
     if (!user) {
-      throw new Error(
-        "Unauthorized: User session required to submit an application."
-      );
+      throw new Error("Unauthorized: User session required to submit an application.");
     }
     userId = user.id;
   }
@@ -73,29 +143,29 @@ export async function submitApplication(data: SubmitApplicationInput) {
   const rawCouncil = data.preferredCouncilId || data.councilId;
   const preferredCouncilId = cleanValue(rawCouncil);
 
-  // Map section to valid enum
   const mappedSection = resolveScoutSectionEnum(data.scoutSection, data.scoutingPosition);
-  
-  // Allow null for sponsoringInstitution if empty or if community-based
   const isCommunity = data.communityBased === true || data.communityBased === "true";
   const sponsoringInstitution = isCommunity ? null : cleanValue(data.sponsoringInstitution);
+  const years = Number(data.requestedRegistrationYears) || 1;
+
+  const now = new Date();
+  const expiresAt = new Date();
+  expiresAt.setFullYear(now.getFullYear() + years);
+
+  const startDateStr = now.toISOString().split("T")[0];
+  const endDateStr = expiresAt.toISOString().split("T")[0];
 
   const insertPayload = {
     userId: userId,
     preferredCouncilId: preferredCouncilId,
     scoutingPosition: cleanValue(data.scoutingPosition),
     scoutSection: mappedSection,
-    advancementRank: cleanValue(data.advancementRank), // Accepts raw text ("Tenderfoot", "Eagle", etc.)
-    tenure:
-      data.tenure !== undefined && data.tenure !== null && data.tenure !== ""
-        ? Number(data.tenure)
-        : 0,
+    advancementRank: cleanValue(data.advancementRank),
+    tenure: data.tenure !== undefined && data.tenure !== null && data.tenure !== "" ? Number(data.tenure) : 0,
     region: cleanValue(data.region),
     communityBased: isCommunity,
     sponsoringInstitution: sponsoringInstitution,
-    requestedRegistrationYears: data.requestedRegistrationYears
-      ? Number(data.requestedRegistrationYears)
-      : 1,
+    requestedRegistrationYears: years,
     bloodType: cleanValue(data.bloodType),
     address: cleanValue(data.address),
     telephoneNumber: cleanValue(data.telephoneNumber),
@@ -103,19 +173,94 @@ export async function submitApplication(data: SubmitApplicationInput) {
     emergencyContactRelationship: cleanValue(data.emergencyContactRelationship),
     emergencyContactNumber: cleanValue(data.emergencyContactNumber),
     remarks: cleanValue(data.remarks),
-    status: data.status ? (String(data.status).toUpperCase() as "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED") : "PENDING",
+    status: "APPROVED" as const,
   };
 
-  const [inserted] = await db
+  return await db.transaction(async (tx) => {
+  // 1. Insert Application marked as APPROVED
+  const [inserted] = await tx
     .insert(scoutApplications)
     .values(insertPayload as typeof scoutApplications.$inferInsert)
     .returning();
 
-  if (data.paymentId && inserted?.id) {
-    await linkPaymentToApplication(data.paymentId, inserted.id);
+  // 2. Fetch or Create Scout Profile
+  const [existingScout] = await tx
+    .select()
+    .from(scouts)
+    .where(eq(scouts.userId, userId))
+    .limit(1);
+
+  let membershipId = existingScout?.membershipNumber;
+  if (!membershipId && preferredCouncilId) {
+    // Pass 'tx' to lock and increment the sequence atomically
+    membershipId = await assignMembershipIdToScout(
+      existingScout?.id || "temp",
+      preferredCouncilId,
+      tx
+    );
   }
 
-  return inserted;
+  let scoutRecord;
+
+  if (existingScout) {
+    const [updated] = await tx
+      .update(scouts)
+      .set({
+        ...(preferredCouncilId ? { councilId: preferredCouncilId } : {}),
+        membershipNumber: membershipId || existingScout.membershipNumber,
+        section: (mappedSection as any) ?? existingScout.section ?? "BOY",
+        advancementRank:
+          (cleanValue(data.advancementRank) as any) ??
+          existingScout.advancementRank,
+        status: "ACTIVE",
+        verificationStatus: "active",
+        approvedAt: now,
+        updatedAt: now,
+      })
+      .where(eq(scouts.id, existingScout.id))
+      .returning();
+    scoutRecord = updated;
+  } else {
+    const [created] = await tx
+      .insert(scouts)
+      .values({
+        userId: userId,
+        councilId: preferredCouncilId || "",
+        membershipNumber: membershipId || null,
+        section: (mappedSection as any) ?? "BOY",
+        advancementRank:
+          (cleanValue(data.advancementRank) as any) ?? undefined,
+        status: "ACTIVE",
+        verificationStatus: "active",
+        approvedAt: now,
+      } as any)
+      .returning();
+    scoutRecord = created;
+  }
+
+  // 3. Insert Active Registration Record
+  if (scoutRecord?.id) {
+    await tx.insert(registrations).values({
+      scoutId: scoutRecord.id,
+      startDate: startDateStr,
+      endDate: endDateStr,
+      registrationYears: years,
+      status: "active",
+    } as any);
+  }
+
+  // 4. Update core user role to SCOUT
+  await tx
+    .update(users)
+    .set({ role: "SCOUT", updatedAt: now })
+    .where(eq(users.id, userId));
+
+  // Return application data along with the generated membership number
+  return {
+    ...inserted,
+    membershipNumber: membershipId || scoutRecord?.membershipNumber,
+  };
+});
 }
 
 // Fetches all applications submitted by a user
@@ -137,10 +282,7 @@ export async function getLatestApplication(userId: string) {
 
 export async function getMembershipCardData() {
   const currentUser = await getCurrentUser();
-
-  if (!currentUser) {
-    return null;
-  }
+  if (!currentUser) return null;
 
   const userId = currentUser.id;
 
@@ -151,10 +293,7 @@ export async function getMembershipCardData() {
     .limit(1);
 
   const application = await getLatestApplication(userId);
-
-  if (!scout && !application) {
-    return null;
-  }
+  if (!scout && !application) return null;
 
   const scoutId = scout?.id ?? null;
 
@@ -219,73 +358,6 @@ export async function getMembershipCardData() {
   };
 }
 
-export async function generateMembershipNumber(
-  regionNumber: string,
-  councilNumber: string,
-  orderNumber: number | string
-): Promise<string> {
-  const year = new Date().getFullYear();
-  const region = String(regionNumber).padStart(2, "0");
-  const council = String(councilNumber).padStart(2, "0");
-  const seq = String(orderNumber).padStart(4, "0");
-  const randomDigits = Math.floor(1000 + Math.random() * 9000);
-
-  return `${year}-${region}-${council}-${seq}-${randomDigits}`;
-}
-
-export async function assignMembershipIdToScout(scoutId: string, councilId: string) {
-  const [councilRecord] = await db
-    .select({
-      councilNumber: councils.councilNumber,
-      regionNumber: regions.regionNumber,
-    })
-    .from(councils)
-    .innerJoin(regions, eq(councils.regionId, regions.id))
-    .where(eq(councils.id, councilId))
-    .limit(1);
-
-  if (!councilRecord) {
-    throw new Error("Council or associated Region not found.");
-  }
-
-  const currentYear = new Date().getFullYear();
-  const startOfYear = new Date(`${currentYear}-01-01T00:00:00.000Z`);
-  const endOfYear = new Date(`${currentYear}-12-31T23:59:59.999Z`);
-
-  const [result] = await db
-    .select({ value: count() })
-    .from(registrations)
-    .innerJoin(scouts, eq(registrations.scoutId, scouts.id))
-    .where(
-      and(
-        eq(scouts.councilId, councilId),
-        gte(registrations.createdAt, startOfYear),
-        lte(registrations.createdAt, endOfYear)
-      )
-    );
-
-  const nextOrderNumber = (result?.value || 0) + 1;
-
-  return await generateMembershipNumber(
-    councilRecord.regionNumber,
-    councilRecord.councilNumber,
-    nextOrderNumber
-  );
-}
-
-export async function linkPaymentToApplication(
-  paymentId: string,
-  applicationId: string
-) {
-  await db
-    .update(payments)
-    .set({
-      applicationId: applicationId,
-      updatedAt: new Date(),
-    })
-    .where(eq(payments.id, paymentId));
-}
-
 export async function approveScoutApplication(
   applicationId: string,
   adminId: string
@@ -320,7 +392,6 @@ export async function approveScoutApplication(
   }
 
   const membershipId = await assignMembershipIdToScout(scout.id, councilId);
-
   const resolvedSection =
     resolveScoutSectionEnum(application.scoutSection, application.scoutingPosition) ??
     "BOY";

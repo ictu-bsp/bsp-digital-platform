@@ -35,6 +35,8 @@ export default async function MembershipPage() {
     redirect("/scout/membership/verified-member");
   }
 
+  console.log(application, cardData);
+
   const isOrphanedApproval =
     application?.status === "APPROVED" && !hasActiveScout;
 
@@ -67,7 +69,7 @@ export default async function MembershipPage() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-[#f5fbe8] to-[#eef4e6] p-4">
+              <div className="rounded-2xl border border-slate-200 bg-linear-to-br from-[#f5fbe8] to-[#eef4e6] p-4">
                 <div className="mb-3 flex items-center gap-2">
                   <Image
                     src="/bsp-logo-with-bkg.svg"
@@ -81,8 +83,8 @@ export default async function MembershipPage() {
                   </div>
                 </div>
 
-                <div className="blur-[4px]">
-                  <div className="w-full aspect-[1.58/1] [perspective:1000px]">
+                <div className="blur-xs">
+                  <div className="w-full aspect-[1.58/1] perspective-[1000px]">
                     <div className="relative h-full w-full rounded-2xl border border-gray-200 bg-[#F1F7EC] p-4 shadow-md overflow-hidden flex flex-col justify-between pl-9">
                       <div className="absolute top-0 left-0 bottom-0 w-6 flex flex-row">
                         <div className="h-full w-1/2 bg-red-600" />

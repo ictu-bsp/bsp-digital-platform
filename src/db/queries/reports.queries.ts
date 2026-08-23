@@ -1,7 +1,7 @@
 // src/db/queries/reports.queries.ts
 //
 // Read-only report queries for /admin/reports.
-// Does NOT touch admin.service.ts or any schema files (Reuben's files) —
+// Does NOT touch admin.service.ts or any schema files —
 // this is a brand new, isolated query module.
 //
 // IMPORTANT KNOWN LIMITATION:

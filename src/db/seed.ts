@@ -16,7 +16,7 @@ import { seedActivities } from "./seeds/activities.seed";
 import { seedActivityRegistrations } from "./seeds/activityRegistrations.seed";
 import { seedScoutApplications } from "./seeds/scoutApplications.seed";
 
-dotenv.config({ path: ".env.local" });
+dotenv.config({ path: ".env" });
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,

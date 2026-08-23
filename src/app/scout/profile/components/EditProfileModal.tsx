@@ -191,7 +191,7 @@ export default function EditProfileModal({
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-        <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+        <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-xl [scrollbar-width:thin] [scrollbar-color:var(--color-zinc-300)_transparent]">
           <h2 className="mb-6 text-center text-2xl font-bold text-green-900">
             Edit Profile
           </h2>
@@ -211,7 +211,7 @@ export default function EditProfileModal({
                     fill="currentColor"
                     viewBox="0 0 24 24"
                   >
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4 1.79-4 4-4 4 1.79 4 4-1.79 4-4 4Zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                   </svg>
                 </div>
               )}

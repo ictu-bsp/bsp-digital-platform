@@ -31,33 +31,20 @@ export async function seedAnnouncements(
 
   await db.insert(announcements).values([
     {
+      title: "One Mindanao Jamboree is Coming!",
+      content: "Get ready for an epic gathering of fellowship, skill-building, and the 40-badge National Merit Badge Challenge. Stay tuned for official schedules and registration updates!",
+      visibility: "PUBLIC",
+      authorId: superAdmin.id,
+    },
+    {
       title: "BSP National Scouting Week",
       content: "Join Scouts nationwide in celebrating National Scouting Week this coming month, with activities in every region.",
       visibility: "PUBLIC",
       isPinned: true,
       authorId: superAdmin.id,
-    },
-    {
-      title: "New Advancement Requirements",
-      content: "Updated advancement requirements for all ranks are now available. Verified scouts should review the changes with their unit leaders.",
-      visibility: "SCOUTS",
-      authorId: superAdmin.id,
-    },
-    {
-      title: "Manila Council Office Hours",
-      content: "The Manila Council office will have updated hours starting next week. Please check with your unit leader for details.",
-      visibility: "COUNCIL",
-      councilId: andrei.councilId,
-      authorId: andrei.id,
-    },
-    {
-      title: "Regional Leader Training",
-      content: "A regional leader training course is scheduled for all regional councils. Slots are limited, register early.",
-      visibility: "REGIONAL",
-      regionId: regionalAdmin.regionId,
-      authorId: regionalAdmin.id,
-    },
+    }
+    
   ]);
 
-  console.log("✅ Seeded 4 announcements across PUBLIC, SCOUTS, COUNCIL, and REGIONAL visibility.");
+  console.log("✅ Seeded 2 announcements across PUBLIC visibility.");
 }

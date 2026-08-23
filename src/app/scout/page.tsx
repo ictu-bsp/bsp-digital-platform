@@ -1,6 +1,8 @@
-//src/app/scout/page.tsx
+// src/app/scout/page.tsx
 
+import Link from "next/link";
 import { redirect } from "next/navigation";
+import { SparklesIcon, ChevronRightIcon, CalendarDaysIcon } from "@heroicons/react/24/solid";
 
 import Header from "./components/Header";
 import BottomNav from "./components/BottomNav";
@@ -77,7 +79,6 @@ export default async function DashboardPage() {
     .slice(0, 5)
     .map((activity, index) => ({
       id: activity.id,
-
       backgroundColor: [
         "#daf5e7",
         "#e7f2df",
@@ -85,27 +86,23 @@ export default async function DashboardPage() {
         "#f1f8e7",
         "#e9f6ea",
       ][index % 5],
-
       title: activity.title,
-
       imageUrl: activity.imageUrl,
-
       linkUrl: canOpenActivities
         ? `/scout/activities/${activity.id}`
         : "/scout/membership",
     }));
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-white via-[#f7fdf8] to-[#e7f6ea] text-slate-950">
+    <main className="min-h-screen bg-linear-to-b from-white via-[#f7fdf8] to-[#e7f6ea] text-slate-950">
       <div className="mx-auto flex min-h-screen max-w-md flex-col">
-
         <Header
           userName={user.firstName}
           avatarUrl={user.avatarUrl}
         />
 
         <div className="flex-1 pb-28">
-          <div className="space-y-5 px-1 py-5">
+          <div className="space-y-5 px-3 py-4">
 
             <PromoCarousel banners={promoBanners} />
 
@@ -113,11 +110,54 @@ export default async function DashboardPage() {
 
             <AnnouncementSection announcements={announcements} />
 
+            <section className="px-4 pt-2">
+              <h2 className="mb-3 text-lg font-bold text-slate-900">
+                Featured Scouting Event
+              </h2>
+
+              <div className="space-y-3">
+                <Link
+                  href="/scout/jamboree/one-mindanao"
+                  className="flex items-center justify-between gap-4 rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-sm transition hover:bg-slate-50"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                        OFFICIAL JAMBOREE
+                      </span>
+                    </div>
+
+                    <h3 className="mt-1.5 truncate text-[0.95rem] font-bold text-slate-900">
+                      7th One Mindanao Scout Jamboree
+                    </h3>
+
+                    <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-600">
+                      Join the National Merit Badge Challenge with 40 merit badges, earn completions, and download official certificates!
+                    </p>
+
+                    <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-medium text-slate-500">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-slate-700">
+                        <SparklesIcon className="h-3.5 w-3.5 text-amber-500" />
+                        40 Merit Badges
+                      </span>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-slate-700">
+                        <CalendarDaysIcon className="h-3.5 w-3.5 text-emerald-700" />
+                        September 2026
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex shrink-0 items-center text-slate-400">
+                    <ChevronRightIcon className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                  </div>
+                </Link>
+              </div>
+            </section>
           </div>
+          
         </div>
 
         <BottomNav />
-
       </div>
     </main>
   );

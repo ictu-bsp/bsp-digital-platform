@@ -27,23 +27,18 @@ export async function getPublishedActivitiesForScope(scope: {
   councilId?: string | null;
   regionId?: string | null;
 }) {
-  const nationalOnly = and(
-    isNull(activities.councilId),
-    isNull(activities.regionId)
-  );
-
   return db.query.activities.findMany({
     where: and(
       eq(activities.isPublished, true),
       or(
-        nationalOnly,
-        scope.councilId
-          ? eq(activities.councilId, scope.councilId)
-          : undefined,
-        scope.regionId
-          ? eq(activities.regionId, scope.regionId)
-          : undefined
-      )
+        eq(activities.category, "NATIONAL"),
+        and(
+          isNull(activities.councilId),
+          isNull(activities.regionId),
+        ),
+        scope.councilId ? eq(activities.councilId, scope.councilId) : undefined,
+        scope.regionId ? eq(activities.regionId, scope.regionId) : undefined,
+      ),
     ),
     orderBy: desc(activities.createdAt),
   });
@@ -55,20 +50,15 @@ export async function getActivityById(id: string) {
   });
 }
 
-export async function createActivity(
-  data: typeof activities.$inferInsert
-) {
-  const [activity] = await db
-    .insert(activities)
-    .values(data)
-    .returning();
+export async function createActivity(data: typeof activities.$inferInsert) {
+  const [activity] = await db.insert(activities).values(data).returning();
 
   return activity;
 }
 
 export async function updateActivity(
   id: string,
-  data: Partial<typeof activities.$inferInsert>
+  data: Partial<typeof activities.$inferInsert>,
 ) {
   const [activity] = await db
     .update(activities)
@@ -83,7 +73,5 @@ export async function updateActivity(
 }
 
 export async function deleteActivity(id: string) {
-  await db
-    .delete(activities)
-    .where(eq(activities.id, id));
+  await db.delete(activities).where(eq(activities.id, id));
 }

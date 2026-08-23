@@ -5,8 +5,8 @@ services:
 
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: bsp1234
-      POSTGRES_DB: bsplocal_digital_platform
+      POSTGRES_PASSWORD: bsp
+      POSTGRES_DB: bsp_digital_platform
 
     ports:
       - "5433:5432"

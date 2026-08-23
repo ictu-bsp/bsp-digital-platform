@@ -4,7 +4,7 @@ import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import * as schema from "../schema";
 
 const councilsByRegion: Record<string, string[]> = {
-  "Ilocos Region Coordination Office": [
+  "Ilocos Region": [
     "Dagupan City Council",
     "Eastern Pangasinan Council",
     "Ilocos Norte-Laoag City Council",
@@ -12,7 +12,7 @@ const councilsByRegion: Record<string, string[]> = {
     "La Union Council",
     "Pangasinan-San Carlos City Council",
   ],
-  "Northeastern Luzon Region Coordination Office": [
+  "Northeastern Luzon Region": [
     "Abra Council",
     "Baguio City Council",
     "Batanes Council",
@@ -27,7 +27,7 @@ const councilsByRegion: Record<string, string[]> = {
     "Quirino Council",
     "Santiago City Council",
   ],
-  "Central Luzon Region Coordination Office": [
+  "Central Luzon Region": [
     "Angeles City Council",
     "Aurora Council",
     "Bataan Council",
@@ -39,7 +39,7 @@ const councilsByRegion: Record<string, string[]> = {
     "Ramon Magsaysay (Zambales) Council",
     "Tarlac Council",
   ],
-  "National Capital Region Coordination Office": [
+  "National Capital Region": [
     "City of Mandaluyong Council",
     "Kalookan City Council",
     "Las Pinas City Council",
@@ -58,7 +58,7 @@ const councilsByRegion: Record<string, string[]> = {
     "Taguig City Council",
     "Valenzuela City Council",
   ],
-  "Southern Tagalog Region Coordination Office": [
+  "Southern Tagalog Region": [
     "Antipolo City Council",
     "Batangas Council",
     "Batangas City Council",
@@ -78,7 +78,7 @@ const councilsByRegion: Record<string, string[]> = {
     "Romblon Council",
     "San Pablo City Council",
   ],
-  "Bicol Region Coordination Office": [
+  "Bicol Region": [
     "Camarines Norte Council",
     "Camarines Sur Council",
     "Catanduanes Council",
@@ -90,7 +90,7 @@ const councilsByRegion: Record<string, string[]> = {
     "Naga City Council",
     "Sorsogon Council",
   ],
-  "Western Visayas Region Coordination Office": [
+  "Western Visayas Region": [
     "Aklan Council",
     "FR Antique Council",
     "Bacolod City Council",
@@ -101,7 +101,7 @@ const councilsByRegion: Record<string, string[]> = {
     "Negros Oriental-Siquijor Council",
     "Passi City Associate Council",
   ],
-  "Eastern Visayas Region Coordination Office": [
+  "Eastern Visayas Region": [
     "Biliran Council",
     "Bohol Council",
     "Calbayog City Council",
@@ -113,7 +113,7 @@ const councilsByRegion: Record<string, string[]> = {
     "Samar Council",
     "Southern Leyte Council",
   ],
-  "Western Mindanao Region Coordination Office": [
+  "Western Mindanao Region": [
     "Basilan Council",
     "Lanao del Sur-Marawi City Council",
     "Maguindanao-Cotabato City Council",
@@ -124,7 +124,7 @@ const councilsByRegion: Record<string, string[]> = {
     "Zamboanga del Sur-Pagadian City Council",
     "Zamboanga-Sibugay Council",
   ],
-  "Eastern Mindanao Region Coordination Office": [
+  "Eastern Mindanao Region": [
     "Cotabato Council",
     "Davao City Council",
     "Davao De Oro Council",
@@ -138,7 +138,7 @@ const councilsByRegion: Record<string, string[]> = {
     "Tagum City Council",
     "National Office",
   ],
-  "Northeastern Mindanao Region Coordination Office": [
+  "Northeastern Mindanao": [
     "Agusan Council",
     "Agusan del Sur Council",
     "Bislig City Associate Council",

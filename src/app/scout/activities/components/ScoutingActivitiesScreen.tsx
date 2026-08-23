@@ -1,15 +1,12 @@
 // src/app/scout/activities/components/ScoutingActivitiesScreen.tsx
-
 "use client";
 
 import { useState } from "react";
-
 import Header from "../../components/Header";
 import BottomNav from "../../components/BottomNav";
 import FeaturedCarousel from "../components/FeaturedCarousel";
 import FilterTabs from "../components/FilterTabs";
 import ActivityList from "../components/ActivityList";
-
 import type {
   Activity,
   ActivityCategory,
@@ -27,27 +24,22 @@ interface ScoutingActivitiesScreenProps {
 export default function ScoutingActivitiesScreen({
   userName,
   avatarUrl,
-  banners,
   activities,
   myActivities,
 }: ScoutingActivitiesScreenProps) {
-  const [activeFilter, setActiveFilter] =
-    useState<ActivityCategory | "all">("all");
+  const [activeFilter, setActiveFilter] = useState<ActivityCategory | "all">(
+    "all",
+  );
 
   const [showMine, setShowMine] = useState(false);
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-white via-[#f7fdf8] to-[#e7f6ea] text-slate-950">
+    <main className="min-h-screen bg-linear-to-b from-white via-[#f7fdf8] to-[#e7f6ea] text-slate-950">
       <div className="mx-auto flex min-h-screen max-w-md flex-col">
-
-        <Header
-          userName={userName}
-          avatarUrl={avatarUrl}
-        />
+        <Header userName={userName} avatarUrl={avatarUrl} />
 
         <div className="flex-1 pb-28">
           <div className="space-y-5 px-5 py-5">
-            <FeaturedCarousel banners={banners} />
 
             {/* All Activities / My Activities */}
             <div className="flex overflow-hidden rounded-xl border border-emerald-700">
@@ -80,11 +72,7 @@ export default function ScoutingActivitiesScreen({
             />
 
             <ActivityList
-              activities={
-                showMine
-                  ? myActivities
-                  : activities
-              }
+              activities={showMine ? myActivities : activities}
               activeFilter={activeFilter}
               emptyMessage={
                 showMine
@@ -92,12 +80,10 @@ export default function ScoutingActivitiesScreen({
                   : "No activities match this filter right now."
               }
             />
-
           </div>
         </div>
 
         <BottomNav />
-
       </div>
     </main>
   );
