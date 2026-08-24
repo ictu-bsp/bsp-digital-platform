@@ -138,7 +138,7 @@ const councilsByRegion: Record<string, string[]> = {
     "Tagum City Council",
     "National Office",
   ],
-  "Northeastern Mindanao": [
+  "Northeastern Mindanao Region": [
     "Agusan Council",
     "Agusan del Sur Council",
     "Bislig City Associate Council",
