@@ -59,7 +59,7 @@ export async function seedUsers(
   const [manilaCouncil] = await db
     .select()
     .from(schema.councils)
-    .where(eq(schema.councils.name, "Manila Council"));
+    .where(eq(schema.councils.name, "Manila"));
 
   if (!manilaCouncil) {
     throw new Error(
