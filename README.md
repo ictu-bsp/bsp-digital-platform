@@ -54,15 +54,27 @@ npm install
 Create a `.env.local` file in the root directory of your project and configure your local database connection:
 
 ```env
-# Neon PostgreSQL Pooled Connection String
-DATABASE_URL="postgres://user:password@endpoint.region.neon.tech/neondb?sslmode=require"
+# Application Port
+PORT=5000
 
-# Neon Auth Configuration
-NEON_AUTH_URL="http://localhost:3000"
+# PostgreSQL Connection Details
+# Replace 'your_password_here' with the actual password for the postgres user
+# If you created a different user, change 'postgres' to that username
+DB_USER=postgres
+DB_PASSWORD=admin
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=bsp_digital_platform
 
-# PayMongo Sandbox Keys (For local payment testing)
-NEXT_PUBLIC_PAYMONGO_PUBLIC_KEY="pk_test_..."
-PAYMONGO_SECRET_KEY="sk_test_..."
+# EMAIL_FROM="Boy Scouts of the Philippines <onboarding@resend.dev>"
+
+DATABASE_URL="postgresql://postgres:admin@127.0.0.1:5432/bsp_digital_platform"
+
+GMAIL_USER="bspproject.ictu@gmail.com"
+GMAIL_APP_PASS="suuxbaihtoepqlus"
+EMAIL_FROM="E-Scouts <bspproject.ictu@gmail.com>"
+
+SMTP_HOST="smtp.gmail.com"
 
 ```
 
@@ -87,13 +99,6 @@ This project uses **Drizzle ORM** to manage PostgreSQL database schemas safely a
 Whenever schema definitions in `src/lib/schema.ts` are updated, sync them to your database instance:
 ```bash
 npx drizzle-kit push
-
-```
-
-
-2. **Open Drizzle Studio (Visual Database GUI):**
-```bash
-npx drizzle-kit studio
 
 ```
 
