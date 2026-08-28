@@ -553,7 +553,7 @@ export default function VerifiedMemberCard({
   };
 
   return (
-    <PageLayout userName={userName} avatarUrl={undefined}>
+    <PageLayout userName={userName} avatarUrl={avatarUrl}>
       <div className="mx-auto w-full max-w-md flex-1 p-5 space-y-6">
         <div className="space-y-2">
           <div
