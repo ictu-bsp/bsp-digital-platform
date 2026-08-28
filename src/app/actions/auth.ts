@@ -23,32 +23,48 @@ export interface ActionResult {
 }
 
 // Processes initial sign-up form submissions without parent email and initiates verification
-export async function signUpAction(prevState: ActionResult, formData: FormData): Promise<ActionResult> {
-  const parsed = signUpSchema.safeParse({
-    firstName: formData.get("firstName"),
-    middleName: formData.get("middleName"),
-    lastName: formData.get("lastName"),
-    suffix: formData.get("suffix"),
-    birthdate: formData.get("birthdate"),
-    sex: formData.get("sex"),
-    email: formData.get("email"),
-    role: formData.get("role"),
-  });
+export async function signUpAction(_prevState: any, formData: FormData) {
+  try {
+    const firstName = formData.get("firstName") as string;
+    const middleName = (formData.get("middleName") as string) || null;
+    const lastName = formData.get("lastName") as string;
+    const suffix = (formData.get("suffix") as string) || null;
+    const birthdate = new Date(formData.get("birthdate") as string);
+    const sex = formData.get("sex") as string;
+    const email = formData.get("email") as string;
+    const role = (formData.get("role") as "VISITOR" | "SCOUT") || "SCOUT";
+    
+    // Extract council and region from FormData
+    const councilId = (formData.get("councilId") || formData.get("preferredCouncilId")) as string;
+    const region = formData.get("region") as string;
 
-  if (!parsed.success) {
+    if (!councilId) {
+      return {
+        success: false,
+        errors: { councilId: ["Please select a local council."] },
+      };
+    }
+
+    const registration = await createPendingUserRegistration({
+      firstName,
+      middleName,
+      lastName,
+      suffix,
+      birthdate,
+      sex,
+      email,
+      role,
+      councilId: councilId.trim(),
+      region: region?.trim() || null,
+    });
+
+    return { success: true, data: registration };
+  } catch (error: any) {
+    console.error("signUpAction error:", error);
     return {
       success: false,
-      message: "Please correct the highlighted fields.",
-      errors: parsed.error.flatten().fieldErrors,
+      message: error.message || "Signup failed. Please try again.",
     };
-  }
-
-  try {
-    await createPendingUserRegistration(parsed.data);
-    return { success: true, message: "Verification code sent to your email." };
-  } catch (error) {
-    console.error("signUpAction error:", error);
-    return { success: false, message: error instanceof Error ? error.message : "Unable to create registration." };
   }
 }
 

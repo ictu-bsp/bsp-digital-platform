@@ -12,6 +12,10 @@ import {
   deleteExpiredSessions,
   getSession,
 } from "@/lib/auth/session";
+import { assignMembershipIdToScout } from "@/services/application.service";
+import { scouts } from "@/db/schema/scouts";
+import { councils } from "@/db/schema/councils";
+import { regions } from "@/db/schema/regions";
 
 export interface CreatePendingRegistrationInput {
   email: string;
@@ -23,6 +27,7 @@ export interface CreatePendingRegistrationInput {
   birthdate: Date;
   sex: string;
   role: "VISITOR" | "SCOUT";
+  councilId?: string | null;
 }
 
 // Maps database connection and runtime errors into user-friendly exceptions
@@ -173,8 +178,9 @@ function calculateAge(birthdate: Date): number {
 }
 
 // Creates or updates a pending registration state and sends verification code
+// Inside src/services/auth.service.ts
 export async function createPendingUserRegistration(
-  data: CreatePendingRegistrationInput,
+  data: CreatePendingRegistrationInput
 ) {
   try {
     const cleanEmail = data.email.trim().toLowerCase();
@@ -187,12 +193,24 @@ export async function createPendingUserRegistration(
     });
 
     const verificationCode = generateVerificationCode();
-    const verificationExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
+    const verificationExpires = new Date(Date.now() + 10 * 60 * 1000);
 
     const sanitizedMiddleName = cleanOptionalString(data.middleName);
     const sanitizedSuffix = cleanOptionalString(data.suffix);
     const sanitizedParentEmail =
       cleanOptionalString(data.parentEmail)?.toLowerCase() ?? null;
+    const sanitizedCouncilId = cleanOptionalString(data.councilId);
+
+    // Resolve region UUID directly from the chosen council record
+    let resolvedRegionId: string | null = null;
+    if (sanitizedCouncilId) {
+      const [councilRecord] = await db
+        .select({ regionId: councils.regionId })
+        .from(councils)
+        .where(eq(councils.id, sanitizedCouncilId))
+        .limit(1);
+      resolvedRegionId = councilRecord?.regionId ?? null;
+    }
 
     let registration;
 
@@ -208,6 +226,8 @@ export async function createPendingUserRegistration(
           birthdate: data.birthdate,
           sex: data.sex,
           role: data.role,
+          councilId: sanitizedCouncilId,
+          regionId: resolvedRegionId,
           verificationCode,
           verificationExpires,
           emailVerifiedAt: null,
@@ -218,33 +238,30 @@ export async function createPendingUserRegistration(
       [registration] = await db
         .insert(pendingUserRegistrations)
         .values({
-          ...data,
           email: cleanEmail,
+          firstName: data.firstName,
           middleName: sanitizedMiddleName,
+          lastName: data.lastName,
           suffix: sanitizedSuffix,
+          birthdate: data.birthdate,
+          sex: data.sex,
+          role: data.role,
           parentEmail: sanitizedParentEmail,
+          councilId: sanitizedCouncilId,
+          regionId: resolvedRegionId,
           verificationCode,
           verificationExpires,
         })
         .returning();
     }
 
-    // Determine target recipient (parent email for minors with parent provided, otherwise primary email)
     const isMinor = calculateAge(data.birthdate) < 18;
-    const recipient =
-      isMinor && sanitizedParentEmail
-        ? sanitizedParentEmail
-        : registration.email;
-
-    const emailResult = await sendVerificationEmail(
-      recipient,
-      verificationCode,
-    );
-    if (!emailResult.success) {
-      console.error("Email delivery failed:", emailResult);
-      throw new Error(
-        "Failed to send verification email. Please verify your email address.",
-      );
+    if (!isMinor || sanitizedParentEmail) {
+      const recipient =
+        isMinor && sanitizedParentEmail
+          ? sanitizedParentEmail
+          : registration.email;
+      await sendVerificationEmail(recipient, verificationCode);
     }
 
     return registration;
@@ -335,7 +352,7 @@ export async function resendPendingVerification(
 // Finalizes user account creation from a verified pending registration
 export async function completePendingRegistration(
   email: string,
-  password: string,
+  password: string
 ) {
   try {
     const cleanEmail = email.trim().toLowerCase();
@@ -352,26 +369,52 @@ export async function completePendingRegistration(
       throw new Error("Email has not been verified.");
 
     const passwordHash = await hashPassword(password);
-    const [user] = await db
-      .insert(users)
-      .values({
-        email: registration.email,
-        passwordHash,
-        firstName: registration.firstName,
-        middleName: registration.middleName,
-        lastName: registration.lastName,
-        suffix: registration.suffix,
-        birthdate: registration.birthdate,
-        sex: registration.sex,
-        role: registration.role,
-        emailVerified: registration.emailVerifiedAt,
-      })
-      .returning();
 
-    await db
-      .delete(pendingUserRegistrations)
-      .where(eq(pendingUserRegistrations.id, registration.id));
-    return user;
+    return await db.transaction(async (tx) => {
+      // 1. Insert Core User Record with councilId and regionId UUIDs
+      const [user] = await tx
+        .insert(users)
+        .values({
+          email: registration.email,
+          passwordHash,
+          firstName: registration.firstName,
+          middleName: registration.middleName,
+          lastName: registration.lastName,
+          suffix: registration.suffix,
+          birthdate: registration.birthdate,
+          sex: registration.sex,
+          role: registration.role,
+          councilId: registration.councilId ?? null,
+          regionId: registration.regionId ?? null,
+          emailVerified: registration.emailVerifiedAt,
+        })
+        .returning();
+
+      // 2. Generate Membership ID & Insert Basic Scout Record for ID Preview
+      if (registration.councilId) {
+        const membershipNumber = await assignMembershipIdToScout(
+          user.id,
+          registration.councilId,
+          tx
+        );
+
+        await tx.insert(scouts).values({
+          userId: user.id,
+          councilId: registration.councilId,
+          membershipNumber: membershipNumber,
+          section: "KID",
+          status: "PENDING",
+          verificationStatus: "unverified",
+        });
+      }
+
+      // 3. Remove verified pending registration entry
+      await tx
+        .delete(pendingUserRegistrations)
+        .where(eq(pendingUserRegistrations.id, registration.id));
+
+      return user;
+    });
   } catch (error) {
     mapDatabaseError(error);
   }

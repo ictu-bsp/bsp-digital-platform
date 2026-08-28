@@ -108,8 +108,6 @@ export default async function DashboardPage() {
 
             <NotificationSection notifications={notifications} />
 
-            <AnnouncementSection announcements={announcements} />
-
             <section className="px-4 pt-2">
               <h2 className="mb-3 text-lg font-bold text-slate-900">
                 Featured Scouting Event
@@ -153,6 +151,7 @@ export default async function DashboardPage() {
                 </Link>
               </div>
             </section>
+            <AnnouncementSection announcements={announcements} />
           </div>
           
         </div>

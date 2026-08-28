@@ -19,18 +19,19 @@ interface ScoutingActivitiesScreenProps {
   banners: FeaturedBanner[];
   activities: Activity[];
   myActivities: Activity[];
+  isScout?: boolean;
 }
 
 export default function ScoutingActivitiesScreen({
   userName,
   avatarUrl,
+  banners,
   activities,
   myActivities,
 }: ScoutingActivitiesScreenProps) {
   const [activeFilter, setActiveFilter] = useState<ActivityCategory | "all">(
     "all",
   );
-
   const [showMine, setShowMine] = useState(false);
 
   return (
@@ -40,10 +41,10 @@ export default function ScoutingActivitiesScreen({
 
         <div className="flex-1 pb-28">
           <div className="space-y-5 px-5 py-5">
-
-            {/* All Activities / My Activities */}
+            {/* All Activities / My Activities Switcher */}
             <div className="flex overflow-hidden rounded-xl border border-emerald-700">
               <button
+                type="button"
                 onClick={() => setShowMine(false)}
                 className={`flex-1 py-2 text-sm font-semibold transition ${
                   !showMine
@@ -55,6 +56,7 @@ export default function ScoutingActivitiesScreen({
               </button>
 
               <button
+                type="button"
                 onClick={() => setShowMine(true)}
                 className={`flex-1 py-2 text-sm font-semibold transition ${
                   showMine

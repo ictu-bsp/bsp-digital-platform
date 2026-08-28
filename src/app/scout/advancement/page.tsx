@@ -16,14 +16,14 @@ export default async function AdvancementPage() {
     redirect("/login");
   }
 
-  const canViewAdvancement =
-  user.role === "SCOUT" ||
-  user.role === "COUNCIL_ADMIN" ||
-  user.role === "SUPER_ADMIN";
+  // const canViewAdvancement =
+  // user.role === "SCOUT" ||
+  // user.role === "COUNCIL_ADMIN" ||
+  // user.role === "SUPER_ADMIN";
 
-  if (!canViewAdvancement) {
-    redirect("/scout/membership");
-  }
+  // if (!canViewAdvancement) {
+  //   redirect("/scout/membership");
+  // }
 
   const scout = user.id ? await getScoutByUserId(user.id) : null;
   const section = (scout?.section as ScoutSection | undefined) ?? "BOY";

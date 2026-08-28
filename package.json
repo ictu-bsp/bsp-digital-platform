@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -H 0.0.0.0 -p 3000",
     "ngrok": "ngrok http 3000 --domain=diploma-blade-matrix.ngrok-free.dev",
     "build": "next build",
     "start": "next start",

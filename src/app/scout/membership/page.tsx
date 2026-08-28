@@ -1,275 +1,133 @@
-//src/app/scout/membership/page.tsx
-
-import Link from "next/link";
-import Image from "next/image";
+// src/app/scout/membership/verified-member/page.tsx
 import { redirect } from "next/navigation";
-import PageLayout from "../../components/PageLayout";
 import { getCurrentUser } from "@/lib/auth/current-user";
-import {
-  getApplicationByUser,
-  getMembershipCardData,
-} from "@/services/application.service";
-import PendingStatusPoller from "./PendingStatusPoller";
+import { getMembershipCardData } from "@/services/application.service";
+import VerifiedMemberCard from "./verified-member/VerifiedMemberCard";
 
-
-export default async function MembershipPage() {
+export default async function VerifiedMemberPage() {
   const user = await getCurrentUser();
 
   if (!user) {
     redirect("/login");
   }
 
-  // Retrieve applications and pick the most recent / single record
-  const applications = await getApplicationByUser(user.id);
-  const application = Array.isArray(applications) ? applications[0] : applications;
-
-  // Retrieve existing membership card data
   const cardData = await getMembershipCardData();
 
-  // Safe optional chaining on `cardData?.scout?.verificationStatus`
-  const hasActiveScout =
-    cardData !== null && cardData?.scout?.verificationStatus === "active";
-
-  // Approved -> this page's job is done, go straight to the real card.
-  if (application?.status === "APPROVED" && hasActiveScout) {
-    redirect("/scout/membership/verified-member");
+  if (!cardData || !cardData.scout) {
+    redirect("/scout/membership");
   }
 
-  console.log(application, cardData);
+  const { application, scout, registration, council } = cardData;
 
-  const isOrphanedApproval =
-    application?.status === "APPROVED" && !hasActiveScout;
+  let parsedRemarks: Record<string, any> = {};
+  if (application?.remarks) {
+    try {
+      parsedRemarks = JSON.parse(application.remarks);
+    } catch {
+      // Ignore non-JSON remarks
+    }
+  }
 
-  const hasPendingApplication = application?.status === "PENDING";  
-  const hasRejectedApplication = application?.status === "REJECTED";
-  const hasCancelledApplication = application?.status === "CANCELLED";
+  const scoutingPositionLabels: Record<string, string> = {
+    kid_scout: "Kid Scout",
+    kab_scout: "Kab Scout",
+    boy_scout: "Boy Scout",
+    senior_scout: "Senior Scout",
+    rover: "Rover",
+  };
 
-  const canApply =
-    !application ||
-    hasRejectedApplication ||
-    hasCancelledApplication ||
-    isOrphanedApproval;
+  const sponsoringInstitutionLabels: Record<string, string> = {
+    school: "School",
+    church: "Church",
+    community_org: "Community Organization",
+    community_based: "Community-Based",
+  };
+
+  const humanize = (value: string) =>
+    value
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+
+  const formatLabel = (
+    value: string | null | undefined,
+    map: Record<string, string>
+  ) => {
+    if (!value) return "N/A";
+    return map[value] ?? humanize(value);
+  };
+
+  const formatDate = (value: Date | string | null | undefined) => {
+    if (!value) return "—";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "—";
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const userData = {
+    firstName: user.firstName,
+    middleInitial: user.middleName ? `${user.middleName.charAt(0)}.` : "",
+    lastName: user.lastName,
+    designation: formatLabel(
+      application?.scoutingPosition || parsedRemarks.scoutingPosition,
+      scoutingPositionLabels
+    ),
+    council: council?.name ?? "N/A",
+    idNumber: scout.membershipNumber ?? "N/A",
+    validUntil: formatDate(registration?.endDate),
+    validUntilRaw: registration?.endDate
+      ? new Date(registration.endDate).toISOString()
+      : null,
+    status: scout.verificationStatus === "active" ? "VALID" : "PENDING",
+    dob: formatDate(user.birthdate),
+    sex: user.sex ?? "N/A",
+    bloodType:
+      scout.bloodType ||
+      application?.bloodType ||
+      parsedRemarks.bloodType ||
+      "N/A",
+    sponsoringInst: formatLabel(
+      application?.sponsoringInstitution || parsedRemarks.sponsoringInstitution,
+      sponsoringInstitutionLabels
+    ),
+    address:
+      scout.address ||
+      application?.address ||
+      parsedRemarks.address ||
+      "N/A",
+    telephone:
+      scout.telephoneNumber ||
+      application?.telephoneNumber ||
+      parsedRemarks.telephoneNumber ||
+      parsedRemarks.telephone ||
+      "N/A",
+    email: user.email,
+    emergencyContact:
+      scout.emergencyContactName ||
+      application?.emergencyContactName ||
+      parsedRemarks.emergencyContactName ||
+      "N/A",
+    emergencyRelationship:
+      scout.emergencyContactRelationship ||
+      application?.emergencyContactRelationship ||
+      parsedRemarks.emergencyContactRelationship ||
+      "N/A",
+    emergencyContactNum:
+      scout.emergencyContactNumber ||
+      application?.emergencyContactNumber ||
+      parsedRemarks.emergencyContactNumber ||
+      "N/A",
+  };
 
   return (
-    <PageLayout userName={user.firstName} avatarUrl={user.avatarUrl ?? undefined}>
-      <div className="space-y-4 px-5 py-6">
-        <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
-          <div className="relative">
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="mb-3 flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-green-700">
-                    Membership Preview
-                  </p>
-                  <h2 className="text-lg font-semibold text-slate-900">Non Member</h2>
-                </div>
-
-                <div className="rounded-full bg-green-900 px-3 py-1 text-xs font-semibold text-white">
-                  INVALID
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 bg-linear-to-br from-[#f5fbe8] to-[#eef4e6] p-4">
-                <div className="mb-3 flex items-center gap-2">
-                  <Image
-                    src="/bsp-logo-with-bkg.svg"
-                    alt="BSP Logo"
-                    width={32}
-                    height={32}
-                    className="h-8 w-8 shrink-0 object-contain"
-                  />
-                  <div className="text-[10px] font-semibold uppercase leading-tight text-slate-700">
-                    Boy Scouts of the Philippines
-                  </div>
-                </div>
-
-                <div className="blur-xs">
-                  <div className="w-full aspect-[1.58/1] perspective-[1000px]">
-                    <div className="relative h-full w-full rounded-2xl border border-gray-200 bg-[#F1F7EC] p-4 shadow-md overflow-hidden flex flex-col justify-between pl-9">
-                      <div className="absolute top-0 left-0 bottom-0 w-6 flex flex-row">
-                        <div className="h-full w-1/2 bg-red-600" />
-                        <div className="h-full w-1/2 bg-blue-800" />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Image
-                          src="/bsp-logo-with-bkg.svg"
-                          alt="BSP Logo"
-                          width={32}
-                          height={32}
-                          className="h-8 w-8 shrink-0 object-contain"
-                        />
-                        <div className="text-[9px] uppercase leading-tight font-bold text-blue-900 tracking-wide">
-                          <p>Boy Scouts of the Philippines</p>
-                          <p className="font-normal text-gray-600">National Office</p>
-                          <p className="font-light normal-case text-[7px] text-gray-400">
-                            181 Natividad Almeda-Lopez St., Ermita, Manila
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="text-center">
-                        <h3 className="text-xs font-bold text-red-500 uppercase tracking-widest leading-none">
-                          Membership Card
-                        </h3>
-                        <span className="text-[7px] font-bold text-blue-900 uppercase">
-                          Valid Until: —
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-3 items-end gap-2">
-                        <div className="col-span-2 space-y-2 text-[10px] pb-1">
-                          <div className="flex flex-col">
-                            <span className="font-bold text-blue-900 border-b border-blue-900/40 pb-0.5 leading-none">
-                              —
-                            </span>
-                            <span className="text-[5px] text-gray-400 uppercase font-bold tracking-tight pt-0.5">
-                              Name
-                            </span>
-                          </div>
-
-                          <div className="flex flex-col">
-                            <span className="font-bold text-blue-900 border-b border-blue-900/40 pb-0.5 leading-none">
-                              —
-                            </span>
-                            <span className="text-[5px] text-gray-400 uppercase font-bold tracking-tight pt-0.5">
-                              Designation
-                            </span>
-                          </div>
-
-                          <div className="flex flex-col">
-                            <span className="font-bold text-blue-900 border-b border-blue-900/40 pb-0.5 leading-none">
-                              —
-                            </span>
-                            <span className="text-[5px] text-gray-400 uppercase font-bold tracking-tight pt-0.5">
-                              Council
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col items-center justify-end">
-                          <div className="relative h-20 w-20 border border-gray-400 bg-gray-200 overflow-hidden mb-2.5 shadow-sm">
-                            <div className="flex h-full w-full flex-col items-center justify-center bg-gray-300 text-gray-500 text-[8px] text-center p-1">
-                              User Photo
-                            </div>
-                          </div>
-                          <div className="w-20 border-t border-blue-900 pt-1 text-center">
-                            <span className="block text-[5px] font-bold text-blue-900/70 uppercase tracking-tight leading-none">
-                              Signature of Member
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex justify-between items-end text-[7px] text-blue-900 pb-0.5">
-                        <div className="flex flex-col items-center">
-                          <div className="w-20 border-t border-blue-900 pt-0.5 text-center">
-                            <span className="block text-[5px] uppercase font-medium text-blue-900/80 tracking-tight">
-                              Council Chairperson
-                            </span>
-                          </div>
-                        </div>
-                        <div className="text-right font-serif text-sm font-bold text-red-600 tracking-tight leading-none">
-                          № <span className="tracking-normal">—</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="blur-[4px]">
-                  <div className="rounded-xl bg-slate-50 p-3 text-center">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-500">
-                      Membership Status
-                    </p>
-                    <p className="mt-2 text-4xl font-black tracking-[0.25em] text-slate-900">
-                      INVALID
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[2px]">
-              <div className="w-full max-w-[300px] rounded-3xl border border-slate-200 bg-white/95 p-5 text-center shadow-xl">
-                {canApply && (
-                  <>
-                    {hasRejectedApplication && (
-                      <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4">
-                        <p className="font-bold text-red-700">
-                          Application Rejected
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          Your payment has been refunded. You may submit
-                          another membership application.
-                        </p>
-                      </div>
-                    )}
-
-                    {hasCancelledApplication && (
-                      <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4">
-                        <p className="font-bold text-red-700">
-                          Application Cancelled
-                        </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          You may submit another membership application.
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Single Dynamic Route Entry Point */}
-                    <Link
-                      href="/scout/membership/membership-registration/agreement"
-                      className="block w-full rounded-full bg-green-900 py-3 font-bold text-white transition hover:bg-green-800"
-                    >
-                      {hasRejectedApplication || hasCancelledApplication
-                        ? "Apply Again"
-                        : "Apply for Scout Membership"}
-                    </Link>
-
-                    {user.role === "SCOUT" && !hasActiveScout && (
-                      <p className="mt-3 text-center text-sm text-gray-700">
-                        Already a Scout?{" "}
-                        <Link
-                          href="/scout/membership/membership-verification"
-                          className="font-semibold text-green-700 underline hover:text-green-800"
-                        >
-                          Click Here
-                        </Link>
-                      </p>
-                    )}
-                  </>
-                )}
-
-                {hasPendingApplication && (
-                  <>
-                    <PendingStatusPoller />
-
-                    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-                      <p className="text-lg font-bold text-amber-700">
-                        Application Submitted
-                      </p>
-                      <p className="mt-2 text-sm text-slate-600">
-                        Your application has been forwarded to your
-                        selected council and is currently awaiting
-                        review.
-                      </p>
-                    </div>
-
-                    <button
-                      disabled
-                      className="mt-4 w-full cursor-not-allowed rounded-full bg-gray-400 py-3 font-bold text-white"
-                    >
-                      Awaiting Council Approval
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </PageLayout>
+    <VerifiedMemberCard
+      userName={user.firstName}
+      avatarUrl={user.avatarUrl ?? undefined}
+      userData={userData}
+    />
   );
 }

@@ -13,7 +13,7 @@ export default async function VerifiedMemberPage() {
 
   const cardData = await getMembershipCardData();
 
-  if (!cardData || !cardData.scout || cardData.scout.verificationStatus !== "active") {
+  if (!cardData || !cardData.scout) {
     redirect("/scout/membership");
   }
 

@@ -1,4 +1,3 @@
-//src/app/(public)/signup/page.tsx
 "use client";
 import Link from "next/link";
 import Image from "next/image";
@@ -6,6 +5,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import BackButton from "@/components-general/ui/BackButton";
 import { signUpAction } from "@/app/actions/auth";
+import { getCouncilsAction, getRegionsAction } from "@/app/actions/councils";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -16,9 +16,12 @@ export default function SignUpPage() {
     suffix: "",
     birthdate: "",
     sex: "",
+    councilId: "",
+    regionName: "",
     email: "",
     noMiddleName: false,
   });
+
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPolicyModal, setShowPolicyModal] = useState(false);
@@ -27,6 +30,31 @@ export default function SignUpPage() {
   const policyScrollRef = useRef<HTMLDivElement | null>(null);
   const [role, setRole] = useState<"VISITOR" | "SCOUT" | null>(null);
   const [showRoleDialog, setShowRoleDialog] = useState(true);
+  const [councils, setCouncils] = useState<
+    { id: string; name: string; regionId: string | null }[]
+  >([]);
+  const [regions, setRegions] = useState<{ id: string; name: string }[]>([]);
+  const [loadingLocations, setLoadingLocations] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    Promise.all([getCouncilsAction(), getRegionsAction()]).then(
+      ([councilsRes, regionsRes]) => {
+        if (isMounted) {
+          if (councilsRes.success && councilsRes.data) {
+            setCouncils(councilsRes.data);
+          }
+          if (regionsRes.success && regionsRes.data) {
+            setRegions(regionsRes.data);
+          }
+          setLoadingLocations(false);
+        }
+      },
+    );
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Calculates user age in years relative to the current date
   const calculateAge = (birthdateStr: string): number => {
@@ -43,18 +71,42 @@ export default function SignUpPage() {
     return age;
   };
 
-  // Handles text and checkbox changes while clearing validation errors for active field
+  // Handles input changes and auto-populates region on council selection
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value, type } = e.target;
     const fieldValue =
       type === "checkbox" ? (e.target as HTMLInputElement).checked : value;
+
+    if (name === "councilId") {
+      const selectedCouncil = councils.find((c) => c.id === value);
+      const matchedRegion = regions.find(
+        (r) => r.id === selectedCouncil?.regionId,
+      );
+      const autoRegionName = matchedRegion?.name ?? "";
+
+      setFormData((prev) => ({
+        ...prev,
+        councilId: value,
+        regionName: autoRegionName,
+      }));
+
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next.councilId;
+        delete next.regionName;
+        return next;
+      });
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: fieldValue,
       ...(name === "noMiddleName" && fieldValue ? { middleName: "" } : {}),
     }));
+
     if (errors[name]) {
       setErrors((prev) => {
         const next = { ...prev };
@@ -103,6 +155,9 @@ export default function SignUpPage() {
     data.append("suffix", formData.suffix);
     data.append("birthdate", formData.birthdate);
     data.append("sex", formData.sex);
+    data.append("councilId", formData.councilId);
+    data.append("preferredCouncilId", formData.councilId);
+    data.append("region", formData.regionName);
     data.append("email", formData.email);
     data.append("role", role ?? "");
 
@@ -297,6 +352,52 @@ export default function SignUpPage() {
                 </p>
               )}
             </div>
+
+            {/* Local Council Selection */}
+            <div>
+              <select
+                name="councilId"
+                required
+                value={formData.councilId}
+                onChange={handleInputChange}
+                disabled={loadingLocations}
+                className={`w-full rounded-lg border bg-white p-3 text-base outline-none transition-all focus:ring-1 ${
+                  !formData.councilId ? "text-gray-400" : "text-gray-900"
+                } ${
+                  errors.councilId
+                    ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                    : "border-gray-300 focus:border-green-900 focus:ring-green-900"
+                } disabled:bg-gray-50 disabled:text-gray-400`}
+              >
+                <option value="" disabled hidden>
+                  {loadingLocations ? "Loading Councils..." : "Select Local Council"}
+                </option>
+                {councils.map((c) => (
+                  <option key={c.id} value={c.id} className="text-gray-900">
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              {errors.councilId && (
+                <p className="mt-1 pl-1 text-xs text-red-600">
+                  {errors.councilId[0]}
+                </p>
+              )}
+            </div>
+
+            {/* Auto-populated Scouting Region (Read-Only) */}
+            <div>
+              <input
+                type="text"
+                name="regionName"
+                placeholder="Scouting Region"
+                readOnly
+                tabIndex={-1}
+                value={formData.regionName}
+                className="w-full cursor-not-allowed select-none rounded-lg border border-gray-300 bg-gray-100 p-3 text-base text-gray-700 outline-none placeholder:text-gray-400"
+              />
+            </div>
+
             <div>
               <input
                 type="email"

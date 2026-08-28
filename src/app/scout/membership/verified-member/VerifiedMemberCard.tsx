@@ -614,6 +614,14 @@ export default function VerifiedMemberCard({
 
           <button
             type="button"
+            onClick={() => setIsCertOpen(true)}
+            className="w-full rounded-xl border border-gray-300 bg-white py-3.5 text-center text-sm font-bold text-green-900 shadow-sm transition-colors hover:bg-gray-50"
+          >
+            Validate Membership
+          </button>
+
+          <button
+            type="button"
             onClick={() => {
               if (!isExpired) {
                 setIsStillValidOpen(true);
